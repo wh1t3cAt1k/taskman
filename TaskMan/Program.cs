@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Collections;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Windows.Forms;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Reflection;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Text.RegularExpressions;
+using System.Windows.Forms;
+using System;
 
 namespace TaskMan
 {
@@ -34,6 +35,18 @@ namespace TaskMan
 		static Regex VersionRegex = new Regex(@"^--version$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 		#region Service Functions
+
+		/// <summary>
+		/// Extracts the value from the given assembly attribute.
+		/// </summary>
+		/// <returns>The value extracted from the assembly attribute.</returns>
+		/// <param name="extractValueFunction">The function to extract the value from the attribute.</param>
+		/// <typeparam name="T">The type of assembly attribute.</typeparam>
+		public static string GetAssemblyAttribute<T>(Func<T, string> extractValueFunction) where T : Attribute
+		{
+			T attribute = (T)Attribute.GetCustomAttribute(Assembly.GetEntryAssembly(), typeof (T));
+			return extractValueFunction.Invoke(attribute);
+		}
 
 		/// <summary>
 		/// Displays the TaskMan help text in the console.
@@ -173,7 +186,7 @@ namespace TaskMan
 				DisplayHelpText();
 				return;
 			}
-				
+
 			Program.currentOperation = "read tasks from the task file";
 			List<Task> taskList = ReadTasks(); 
 
@@ -309,12 +322,15 @@ namespace TaskMan
 			}
 			else if (VersionRegex.IsMatch(commandName))
 			{
-				AssemblyName currentAssemblyName = Assembly.GetExecutingAssembly().GetName();
+				Assembly executingAssembly = Assembly.GetExecutingAssembly();
+				AssemblyName assemblyName = executingAssembly.GetName();
 
 				Console.WriteLine(
-					"{0} version {1}",
-					currentAssemblyName.Name,
-					currentAssemblyName.Version);
+					"{0} version {1}.{2}.{3}",
+					GetAssemblyAttribute<AssemblyProductAttribute>(attribute => attribute.Product),
+					assemblyName.Version.Major,
+					assemblyName.Version.Minor,
+					assemblyName.Version.Build);
 			}
 			else 
 			{
