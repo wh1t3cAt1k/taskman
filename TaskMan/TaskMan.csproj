@@ -81,7 +81,6 @@
     <Compile Include="StringExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Properties\app.manifest" />
     <None Include="..\README">
       <Link>README</Link>
     </None>
