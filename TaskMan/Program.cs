@@ -33,6 +33,7 @@ namespace TaskMan
 		static Regex SingleIdRegex = new Regex(@"^([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static Regex VersionRegex = new Regex(@"^--version$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static Regex TaskPriorityRegex = new Regex(@"^\[([0-9]+)\]$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 		#region Service Functions
 
@@ -150,7 +151,7 @@ namespace TaskMan
 		{
 			try
 			{
-				RunTaskman(args);
+				RunTaskman(new LinkedList<string>(args));
 			}
 			catch (Exception exception)
 			{
@@ -165,14 +166,17 @@ namespace TaskMan
 			return 0;
 		}
 
-		static void RunTaskman(params string[] args)
+		static void RunTaskman(LinkedList<string> arguments)
 		{
-			if (args.Length == 0) 
+			if (!arguments.Any()) 
 			{
-				args = new string[] { "showall" }; 
+				arguments = new LinkedList<string>(new string[] { "showall" }); 
 			}
 
-			string commandName = args[0].ToLower();
+			// Retrieve and pop the command name from the arguments.
+			// -
+			string commandName = arguments.First.Value;
+			arguments.RemoveFirst();
 
 			if (HelpMakeRegex.IsMatch(commandName))
 			{
@@ -194,46 +198,33 @@ namespace TaskMan
 			{
 				Program.currentOperation = "add a new task";
 
-				string description = "";
-				int priorityLevel = 1;
-
-				int newArgumentsLength = args.Length - 2;
-
-				if (newArgumentsLength < 0)
+				if (!arguments.Any())
 				{
 					throw new Exception(Messages.NoDescriptionSpecified);
 				}
 
-				int argumentIndex;
+				string description = string.Join(
+					" ", 
+					arguments
+						.Where(argument => !TaskPriorityRegex.IsMatch(argument)));
 
-				for (argumentIndex = 1; argumentIndex < args.Length; argumentIndex++)
+				int priorityLevel = 1;
+				string priorityArgument = arguments.FirstOrDefault(TaskPriorityRegex.IsMatch);
+
+				if (priorityArgument != null)
 				{
-					if (args[argumentIndex][0] == '[')
-					{
-						break;
-					}
-					else
-					{
-						description += args[argumentIndex] + " ";
-					}
-				}
+					string priorityValueString = TaskPriorityRegex.Match(priorityArgument).Groups[1].ToString();
 
-				description = description.Trim();
-
-				if (argumentIndex != args.Length && newArgumentsLength >= 1)
-				{ 
-					string priorityLevelString = args[argumentIndex].Substring(1, args[argumentIndex].Length - 2);
-
-					if (!int.TryParse(priorityLevelString, out priorityLevel) ||
+					if (!int.TryParse(priorityValueString, out priorityLevel) ||
 						priorityLevel < 1 || 
 						priorityLevel > 3)
 					{
 						throw new Exception(string.Format(
 							Messages.UnknownPriorityLevel, 
-							priorityLevelString)); 
+							priorityArgument)); 
 					}
 				}
-
+					
 				taskList.Add(new Task(taskList.Count, description, (Priority)priorityLevel));
 				Save(taskList);
 
@@ -253,15 +244,15 @@ namespace TaskMan
 
 				if (displayEnding == "" || displayEnding == "all")
 				{
-					DisplayTasks(taskList, args, TaskDisplayCondition.All);
+					DisplayTasks(taskList, arguments, TaskDisplayCondition.All);
 				}
 				else if (displayEnding == "p")
 				{
-					DisplayTasks(taskList, args, TaskDisplayCondition.Current);
+					DisplayTasks(taskList, arguments, TaskDisplayCondition.Current);
 				}
 				else if (displayEnding == "f")
 				{
-					DisplayTasks(taskList, args, TaskDisplayCondition.Finished);
+					DisplayTasks(taskList, arguments, TaskDisplayCondition.Finished);
 				}
 
 				return;
@@ -270,13 +261,13 @@ namespace TaskMan
 			{
 				Program.currentOperation = "delete tasks";
 
-				if (args.Length == 1)
+				if (!arguments.Any())
 				{
 					return;
 				}
 
 				int idToDelete;
-				extractTaskIdNumber(args[1], out idToDelete);
+				extractTaskIdNumber(arguments.First(), out idToDelete);
 
 				taskList.DeleteTaskWithId(idToDelete);
 				return;
@@ -284,7 +275,7 @@ namespace TaskMan
 			else if (commandName.Equals("set"))
 			{
 				Program.currentOperation = "set task parameters";
-				SetTaskParameters(args, taskList);
+				SetTaskParameters(arguments, taskList);
 			}
 			else if (commandName.Equals("clear"))
 			{
@@ -305,12 +296,12 @@ namespace TaskMan
 
 				int idToFinish;
 
-				if (args.Length == 1)
+				if (!arguments.Any())
 				{ 
 					return;
 				}
 
-				extractTaskIdNumber(args[1], out idToFinish);
+				extractTaskIdNumber(arguments.First(), out idToFinish);
 
 				Task taskToFinish = TaskWithId(taskList, idToFinish);
 				taskToFinish.IsFinished = true;
@@ -375,18 +366,18 @@ namespace TaskMan
 
 		#endregion
 
-		static void DisplayTasks(this List<Task> taskList, string[] args, TaskDisplayCondition displayCondition)
+		static void DisplayTasks(this List<Task> taskList, IEnumerable<string> args, TaskDisplayCondition displayCondition)
 		{
 			Program.currentOperation = "display tasks";
 
-			if (args.Length == 1)
+			if (!args.Any())
 			{ 
 				ShowAll(taskList, displayCondition);
 				return;
 			}
 
-			Match singleIdMatch = SingleIdRegex.Match(args[1]);
-			Match idRangeMatch = IdRangeRegex.Match(args[1]);
+			Match singleIdMatch = SingleIdRegex.Match(args.First());
+			Match idRangeMatch = IdRangeRegex.Match(args.First());
 
 			if (singleIdMatch.Success)
 			{
@@ -455,9 +446,9 @@ namespace TaskMan
 			}
 		}
 
-		static void SetTaskParameters(string[] args, List<Task> taskList)
+		static void SetTaskParameters(IEnumerable<string> args, List<Task> taskList)
 		{
-			if (args.Length < 2)
+			if (args.Count() < 1)
 			{
 				Console.WriteLine("Syntax:\nDescription:\t\ttaskman set id desc(//ription) new description");
 				Console.WriteLine("Priority:\t\ttaskman set id priority 1..3");
@@ -465,15 +456,15 @@ namespace TaskMan
 				return;
 			}
 
-			if (args.Length < 4)
+			if (args.Count() < 3)
 			{ 
 				throw new Exception(Messages.InsufficientSetParameters);
 			}
 
 			int taskId;
-			extractTaskIdNumber(args[1], out taskId);
+			extractTaskIdNumber(args.First(), out taskId);
 
-			string whatToChange = args[2].ToLower();
+			string whatToChange = args.ElementAt(1).ToLower();
 
 			Task taskToUpdate = taskList.TaskWithId(taskId);
 
@@ -481,11 +472,11 @@ namespace TaskMan
 			{
 				int priorityLevel;
 
-				if (!int.TryParse(args[3], out priorityLevel) || 
+				if (!int.TryParse(args.ElementAt(2), out priorityLevel) || 
 					priorityLevel < 1 || 
 					priorityLevel > 3)
 				{
-					throw new Exception(string.Format(Messages.UnknownPriorityLevel, args[3]));
+					throw new Exception(string.Format(Messages.UnknownPriorityLevel, args.ElementAt(2)));
 				}
 
 				taskToUpdate.PriorityLevel = (Priority)priorityLevel;
@@ -496,10 +487,11 @@ namespace TaskMan
 			else if (whatToChange.StartsWith("desc", StringComparison.CurrentCultureIgnoreCase))
 			{
 				string tmp="";
-				for (int i = 3; i < args.Length; i++)
-					tmp += args[i] + " ";
+				for (int i = 2; i < args.Count(); i++)
+					tmp += args.ElementAt(i) + " ";
+				tmp = tmp.Trim();
 
-				taskToUpdate.Description = tmp;
+				taskToUpdate.Description = tmp.Trim();
 
 				Save(taskList);
 				Console.WriteLine("Congrats! Task with Id {0} has changed its description to [{1}].", taskToUpdate.ID, tmp);
@@ -507,13 +499,12 @@ namespace TaskMan
 			}
 			else if (whatToChange == "finished")
 			{
-				if (args.Length < 4) return;
+				if (args.Count() < 3) return;
 				bool arg;
 
-				if(!bool.TryParse(args[3].ToLower(), out arg))
+				if(!bool.TryParse(args.ElementAt(2).ToLower(), out arg))
 				{
-					Console.WriteLine("Error: unknown bool value. Should be true or false.");
-					return;
+					throw new Exception(Messages.UnknownBoolValue);
 				}
 				taskToUpdate.IsFinished = arg;
 				Save(taskList);

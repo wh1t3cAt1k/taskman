@@ -21,6 +21,7 @@ namespace TaskMan
 		public const string TaskWasFinished = "Task with id {0} [{1}] was marked as finished!";
 		public const string TaskListIsEmpty = "The task list is empty.";
 		public const string TaskWithIdWasDeleted = "Task with ID {0} [{1}] was successfully deleted.";
+		public const string UnknownBoolValue = "Unknown bool value. Should be true or false.";
 		public const string UnknownCommand = "Unknown command format. Please type 'taskman help' for the list of available commands.";
 		public const string UnknownDisplayCondition = "Unknown display condition provided.";
 		public const string UnknownPriorityLevel = "Unknown priority level {0}. Should be 1-3.";
