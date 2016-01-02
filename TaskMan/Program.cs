@@ -26,7 +26,7 @@ namespace TaskMan
 		static Regex HelpMakeRegex = new Regex(@"^-mkhelp$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static Regex HelpRequestRegex = new Regex(@"(^/\?$)|(^-?-?h(elp)?$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static Regex TaskAddRegex = new Regex(@"(^add$)|(^new$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex TaskDisplayRegex = new Regex(@"^(show|display)(p|f|all)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static Regex TaskDisplayRegex = new Regex(@"^(show|display|view)(p|f|all)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static Regex TaskDeleteRegex = new Regex(@"(^delete$)|(^remove$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static Regex TaskCompleteRegex = new Regex(@"(^complete$)|(^finish$)|(^accomplish$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static Regex SingleIdRegex = new Regex(@"^([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -299,7 +299,7 @@ namespace TaskMan
 				extractTaskIdNumber(args[1], out idToFinish);
 
 				Task taskToFinish = TaskWithId(taskList, idToFinish);
-				taskToFinish.Finished = true;
+				taskToFinish.IsFinished = true;
 
 				Save(taskList);
 
@@ -349,13 +349,13 @@ namespace TaskMan
 
 		#endregion
 
-		static void DisplayTasks(this List<Task> taskList, string[] args, TaskDisplayCondition displayType)
+		static void DisplayTasks(this List<Task> taskList, string[] args, TaskDisplayCondition displayCondition)
 		{
 			Program.currentOperation = "display tasks";
 
 			if (args.Length == 1)
 			{ 
-				ShowAll(taskList, displayType);
+				ShowAll(taskList, displayCondition);
 				return;
 			}
 
@@ -369,7 +369,7 @@ namespace TaskMan
 				int taskToDisplayId = int.Parse(singleIdMatch.Groups[1].ToString());
 				Task taskToDisplay = taskList.TaskWithId(taskToDisplayId);
 
-				if (!displayIfTypeMatches(taskToDisplay, displayType))
+				if (!taskToDisplay.MatchesDisplayCondition(displayCondition))
 				{
 					Console.WriteLine(Messages.TaskWithIdDoesNotMatchTheCondition, taskToDisplayId);
 				}
@@ -380,8 +380,6 @@ namespace TaskMan
 			{
 				Program.currentOperation = "display tasks in the ID range";
 
-				// ID range given
-				// -
 				int startingId = int.Parse(idRangeMatch.Groups[1].ToString());
 				int endingId = int.Parse(idRangeMatch.Groups[2].ToString());
 
@@ -390,19 +388,20 @@ namespace TaskMan
 					throw new Exception(Messages.InvalidTaskIdRange);
 				}
 
-				bool somethingWasDisplayed = false;
-
-				taskList.ForEach(delegate(Task task)
-					{
-						somethingWasDisplayed |= 
-							task.ID >= startingId &&
-							task.ID <= endingId &&
-							displayIfTypeMatches(task, displayType);
-					});
-			
-				if (!somethingWasDisplayed)
+				IEnumerable<Task> tasksToDisplay = taskList.Where(task =>
+					task.ID >= startingId &&
+					task.ID <= endingId &&
+					task.MatchesDisplayCondition(displayCondition));
+				
+				if (tasksToDisplay.Any())
 				{
-					Console.WriteLine(Messages.NoTasksInSpecifiedIdRange);
+					tasksToDisplay.ForEach(task => task.Display());
+				}
+				else
+				{
+					Console.WriteLine(
+						Messages.NoTasksInSpecifiedIdRangeWithCondition, 
+						displayCondition);
 				}
 
 				return;
@@ -424,35 +423,10 @@ namespace TaskMan
 			}
 			else
 			{
-				taskList.ForEach(task => displayIfTypeMatches(task, displayCondition));
+				taskList
+					.Where(task => task.MatchesDisplayCondition(displayCondition))
+					.ForEach(task => task.Display());
 			}
-		}
-
-		/// <summary>
-		/// Displays the given task if its status matches the given condition.
-		/// </summary>
-		/// <returns><c>true</c>, if the task was displayed, <c>false</c> otherwise.</returns>
-		/// <param name="task">The task to be displayed.</param>
-		/// <param name="displayCondition">Display condition.</param>
-		static bool displayIfTypeMatches(Task task, TaskDisplayCondition displayCondition)
-		{
-			if (displayCondition == TaskDisplayCondition.All)
-			{ 
-				Console.WriteLine(task); 
-				return true; 
-			}
-			else if (displayCondition == TaskDisplayCondition.Current && !task.Finished)
-			{ 
-				Console.WriteLine(task); 
-				return true; 
-			}
-			else if (displayCondition == TaskDisplayCondition.Finished && task.Finished)
-			{ 
-				Console.WriteLine(task); 
-				return true; 
-			}
-
-			return false;
 		}
 
 		static void SetTaskParameters(string[] args, List<Task> taskList)
@@ -515,7 +489,7 @@ namespace TaskMan
 					Console.WriteLine("Error: unknown bool value. Should be true or false.");
 					return;
 				}
-				taskToUpdate.Finished = arg;
+				taskToUpdate.IsFinished = arg;
 				Save(taskList);
 				Console.WriteLine("Congrats! Task with id {0} has changed its finished state to {1}.", taskToUpdate.ID, arg);
 				return;

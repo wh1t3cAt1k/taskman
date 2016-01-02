@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.Serialization;
 
 namespace TaskMan
@@ -9,7 +10,7 @@ namespace TaskMan
 	public enum Priority
 	{
 		Average = 1,
-		High = 2,
+		Important = 2,
 		Critical = 3
 	}
 
@@ -28,7 +29,7 @@ namespace TaskMan
 	public class Task: IComparable<Task>
 	{
 		public int ID { get; set; }
-		public bool Finished { get; set; }
+		public bool IsFinished { get; set; }
 		public Priority PriorityLevel { get; set; }
 		public string Description { get; set; }
 
@@ -51,7 +52,7 @@ namespace TaskMan
 				case Priority.Average:
 					prioritySymbol = ' ';
 					break;
-				case Priority.High:
+				case Priority.Important:
 					prioritySymbol = '!';
 					break;
 				case Priority.Critical:
@@ -62,7 +63,7 @@ namespace TaskMan
 					break;
 			}
 
-			if (this.Finished)
+			if (this.IsFinished)
 			{
 				prioritySymbol = 'x';
 			}
@@ -72,7 +73,99 @@ namespace TaskMan
 				prioritySymbol, 
 				ID, 
 				Description, 
-				(Finished ? "--| fin." : "cur."));
+				(IsFinished ? "--| fin." : "cur."));
+		}
+
+		/// <summary>
+		/// Return a boolean value signifying whether the task matches
+		/// the given display condition.
+		/// </summary>
+		/// <returns><c>true</c>, if the current task matches the given display condition, <c>false</c> otherwise.</returns>
+		/// <param name="displayCondition">The task display condition.</param>
+		public bool MatchesDisplayCondition(TaskDisplayCondition displayCondition)
+		{
+			switch (displayCondition)
+			{
+				case TaskDisplayCondition.All:
+					return true;
+				case TaskDisplayCondition.Current:
+					return !this.IsFinished;
+				case TaskDisplayCondition.Finished:
+					return this.IsFinished;
+				default:
+					throw new InvalidOperationException(Messages.UnknownDisplayCondition);
+			}
+		}
+
+		public static readonly ConsoleColor NormalTaskColor = Console.ForegroundColor;
+		public static readonly ConsoleColor FinishedTaskColor = ConsoleColor.Gray;
+		public static readonly ConsoleColor ImportantTaskColor = ConsoleColor.Cyan;
+		public static readonly ConsoleColor CriticalTaskColor = ConsoleColor.Yellow;
+
+		/// <summary>
+		/// Gets the foreground color with which the Task would be output
+		/// into the console.
+		/// </summary>
+		/// <value>The color of the console output.</value>
+		public ConsoleColor ConsoleOutputColor
+		{
+			get
+			{
+				if (this.IsFinished)
+				{
+					return Task.FinishedTaskColor;
+				}
+				else if (this.PriorityLevel == Priority.Important)
+				{
+					return Task.ImportantTaskColor;
+				}
+				else if (this.PriorityLevel == Priority.Critical)
+				{
+					return Task.CriticalTaskColor;
+				}
+				else
+				{
+					return Task.NormalTaskColor;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Writes the string representation of the current task (followed by a line terminator) into
+		/// the standard output stream or explicitly provided <see cref="TextWriter"/> output. 
+		/// For console output, optional background and foreground <see cref="ConsoleColor"/>
+		/// parameters can be specified to override the standard colouring scheme.
+		/// </summary>
+		public void Display(
+			TextWriter outputStream = null,
+			ConsoleColor? backgroundColor = null,
+			ConsoleColor? foregroundColor = null)
+		{
+			if (outputStream == null)
+			{
+				outputStream = Console.Out;
+			}
+
+			if (!backgroundColor.HasValue)
+			{
+				backgroundColor = Console.BackgroundColor;
+			}
+
+			if (!foregroundColor.HasValue)
+			{
+				foregroundColor = this.ConsoleOutputColor;
+			}
+
+			ConsoleColor originalBackgroundColor = Console.BackgroundColor;
+			ConsoleColor originalForegroundColor = Console.ForegroundColor;
+
+			Console.BackgroundColor = backgroundColor.Value;
+			Console.ForegroundColor = foregroundColor.Value;
+
+			outputStream.WriteLine(this);
+
+			Console.BackgroundColor = originalBackgroundColor;
+			Console.ForegroundColor = originalForegroundColor;
 		}
 
 		public static int CompareTasks(Task firstTask, Task secondTask)
@@ -85,9 +178,9 @@ namespace TaskMan
 			{
 				return (firstTask == null ? 1 : -1);
 			}
-			else if (firstTask.Finished != secondTask.Finished)
+			else if (firstTask.IsFinished != secondTask.IsFinished)
 			{
-				return (firstTask.Finished ? 1 : -1);
+				return (firstTask.IsFinished ? 1 : -1);
 			}
 			else if (firstTask.PriorityLevel != secondTask.PriorityLevel)
 			{
