@@ -6,12 +6,12 @@ using System.Resources;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("TaskMan")]
-[assembly: AssemblyDescription("A simple organizer for managing your personal tasks")]
+[assembly: AssemblyTitle("taskman")]
+[assembly: AssemblyDescription("A simple CLI todo list for managing your personal tasks")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Kabir bureau of Ideas")]
-[assembly: AssemblyProduct("TaskMan")]
-[assembly: AssemblyCopyright("Copyright © Кабир Павел 2009")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("taskman")]
+[assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
