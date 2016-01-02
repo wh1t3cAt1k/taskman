@@ -1,17 +1,19 @@
 ﻿<Properties StartupItem="TaskMan/TaskMan.csproj" RefactoringSettings.EnableRefactorings="True">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Release" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="TaskMan/Program.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="TaskMan/Properties/app.manifest">
     <Files>
-      <File FileName="TaskMan/Program.cs" Line="362" Column="34" />
-      <File FileName="TaskMan/Task.cs" Line="20" Column="11" />
+      <File FileName="TaskMan/Program.cs" Line="313" Column="5" />
+      <File FileName="TaskMan/Task.cs" Line="146" Column="32" />
       <File FileName="TaskMan/IEnumerableExtensions.cs" Line="22" Column="30" />
-      <File FileName="TaskMan/Messages.cs" Line="26" Column="143" />
+      <File FileName="TaskMan/Messages.cs" Line="19" Column="49" />
       <File FileName="TaskMan/StringExtensions.cs" Line="17" Column="4" />
+      <File FileName="TaskMan/Properties/AssemblyInfo.cs" Line="17" Column="1" />
+      <File FileName="TaskMan/Properties/app.manifest" Line="3" Column="4" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore>
-      <Breakpoint file="/Users/pkabir/Projects/Visual Studio/TaskMan/TaskMan/Program.cs" line="359" column="1" />
+      <Breakpoint file="/Users/pkabir/Projects/Visual Studio/TaskMan/TaskMan/Program.cs" line="369" column="1" />
     </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />

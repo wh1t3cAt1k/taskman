@@ -31,6 +31,7 @@ namespace TaskMan
 		static Regex TaskCompleteRegex = new Regex(@"(^complete$)|(^finish$)|(^accomplish$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static Regex SingleIdRegex = new Regex(@"^([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static Regex VersionRegex = new Regex(@"^--version$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 		#region Service Functions
 
@@ -305,6 +306,15 @@ namespace TaskMan
 
 				Console.WriteLine(Messages.TaskWasFinished, taskToFinish.ID, taskToFinish.Description);
 				return;
+			}
+			else if (VersionRegex.IsMatch(commandName))
+			{
+				AssemblyName currentAssemblyName = Assembly.GetExecutingAssembly().GetName();
+
+				Console.WriteLine(
+					"{0} version {1}",
+					currentAssemblyName.Name,
+					currentAssemblyName.Version);
 			}
 			else 
 			{
