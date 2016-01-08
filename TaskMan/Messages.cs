@@ -12,6 +12,7 @@ namespace TaskMan
 		public const string InsufficientSetParameters = "Insufficient parameters in 'set' command.";
 		public const string InvalidTaskId = "Invalid task ID provided.";
 		public const string InvalidTaskIdRange = "Invalid task ID range: the starting ID should not exceed the ending ID.";
+		public const string InvalidSetParameters = "Invalid 'set' command syntax. Type 'taskman help' to view command syntax.";
 		public const string MakeHelpSucceeded = "Successfully created a help file.";
 		public const string NewTaskList = "New task list:";
 		public const string NoDescriptionSpecified = "A task description is missing.";

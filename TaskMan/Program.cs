@@ -133,7 +133,7 @@ namespace TaskMan
 		/// Sorts and saves a given collection of tasks to the tasks binary file.
 		/// </summary>
 		/// <param name="tasks">A collection of tasks.</param>
-		static void Save(List<Task> tasks)
+		static void SaveTasksIntoFile(List<Task> tasks)
 		{
 			tasks.Sort();
 
@@ -226,7 +226,7 @@ namespace TaskMan
 				}
 					
 				taskList.Add(new Task(taskList.Count, description, (Priority)priorityLevel));
-				Save(taskList);
+				SaveTasksIntoFile(taskList);
 
 				Console.WriteLine(
 					Messages.TaskWasAdded,
@@ -276,7 +276,7 @@ namespace TaskMan
 				if (Console.ReadKey(true).Key == ConsoleKey.Y)
 				{
 					taskList.Clear();
-					Save(taskList);
+					SaveTasksIntoFile(taskList);
 					Console.WriteLine("Task list cleared.");
 				}
 			}
@@ -296,7 +296,7 @@ namespace TaskMan
 				Task taskToFinish = TaskWithId(taskList, idToFinish);
 				taskToFinish.IsFinished = true;
 
-				Save(taskList);
+				SaveTasksIntoFile(taskList);
 
 				Console.WriteLine(Messages.TaskWasFinished, taskToFinish.ID, taskToFinish.Description);
 				return;
@@ -443,14 +443,12 @@ namespace TaskMan
 				throw new Exception(Messages.UnknownCommand);
 			}
 		}
-			
+
 		static void SetTaskParameters(LinkedList<string> cliArguments, List<Task> taskList)
 		{
-			if (cliArguments.Count < 1)
+			if (!cliArguments.Any())
 			{
-				Console.WriteLine("Syntax:\nDescription:\t\ttaskman set id desc(//ription) new description");
-				Console.WriteLine("Priority:\t\ttaskman set id priority 1..3");
-				Console.WriteLine("Finish status:\t\ttaskman set id finished true/false");
+				DisplayHelpText();
 				return;
 			}
 
@@ -460,9 +458,9 @@ namespace TaskMan
 			}
 
 			int taskId;
-			ExtractTaskIdNumber(cliArguments.First(), out taskId);
+			ExtractTaskIdNumber(cliArguments.PopFirst(), out taskId);
 
-			string whatToChange = cliArguments.ElementAt(1).ToLower();
+			string whatToChange = cliArguments.PopFirst().ToLower();
 
 			Task taskToUpdate = taskList.TaskWithId(taskId);
 
@@ -470,7 +468,7 @@ namespace TaskMan
 			{
 				int priorityLevel;
 
-				if (!int.TryParse(cliArguments.ElementAt(2), out priorityLevel) || 
+				if (!int.TryParse(cliArguments.First(), out priorityLevel) || 
 					priorityLevel < 1 || 
 					priorityLevel > 3)
 				{
@@ -478,43 +476,37 @@ namespace TaskMan
 				}
 
 				taskToUpdate.PriorityLevel = (Priority)priorityLevel;
-				Save(taskList);
+				SaveTasksIntoFile(taskList);
 				Console.WriteLine("Congrats! Task with Id {0} has changed its priority to {1}", taskToUpdate.ID, taskToUpdate.PriorityLevel);
 				return;
 			}
 			else if (whatToChange.StartsWith("desc", StringComparison.CurrentCultureIgnoreCase))
 			{
-				string tmp="";
-				for (int i = 2; i < cliArguments.Count(); i++)
-					tmp += cliArguments.ElementAt(i) + " ";
-				tmp = tmp.Trim();
+				taskToUpdate.Description = string.Join(" ", cliArguments);
 
-				taskToUpdate.Description = tmp.Trim();
+				SaveTasksIntoFile(taskList);
+				Console.WriteLine("Congrats! Task with Id {0} has changed its description to [{1}].", taskToUpdate.ID, taskToUpdate.Description);
 
-				Save(taskList);
-				Console.WriteLine("Congrats! Task with Id {0} has changed its description to [{1}].", taskToUpdate.ID, tmp);
 				return;
 			}
 			else if (whatToChange == "finished")
 			{
-				if (cliArguments.Count() < 3) return;
-				bool arg;
+				bool finishedFlag;
 
-				if(!bool.TryParse(cliArguments.ElementAt(2).ToLower(), out arg))
+				if(!bool.TryParse(cliArguments.First().ToLower(), out finishedFlag))
 				{
 					throw new Exception(Messages.UnknownBoolValue);
 				}
-				taskToUpdate.IsFinished = arg;
-				Save(taskList);
-				Console.WriteLine("Congrats! Task with id {0} has changed its finished state to {1}.", taskToUpdate.ID, arg);
+				taskToUpdate.IsFinished = finishedFlag;
+
+				SaveTasksIntoFile(taskList);
+				Console.WriteLine("Congrats! Task with id {0} has changed its finished state to {1}.", taskToUpdate.ID, finishedFlag);
+
 				return;
 			}
 			else
 			{
-				Console.WriteLine("Unknown set command syntax. First mention the Id of the task,");
-				Console.WriteLine("then type what to change (i.e. priority or desc), then depict the change.");
-				SetTaskParameters(new LinkedList<string>(), null);
-				return;
+				throw new Exception(Messages.InvalidSetParameters);
 			}
 		}
 
@@ -544,11 +536,7 @@ namespace TaskMan
 			
 			Console.WriteLine(Messages.TaskWithIdWasDeleted, taskToDelete.ID, taskToDelete.Description);
 
-			Save(taskList);
-
-			Console.WriteLine(Messages.NewTaskList);
-
-			DisplayTasks(new LinkedList<string>(), taskList, TaskDisplayCondition.All);
+			SaveTasksIntoFile(taskList);
 
 			return;
 		}

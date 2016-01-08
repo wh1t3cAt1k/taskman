@@ -78,6 +78,7 @@
     <Compile Include="Task.cs" />
     <Compile Include="IEnumerableExtensions.cs" />
     <Compile Include="StringExtensions.cs" />
+    <Compile Include="LinkedListExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
