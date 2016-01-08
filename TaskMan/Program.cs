@@ -26,14 +26,14 @@ namespace TaskMan
 
 		static Regex HelpMakeRegex = new Regex(@"^-mkhelp$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static Regex HelpRequestRegex = new Regex(@"(^/\?$)|(^-?-?h(elp)?$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex TaskAddRegex = new Regex(@"(^add$)|(^new$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex TaskDisplayRegex = new Regex(@"^(show|display|view)(p|f|all)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex TaskDeleteRegex = new Regex(@"(^delete$)|(^remove$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex TaskCompleteRegex = new Regex(@"(^complete$)|(^finish$)|(^accomplish$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex SingleIdRegex = new Regex(@"^([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex VersionRegex = new Regex(@"^--version$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static Regex SingleIdRegex = new Regex(@"^([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static Regex TaskAddRegex = new Regex(@"(^add$)|(^new$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static Regex TaskCompleteRegex = new Regex(@"(^complete$)|(^finish$)|(^accomplish$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static Regex TaskDeleteRegex = new Regex(@"(^delete$)|(^remove$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static Regex TaskDisplayRegex = new Regex(@"^(show|display|view)(p|f|all)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static Regex TaskPriorityRegex = new Regex(@"^\[([0-9]+)\]$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static Regex VersionRegex = new Regex(@"^--version$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 		#region Service Functions
 
@@ -43,7 +43,7 @@ namespace TaskMan
 		/// <returns>The value extracted from the assembly attribute.</returns>
 		/// <param name="extractValueFunction">The function to extract the value from the attribute.</param>
 		/// <typeparam name="T">The type of assembly attribute.</typeparam>
-		public static string GetAssemblyAttribute<T>(Func<T, string> extractValueFunction) where T : Attribute
+		public static V GetAssemblyAttributeValue<T, V>(Func<T, V> extractValueFunction) where T : Attribute
 		{
 			T attribute = (T)Attribute.GetCustomAttribute(Assembly.GetEntryAssembly(), typeof (T));
 			return extractValueFunction.Invoke(attribute);
@@ -165,12 +165,12 @@ namespace TaskMan
 
 			return 0;
 		}
-
+			
 		static void RunTaskman(LinkedList<string> arguments)
 		{
 			if (!arguments.Any()) 
 			{
-				arguments = new LinkedList<string>(new string[] { "showall" }); 
+				arguments = new LinkedList<string>(new [] { "showall" }); 
 			}
 
 			// Retrieve and pop the command name from the arguments.
@@ -267,7 +267,7 @@ namespace TaskMan
 				}
 
 				int idToDelete;
-				extractTaskIdNumber(arguments.First(), out idToDelete);
+				ExtractTaskIdNumber(arguments.First(), out idToDelete);
 
 				taskList.DeleteTaskWithId(idToDelete);
 				return;
@@ -301,7 +301,7 @@ namespace TaskMan
 					return;
 				}
 
-				extractTaskIdNumber(arguments.First(), out idToFinish);
+				ExtractTaskIdNumber(arguments.First(), out idToFinish);
 
 				Task taskToFinish = TaskWithId(taskList, idToFinish);
 				taskToFinish.IsFinished = true;
@@ -313,12 +313,14 @@ namespace TaskMan
 			}
 			else if (VersionRegex.IsMatch(commandName))
 			{
+				Program.currentOperation = "display the taskman version";
+
 				Assembly executingAssembly = Assembly.GetExecutingAssembly();
 				AssemblyName assemblyName = executingAssembly.GetName();
 
 				Console.WriteLine(
 					"{0} version {1}.{2}.{3}",
-					GetAssemblyAttribute<AssemblyProductAttribute>(attribute => attribute.Product),
+					GetAssemblyAttributeValue<AssemblyProductAttribute, string>(attribute => attribute.Product),
 					assemblyName.Version.Major,
 					assemblyName.Version.Minor,
 					assemblyName.Version.Build);
@@ -332,11 +334,15 @@ namespace TaskMan
 			return;
 		}
 
-		#region ID_GETTING_FUNCTIONS:
-
-		static void extractTaskIdNumber(string what, out int toId)
+		/// <summary>
+		/// Parses the given string into a task ID number, or 
+		/// throws an exception if parse operation is failed.
+		/// </summary>
+		/// <param name="taskIdString">Task identifier string.</param>
+		/// <param name="taskId">Task identifier.</param>
+		static void ExtractTaskIdNumber(string taskIdString, out int taskId)
 		{
-			if (!int.TryParse(what, out toId))
+			if (!int.TryParse(taskIdString, out taskId))
 			{
 				throw new Exception(Messages.InvalidTaskId);
 			}
@@ -363,8 +369,6 @@ namespace TaskMan
 				throw new Exception(string.Format(Messages.NoTaskWithSpecifiedId, id));
 			}
 		}
-
-		#endregion
 
 		static void DisplayTasks(this List<Task> taskList, IEnumerable<string> args, TaskDisplayCondition displayCondition)
 		{
@@ -462,7 +466,7 @@ namespace TaskMan
 			}
 
 			int taskId;
-			extractTaskIdNumber(args.First(), out taskId);
+			ExtractTaskIdNumber(args.First(), out taskId);
 
 			string whatToChange = args.ElementAt(1).ToLower();
 
