@@ -49,7 +49,6 @@
     <WarningLevel>4</WarningLevel>
     <LangVersion>6</LangVersion>
     <PlatformTarget>x86</PlatformTarget>
-    <Commandlineparameters>show 1-2</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Optimize>true</Optimize>

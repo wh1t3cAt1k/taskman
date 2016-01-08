@@ -1,19 +1,31 @@
 ﻿<Properties StartupItem="TaskMan/TaskMan.csproj" RefactoringSettings.EnableRefactorings="True">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Release" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="TaskMan/Properties/app.manifest">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="TaskMan/Program.cs">
     <Files>
-      <File FileName="TaskMan/Program.cs" Line="313" Column="5" />
-      <File FileName="TaskMan/Task.cs" Line="146" Column="32" />
-      <File FileName="TaskMan/IEnumerableExtensions.cs" Line="22" Column="30" />
-      <File FileName="TaskMan/Messages.cs" Line="19" Column="49" />
-      <File FileName="TaskMan/StringExtensions.cs" Line="17" Column="4" />
-      <File FileName="TaskMan/Properties/AssemblyInfo.cs" Line="17" Column="1" />
-      <File FileName="TaskMan/Properties/app.manifest" Line="3" Column="4" />
+      <File FileName="TaskMan/Task.cs" Line="1" Column="1" />
+      <File FileName="TaskMan/IEnumerableExtensions.cs" Line="37" Column="50" />
+      <File FileName="TaskMan/Messages.cs" Line="16" Column="44" />
+      <File FileName="TaskMan/StringExtensions.cs" Line="1" Column="1" />
+      <File FileName="TaskMan/Properties/AssemblyInfo.cs" Line="32" Column="52" />
+      <File FileName="TaskMan/Program.cs" Line="260" Column="50" />
+      <File FileName="LICENSE.md" Line="11" Column="24" />
     </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="TaskMan" expanded="True">
+            <Node name="TaskMan" expanded="True">
+              <Node name="Properties" expanded="True" />
+              <Node name="Program.cs" selected="True" />
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+    </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore>
-      <Breakpoint file="/Users/pkabir/Projects/Visual Studio/TaskMan/TaskMan/Program.cs" line="369" column="1" />
+      <Breakpoint file="/Users/pkabir/Projects/Visual Studio/TaskMan/TaskMan/Program.cs" line="242" column="1" />
     </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />

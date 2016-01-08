@@ -367,19 +367,30 @@ namespace TaskMan
 		/// <param name="taskList">Task list.</param>
 		/// <param name="displayCondition">Display condition.</param>
 		static void DisplayTasks(
-			IEnumerable<string> cliArguments, 
+			LinkedList<string> cliArguments, 
 			List<Task> taskList, 
 			TaskDisplayCondition displayCondition)
 		{
-			Match singleIdMatch = SingleIdRegex.Match(cliArguments.FirstOrDefault());
-			Match idRangeMatch = IdRangeRegex.Match(cliArguments.FirstOrDefault());
-
 			if (!cliArguments.Any())
 			{ 
-				ShowAll(taskList, displayCondition);
+				if (taskList.Count == 0)
+				{
+					Console.WriteLine(Messages.TaskListIsEmpty);
+				}
+				else
+				{
+					taskList
+						.Where(task => task.MatchesDisplayCondition(displayCondition))
+						.ForEach(task => task.Display());
+				}
+
 				return;
 			}
-			else if (singleIdMatch.Success)
+
+			Match singleIdMatch = SingleIdRegex.Match(cliArguments.First());
+			Match idRangeMatch = IdRangeRegex.Match(cliArguments.First());
+
+			if (singleIdMatch.Success)
 			{
 				int taskToDisplayId;
 
@@ -433,25 +444,6 @@ namespace TaskMan
 			}
 		}
 			
-		/// <summary>
-		/// Display all tasks in the task that match the specified condition.
-		/// </summary>
-		/// <param name="taskList">Task list.</param>
-		/// <param name="displayCondition">Display condition.</param>
-		static void ShowAll(this List<Task> taskList, TaskDisplayCondition displayCondition)
-		{
-			if (taskList.Count == 0)
-			{
-				Console.WriteLine(Messages.TaskListIsEmpty);
-			}
-			else
-			{
-				taskList
-					.Where(task => task.MatchesDisplayCondition(displayCondition))
-					.ForEach(task => task.Display());
-			}
-		}
-
 		static void SetTaskParameters(LinkedList<string> cliArguments, List<Task> taskList)
 		{
 			if (cliArguments.Count < 1)
@@ -526,7 +518,12 @@ namespace TaskMan
 			}
 		}
 
-		static void DeleteTasks(LinkedList<string> cliArguments, List<Task> taskList)
+		/// <summary>
+		/// Encapsulates the task deletion logic in one method.
+		/// </summary>
+		/// <param name="cliArguments">Command line arguments.</param>
+		/// <param name="taskList">Task list.</param>
+		public static void DeleteTasks(LinkedList<string> cliArguments, List<Task> taskList)
 		{
 			if (!cliArguments.Any())
 			{
@@ -551,7 +548,8 @@ namespace TaskMan
 
 			Console.WriteLine(Messages.NewTaskList);
 
-			ShowAll(taskList, TaskDisplayCondition.All);
+			DisplayTasks(new LinkedList<string>(), taskList, TaskDisplayCondition.All);
+
 			return;
 		}
 	}
