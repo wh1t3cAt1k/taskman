@@ -16,6 +16,7 @@ namespace TaskMan
 		public const string NewTaskList = "New task list:";
 		public const string NoDescriptionSpecified = "A task description is missing.";
 		public const string NoTaskWithSpecifiedId = "There is no task with the specified ID: {0}.";
+		public const string NoTaskIdProvided = "You should specify a task ID to {0}.";
 		public const string NoTasksInSpecifiedIdRangeWithCondition = "There are no tasks with ID in the specified range that match the display condition: {0}.";
 		public const string TaskWasAdded = "Task [{0}] was added with a priority of {1}.";
 		public const string TaskWasFinished = "Task with id {0} [{1}] was marked as finished!";

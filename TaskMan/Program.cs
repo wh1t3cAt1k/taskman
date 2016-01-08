@@ -237,22 +237,22 @@ namespace TaskMan
 			}
 			else if (TaskDisplayRegex.IsMatch(commandName))
 			{
-				Program.currentOperation = "show tasks";
+				Program.currentOperation = "display tasks";
 
 				Match regexMatch = TaskDisplayRegex.Match(commandName);
 				string displayEnding = regexMatch.Groups[2].ToString();
 
 				if (displayEnding == "" || displayEnding == "all")
 				{
-					DisplayTasks(taskList, arguments, TaskDisplayCondition.All);
+					DisplayTasks(arguments, taskList, TaskDisplayCondition.All);
 				}
 				else if (displayEnding == "p")
 				{
-					DisplayTasks(taskList, arguments, TaskDisplayCondition.Current);
+					DisplayTasks(arguments, taskList, TaskDisplayCondition.Current);
 				}
 				else if (displayEnding == "f")
 				{
-					DisplayTasks(taskList, arguments, TaskDisplayCondition.Finished);
+					DisplayTasks(arguments, taskList, TaskDisplayCondition.Finished);
 				}
 
 				return;
@@ -260,17 +260,7 @@ namespace TaskMan
 			else if (TaskDeleteRegex.IsMatch(commandName))
 			{
 				Program.currentOperation = "delete tasks";
-
-				if (!arguments.Any())
-				{
-					return;
-				}
-
-				int idToDelete;
-				ExtractTaskIdNumber(arguments.First(), out idToDelete);
-
-				taskList.DeleteTaskWithId(idToDelete);
-				return;
+				DeleteTasks(arguments, taskList);
 			}
 			else if (commandName.Equals("set"))
 			{
@@ -370,24 +360,31 @@ namespace TaskMan
 			}
 		}
 
-		static void DisplayTasks(this List<Task> taskList, IEnumerable<string> args, TaskDisplayCondition displayCondition)
+		/// <summary>
+		/// Encapsulates the task displaying logic inside one method.
+		/// </summary>
+		/// <param name="cliArguments">Command line arguments.</param>
+		/// <param name="taskList">Task list.</param>
+		/// <param name="displayCondition">Display condition.</param>
+		static void DisplayTasks(
+			IEnumerable<string> cliArguments, 
+			List<Task> taskList, 
+			TaskDisplayCondition displayCondition)
 		{
-			Program.currentOperation = "display tasks";
+			Match singleIdMatch = SingleIdRegex.Match(cliArguments.FirstOrDefault());
+			Match idRangeMatch = IdRangeRegex.Match(cliArguments.FirstOrDefault());
 
-			if (!args.Any())
+			if (!cliArguments.Any())
 			{ 
 				ShowAll(taskList, displayCondition);
 				return;
 			}
-
-			Match singleIdMatch = SingleIdRegex.Match(args.First());
-			Match idRangeMatch = IdRangeRegex.Match(args.First());
-
-			if (singleIdMatch.Success)
+			else if (singleIdMatch.Success)
 			{
-				Program.currentOperation = "display a single task";
+				int taskToDisplayId;
 
-				int taskToDisplayId = int.Parse(singleIdMatch.Groups[1].ToString());
+				ExtractTaskIdNumber(singleIdMatch.Groups[1].ToString(), out taskToDisplayId);
+
 				Task taskToDisplay = taskList.TaskWithId(taskToDisplayId);
 
 				if (!taskToDisplay.MatchesDisplayCondition(displayCondition))
@@ -401,8 +398,11 @@ namespace TaskMan
 			{
 				Program.currentOperation = "display tasks in the ID range";
 
-				int startingId = int.Parse(idRangeMatch.Groups[1].ToString());
-				int endingId = int.Parse(idRangeMatch.Groups[2].ToString());
+				int startingId;
+				int endingId;
+
+				ExtractTaskIdNumber(idRangeMatch.Groups[1].ToString(), out startingId);
+				ExtractTaskIdNumber(idRangeMatch.Groups[2].ToString(), out endingId);
 
 				if (startingId > endingId)
 				{
@@ -427,8 +427,10 @@ namespace TaskMan
 
 				return;
 			}
-
-			throw new Exception(Messages.UnknownCommand);
+			else
+			{
+				throw new Exception(Messages.UnknownCommand);
+			}
 		}
 			
 		/// <summary>
@@ -450,9 +452,9 @@ namespace TaskMan
 			}
 		}
 
-		static void SetTaskParameters(IEnumerable<string> args, List<Task> taskList)
+		static void SetTaskParameters(LinkedList<string> cliArguments, List<Task> taskList)
 		{
-			if (args.Count() < 1)
+			if (cliArguments.Count < 1)
 			{
 				Console.WriteLine("Syntax:\nDescription:\t\ttaskman set id desc(//ription) new description");
 				Console.WriteLine("Priority:\t\ttaskman set id priority 1..3");
@@ -460,15 +462,15 @@ namespace TaskMan
 				return;
 			}
 
-			if (args.Count() < 3)
+			if (cliArguments.Count < 3)
 			{ 
 				throw new Exception(Messages.InsufficientSetParameters);
 			}
 
 			int taskId;
-			ExtractTaskIdNumber(args.First(), out taskId);
+			ExtractTaskIdNumber(cliArguments.First(), out taskId);
 
-			string whatToChange = args.ElementAt(1).ToLower();
+			string whatToChange = cliArguments.ElementAt(1).ToLower();
 
 			Task taskToUpdate = taskList.TaskWithId(taskId);
 
@@ -476,11 +478,11 @@ namespace TaskMan
 			{
 				int priorityLevel;
 
-				if (!int.TryParse(args.ElementAt(2), out priorityLevel) || 
+				if (!int.TryParse(cliArguments.ElementAt(2), out priorityLevel) || 
 					priorityLevel < 1 || 
 					priorityLevel > 3)
 				{
-					throw new Exception(string.Format(Messages.UnknownPriorityLevel, args.ElementAt(2)));
+					throw new Exception(string.Format(Messages.UnknownPriorityLevel, cliArguments.ElementAt(2)));
 				}
 
 				taskToUpdate.PriorityLevel = (Priority)priorityLevel;
@@ -491,8 +493,8 @@ namespace TaskMan
 			else if (whatToChange.StartsWith("desc", StringComparison.CurrentCultureIgnoreCase))
 			{
 				string tmp="";
-				for (int i = 2; i < args.Count(); i++)
-					tmp += args.ElementAt(i) + " ";
+				for (int i = 2; i < cliArguments.Count(); i++)
+					tmp += cliArguments.ElementAt(i) + " ";
 				tmp = tmp.Trim();
 
 				taskToUpdate.Description = tmp.Trim();
@@ -503,10 +505,10 @@ namespace TaskMan
 			}
 			else if (whatToChange == "finished")
 			{
-				if (args.Count() < 3) return;
+				if (cliArguments.Count() < 3) return;
 				bool arg;
 
-				if(!bool.TryParse(args.ElementAt(2).ToLower(), out arg))
+				if(!bool.TryParse(cliArguments.ElementAt(2).ToLower(), out arg))
 				{
 					throw new Exception(Messages.UnknownBoolValue);
 				}
@@ -519,13 +521,22 @@ namespace TaskMan
 			{
 				Console.WriteLine("Unknown set command syntax. First mention the Id of the task,");
 				Console.WriteLine("then type what to change (i.e. priority or desc), then depict the change.");
-				SetTaskParameters(new string[0], null);
+				SetTaskParameters(new LinkedList<string>(), null);
 				return;
 			}
 		}
 
-		static void DeleteTaskWithId(this List<Task> taskList, int idToDelete)
+		static void DeleteTasks(LinkedList<string> cliArguments, List<Task> taskList)
 		{
+			if (!cliArguments.Any())
+			{
+				Console.WriteLine(Messages.NoTaskIdProvided, Program.currentOperation);
+				return;
+			}
+
+			int idToDelete;
+			ExtractTaskIdNumber(cliArguments.First(), out idToDelete);
+
 			Task taskToDelete = taskList.TaskWithId(idToDelete);
 
 			taskList.RemoveAll(task => (task.ID == idToDelete));
@@ -540,7 +551,7 @@ namespace TaskMan
 
 			Console.WriteLine(Messages.NewTaskList);
 
-			ShowAll(taskList, 0);
+			ShowAll(taskList, TaskDisplayCondition.All);
 			return;
 		}
 	}
