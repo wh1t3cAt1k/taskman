@@ -1,3 +1,4 @@
 TaskMan/bin/
 TaskMan/obj/
 **/.DS_Store
+*.userprefs
