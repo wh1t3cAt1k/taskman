@@ -22,13 +22,12 @@ namespace TaskMan
 		/// The folder where the task list and app configuration files will be stored,
 		/// e.g. '~/.config/TaskMan' or 'c:\users\current_user\AppData\Roaming'
 		/// </summary>
-		static readonly string APP_DATA_PATH = 
-			Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) +
-			Path.DirectorySeparatorChar +
-			Assembly.GetEntryAssembly().GetName().Name;
+		static readonly string APP_DATA_PATH = Path.Combine(
+			Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+			Assembly.GetEntryAssembly().GetName().Name);
 
 		static readonly string TASKS_FILE = "taskman_tasks.tmf";
-		static readonly string TASKS_FULL_NAME = APP_DATA_PATH + Path.DirectorySeparatorChar + TASKS_FILE;
+		static readonly string TASKS_FULL_NAME = Path.Combine(APP_DATA_PATH, TASKS_FILE);
 
 		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static readonly Regex HelpRequestRegex = new Regex(@"(^/\?$)|(^-?-?help$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -40,9 +39,7 @@ namespace TaskMan
 		static readonly Regex TaskDeleteRegex = new Regex(@"(^delete$)|(^remove$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static readonly Regex TaskDisplayRegex = new Regex(@"^(show|display|view)(p|f|all)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static readonly Regex TaskPriorityRegex = new Regex(@"^\[([0-9]+)\]$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static readonly Regex VersionRegex = new Regex(@"^--version$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-		#region Service Functions
+		static readonly Regex VersionRequestRegex = new Regex(@"^--version$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 		/// <summary>
 		/// Extracts the value from the given assembly attribute.
@@ -122,8 +119,6 @@ namespace TaskMan
 
 			outputFileStream.Close();
 		}
-
-		#endregion
 
 		static int Main(params string[] args)
 		{
@@ -265,7 +260,7 @@ namespace TaskMan
 				Console.WriteLine(Messages.TaskWasFinished, taskToFinish.ID, taskToFinish.Description);
 				return;
 			}
-			else if (VersionRegex.IsMatch(commandName))
+			else if (VersionRequestRegex.IsMatch(commandName))
 			{
 				Program.CurrentOperation = "display the taskman version";
 
