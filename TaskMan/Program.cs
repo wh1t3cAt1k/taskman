@@ -11,32 +11,40 @@ namespace TaskMan
 {
 	static class Program
 	{
-		static string currentOperation;
+		/// <summary>
+		/// Gets or sets the current operation performed by the program.
+		/// </summary>
+		/// <value>The current operation.</value>
+		static string CurrentOperation { get; set; }
 
-		static readonly string STARTUP_PATH = 
-			Path.GetDirectoryName(typeof(Program).Assembly.Location).Equals(string.Empty) ?
-			Path.GetDirectoryName(typeof(Program).Assembly.Location) :
-			".";
-		
+		/// <summary>
+		/// The folder where the task list and app configuration files will be stored,
+		/// e.g. '~/.config/TaskMan' or 'c:\users\current_user\AppData\Roaming'
+		/// </summary>
+		static readonly string APP_DATA_PATH = 
+			Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) +
+			Path.DirectorySeparatorChar +
+			Assembly.GetEntryAssembly().GetName().Name;
+
 		static readonly string TASKS_FILE = "taskman_tasks.tmf";
 		static readonly string HELP_FILE = "taskman_service.tmf";
 		static readonly string HELP_TEXT_FILE = "taskman_input.txt";
 
-		static readonly string TASKS_FULL_NAME = STARTUP_PATH + Path.DirectorySeparatorChar + TASKS_FILE;
-		static readonly string HELP_FULL_NAME = STARTUP_PATH + Path.DirectorySeparatorChar + HELP_FILE;
-		static readonly string HELP_TEXT_FULL_NAME = STARTUP_PATH + Path.DirectorySeparatorChar + HELP_TEXT_FILE;
+		static readonly string TASKS_FULL_NAME = APP_DATA_PATH + Path.DirectorySeparatorChar + TASKS_FILE;
+		static readonly string HELP_FULL_NAME = APP_DATA_PATH + Path.DirectorySeparatorChar + HELP_FILE;
+		static readonly string HELP_TEXT_FULL_NAME = APP_DATA_PATH + Path.DirectorySeparatorChar + HELP_TEXT_FILE;
 
-		static Regex HelpMakeRegex = new Regex(@"^-mkhelp$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex HelpRequestRegex = new Regex(@"(^/\?$)|(^-?-?h(elp)?$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex SingleIdRegex = new Regex(@"^([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex TaskAddRegex = new Regex(@"(^add$)|(^new$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex TaskCompleteRegex = new Regex(@"(^complete$)|(^finish$)|(^accomplish$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex TaskDeleteRegex = new Regex(@"(^delete$)|(^remove$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex TaskDisplayRegex = new Regex(@"^(show|display|view)(p|f|all)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex TaskPriorityRegex = new Regex(@"^\[([0-9]+)\]$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex VersionRegex = new Regex(@"^--version$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex HelpMakeRegex = new Regex(@"^-mkhelp$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex HelpRequestRegex = new Regex(@"(^/\?$)|(^-?-?h(elp)?$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex SingleIdRegex = new Regex(@"^([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex TaskAddRegex = new Regex(@"(^add$)|(^new$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex TaskCompleteRegex = new Regex(@"(^complete$)|(^finish$)|(^accomplish$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex TaskDeleteRegex = new Regex(@"(^delete$)|(^remove$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex TaskDisplayRegex = new Regex(@"^(show|display|view)(p|f|all)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex TaskPriorityRegex = new Regex(@"^\[([0-9]+)\]$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex VersionRegex = new Regex(@"^--version$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 		#region Service Functions
 
@@ -160,7 +168,7 @@ namespace TaskMan
 			{
 				Console.Error.WriteLine(
 					Messages.ErrorPerformingOperation,
-					Program.currentOperation,
+					Program.CurrentOperation,
 					exception.Message.DecapitaliseFirstLetter());
 				
 				return -1;
@@ -176,6 +184,12 @@ namespace TaskMan
 				arguments = new LinkedList<string>(new [] { "showall" }); 
 			}
 
+			if (!Directory.Exists(Program.APP_DATA_PATH))
+			{
+				Program.CurrentOperation = "create the app subdirectory in the application data folder";
+				Directory.CreateDirectory(Program.APP_DATA_PATH);
+			}
+
 			// Retrieve and pop the command name from the arguments.
 			// -
 			string commandName = arguments.First.Value;
@@ -183,23 +197,23 @@ namespace TaskMan
 
 			if (HelpMakeRegex.IsMatch(commandName))
 			{
-				Program.currentOperation = "generate help binary file";
+				Program.CurrentOperation = "generate help binary file";
 				MakeHelp();
 				return;
 			}
 			else if (HelpRequestRegex.IsMatch(commandName))
 			{
-				Program.currentOperation = "display help text";
+				Program.CurrentOperation = "display help text";
 				DisplayHelpText();
 				return;
 			}
 
-			Program.currentOperation = "read tasks from the task file";
+			Program.CurrentOperation = "read tasks from the task file";
 			List<Task> taskList = ReadTasks(); 
 
 			if (TaskAddRegex.IsMatch(commandName))
 			{
-				Program.currentOperation = "add a new task";
+				Program.CurrentOperation = "add a new task";
 
 				Task addedTask = AddTask(arguments, taskList);
 				SaveTasksIntoFile(taskList);
@@ -211,7 +225,7 @@ namespace TaskMan
 			}
 			else if (TaskDisplayRegex.IsMatch(commandName))
 			{
-				Program.currentOperation = "display tasks";
+				Program.CurrentOperation = "display tasks";
 
 				Match regexMatch = TaskDisplayRegex.Match(commandName);
 				string displayEnding = regexMatch.Groups[2].ToString();
@@ -231,7 +245,7 @@ namespace TaskMan
 			}
 			else if (TaskDeleteRegex.IsMatch(commandName))
 			{
-				Program.currentOperation = "delete tasks";
+				Program.CurrentOperation = "delete tasks";
 
 				Task deletedTask = DeleteTask(arguments, taskList);
 				SaveTasksIntoFile(taskList);
@@ -243,12 +257,12 @@ namespace TaskMan
 			}
 			else if (commandName.Equals("set"))
 			{
-				Program.currentOperation = "set task parameters";
+				Program.CurrentOperation = "set task parameters";
 				SetTaskParameters(arguments, taskList);
 			}
 			else if (commandName.Equals("clear"))
 			{
-				Program.currentOperation = "clear the task list";
+				Program.CurrentOperation = "clear the task list";
 
 				Console.Write(Messages.ClearConfirmationMessage);
 
@@ -265,7 +279,7 @@ namespace TaskMan
 			}
 			else if (TaskCompleteRegex.IsMatch(commandName))
 			{
-				Program.currentOperation = "finish a task";
+				Program.CurrentOperation = "finish a task";
 
 				int idToFinish;
 
@@ -286,7 +300,7 @@ namespace TaskMan
 			}
 			else if (VersionRegex.IsMatch(commandName))
 			{
-				Program.currentOperation = "display the taskman version";
+				Program.CurrentOperation = "display the taskman version";
 
 				Assembly executingAssembly = Assembly.GetExecutingAssembly();
 				AssemblyName assemblyName = executingAssembly.GetName();
@@ -300,7 +314,7 @@ namespace TaskMan
 			}
 			else 
 			{
-				Program.currentOperation = "recognize the command";
+				Program.CurrentOperation = "recognize the command";
 				throw new Exception(Messages.UnknownCommand);
 			}
 
@@ -390,7 +404,7 @@ namespace TaskMan
 			}
 			else if (idRangeMatch.Success)
 			{
-				Program.currentOperation = "display tasks in the ID range";
+				Program.CurrentOperation = "display tasks in the ID range";
 
 				int startingId;
 				int endingId;
@@ -544,7 +558,7 @@ namespace TaskMan
 		{
 			if (!cliArguments.Any())
 			{
-				throw new Exception(string.Format(Messages.NoTaskIdProvided, Program.currentOperation));
+				throw new Exception(string.Format(Messages.NoTaskIdProvided, Program.CurrentOperation));
 			}
 
 			int idToDelete;
