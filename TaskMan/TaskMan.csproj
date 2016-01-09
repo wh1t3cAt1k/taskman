@@ -120,15 +120,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="..\HELP.txt">
-      <Link>Resources\HELP.txt</Link>
-      <LogicalName>TaskMan.HELP.txt</LogicalName>
-    </EmbeddedResource>
     <EmbeddedResource Include="..\LICENSE.txt">
       <Link>LICENSE.txt</Link>
     </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Resources\" />
+    <EmbeddedResource Include="..\README.txt">
+      <Link>README.txt</Link>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

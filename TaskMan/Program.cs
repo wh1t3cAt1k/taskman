@@ -76,7 +76,7 @@ namespace TaskMan
 		/// </summary>
 		static void DisplayHelpText()
 		{
-			DisplayResourceText("TaskMan.HELP.txt");
+			DisplayResourceText("TaskMan.README.txt");
 		}
 
 		/// <summary>
