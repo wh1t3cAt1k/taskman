@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
 using System;
 
 namespace TaskMan
@@ -14,7 +13,10 @@ namespace TaskMan
 	{
 		static string currentOperation;
 
-		static readonly string STARTUP_PATH = Application.StartupPath;
+		static readonly string STARTUP_PATH = 
+			Path.GetDirectoryName(typeof(Program).Assembly.Location).Equals(string.Empty) ?
+			Path.GetDirectoryName(typeof(Program).Assembly.Location) :
+			".";
 		
 		static readonly string TASKS_FILE = "taskman_tasks.tmf";
 		static readonly string HELP_FILE = "taskman_service.tmf";
@@ -34,6 +36,7 @@ namespace TaskMan
 		static Regex TaskDisplayRegex = new Regex(@"^(show|display|view)(p|f|all)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static Regex TaskPriorityRegex = new Regex(@"^\[([0-9]+)\]$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static Regex VersionRegex = new Regex(@"^--version$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 		#region Service Functions
 
@@ -149,9 +152,6 @@ namespace TaskMan
 
 		static int Main(params string[] args)
 		{
-			Console.WriteLine(Assembly.GetEntryAssembly().CodeBase);
-			Console.WriteLine(Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase));
-
 			try
 			{
 				RunTaskman(new LinkedList<string>(args));
@@ -168,7 +168,7 @@ namespace TaskMan
 
 			return 0;
 		}
-			
+
 		static void RunTaskman(LinkedList<string> arguments)
 		{
 			if (!arguments.Any()) 
@@ -248,15 +248,19 @@ namespace TaskMan
 			}
 			else if (commandName.Equals("clear"))
 			{
-				Program.currentOperation = "clear task list";
+				Program.currentOperation = "clear the task list";
 
-				Console.WriteLine(Messages.ClearConfirmationMessage);
+				Console.Write(Messages.ClearConfirmationMessage);
 
-				if (Console.ReadKey(true).Key == ConsoleKey.Y)
+				if (ConfirmActionRegex.IsMatch(Console.ReadLine()))
 				{
 					taskList.Clear();
 					SaveTasksIntoFile(taskList);
-					Console.WriteLine("Task list cleared.");
+					Console.WriteLine(Messages.TaskListCleared);
+				}
+				else
+				{
+					Console.WriteLine(Messages.TaskListClearCancelled);
 				}
 			}
 			else if (TaskCompleteRegex.IsMatch(commandName))
@@ -479,7 +483,7 @@ namespace TaskMan
 				taskToUpdate.IsFinished = finishedFlag;
 
 				SaveTasksIntoFile(taskList);
-				Console.WriteLine("Congrats! Task with id {0} has changed its finished state to {1}.", taskToUpdate.ID, finishedFlag);
+				Console.WriteLine("Congrats! Task with id {0} has changed its finished state to {1}.", taskToUpdate.ID, taskToUpdate.IsFinished);
 
 				return;
 			}

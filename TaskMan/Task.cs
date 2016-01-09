@@ -22,7 +22,7 @@ namespace TaskMan
 	}
 
 	/// <summary>
-	/// Denotes a particular task to be completed, with a description,
+	/// Denotes a particular task to be done, with a description text,
 	/// importance level, and completion flag.
 	/// </summary>
 	[Serializable]

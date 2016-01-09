@@ -4,7 +4,7 @@ namespace TaskMan
 {
 	public static class Messages
 	{
-		public const string ClearConfirmationMessage = "All tasks will be deleted. Confirm (Y/N): ";
+		public const string ClearConfirmationMessage = "All tasks will be deleted. Confirm (y[es]/n[o]): ";
 		public const string CouldNotCreateHelpFile = "An error occurred while trying to create a help file: {0}";
 		public const string CouldNotReadTaskList = "An error occurred while trying to read task list: {0}";
 		public const string ErrorPerformingOperation = "Cannot {0}: {1}";
@@ -22,6 +22,8 @@ namespace TaskMan
 		public const string TaskWasAdded = "Task [{0}] was added with a priority of {1}.";
 		public const string TaskWasFinished = "Task with id {0} [{1}] was marked as finished!";
 		public const string TaskListIsEmpty = "The task list is empty.";
+		public const string TaskListClearCancelled = "Task list clearing has been cancelled.";
+		public const string TaskListCleared = "Task list has been cleared.";
 		public const string TaskWithIdWasDeleted = "Task with ID {0} [{1}] was successfully deleted.";
 		public const string UnknownBoolValue = "Unknown bool value. Should be true or false.";
 		public const string UnknownCommand = "Unknown command format. Please type 'taskman help' for the list of available commands.";

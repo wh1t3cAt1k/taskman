@@ -61,7 +61,7 @@
     <PlatformTarget>x86</PlatformTarget>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/Library/Frameworks/Mono.framework/Versions/Current/lib/pkgconfig/ AS=&quot;as -arch x86_64&quot; CC=&quot;cc -arch x86_64 -framework CoreFoundation -lobjc -liconv&quot; &amp;&amp; mkbundle --deps --static TaskMan.exe -o taskman &amp;&amp; cp taskman /usr/local/bin" workingdir="${TargetDir}" externalConsole="True" />
+        <Command type="Custom" name="DeprecatedUntilBundlePathSolved" command="export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/Library/Frameworks/Mono.framework/Versions/Current/lib/pkgconfig/ AS=&quot;as -arch x86_64&quot; CC=&quot;cc -arch x86_64 -framework CoreFoundation -lobjc -liconv&quot; &amp;&amp; mkbundle --deps TaskMan.exe -o taskman &amp;&amp; cp taskman /usr/local/bin" workingdir="${TargetDir}" externalConsole="True" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -117,6 +117,12 @@
     </None>
     <None Include="..\LICENSE.md">
       <Link>LICENSE.md</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="taskman">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="taskman_install">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

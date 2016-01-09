@@ -1,0 +1,22 @@
+#!/bin/sh
+touch ~/.bash_profile
+
+# The directory where the current script is located.
+# Needs to be the same as the TaskMan.exe directory.
+# -
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Only append to PATH if the directory is not already there.
+# -
+if [ -d "$SCRIPT_DIR" ] && [[ ":$PATH:" != *":$SCRIPT_DIR:"* ]]; then
+	echo "# Make TaskMan available from any working directory" >> ~/.bash_profile
+	echo 'export PATH="'"$SCRIPT_DIR"'":${PATH}' >> ~/.bash_profile
+fi
+
+# Mark the taskman script as executable
+# -
+chmod +x "$SCRIPT_DIR/taskman"
+
+# Reopen the bash profile to reflect the changes to environment variable.
+# -
+source ~/.bash_profile
