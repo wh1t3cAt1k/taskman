@@ -5,15 +5,13 @@
 
 --> to show this information: 
 
-	taskman /?
-    OR: taskman help
+	taskman (/?|--help|help)
 
 --> to add a new task:
 
-	taskman new description [priority]
-    OR:	taskman add description [priority]
-	
-	> [priority] optional, must be 1..3 and (!) enclosed in []
+	taskman (add|new) description [priority]
+    
+	> [priority] optional, must be 1..3 and enclosed in []
 	> ID will be set to the task automatically.
 
 --> to change properties of a task:
@@ -30,24 +28,24 @@
 
 	> pending: 	taskman showp parameters
 	> finished:	taskman showf parameters
-	> all:		taskman show parameters
-		    OR:	taskman showall parameters
+	> all:		taskman (show|showall) parameters
 
 	parameters syntax:
 	(no parameters) - shows all
-	(Id number)	- shows the task with specified id
-	n-m		- shows all tasks in n-m Id range
+	ID		- shows the task with specified ID
+	n-m		- shows all tasks in n-m ID range
 
 --> to mark a task 'finished':
 
-	taskman finish id
+	taskman (finish|complete|accomplish) id
 
 --> to remove a task:
 
 	taskman delete id
-	> currently, you can only delete one task at a time
+	> currently, you can only delete one task at a time.
 
 --> to clear the task list:
 
 	taskman clear
-	> use with precaution, clears instantly!
+	> confirmation message will be displayed before clearing;
+	> be careful, you cannot undo this action.

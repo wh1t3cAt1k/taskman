@@ -111,19 +111,23 @@
   </Target>
   -->
   <ItemGroup>
-    <None Include="..\README">
-      <Link>README</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\LICENSE.md">
-      <Link>LICENSE.md</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Include="taskman">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="taskman_install">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\Help.txt">
+      <Link>Resources\Help.txt</Link>
+      <LogicalName>TaskMan.Help.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\LICENSE.md">
+      <Link>LICENSE.md</Link>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Resources\" />
   </ItemGroup>
 </Project>
