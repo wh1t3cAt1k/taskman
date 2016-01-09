@@ -10,7 +10,7 @@ namespace TaskMan
 	public static class LinkedListExtensions
 	{
 		/// <summary>
-		/// Removes and returns the first element in a linked list.
+		/// Removes and returns the first element from a linked list.
 		/// </summary>
 		/// <returns>The first element in a linked list prior to its removal.</returns>
 		/// <param name="linkedList">The linked list to remove the first element from.</param>

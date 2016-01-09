@@ -1,2 +1,5 @@
 #!/bin/bash
+# Use this script to run TaskMan under Linux / OSX
+# You need to have Mono Runtime 4.5 or newer installed on your machine
+# -
 `which mono` "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )""/TaskMan.exe" "$@"
