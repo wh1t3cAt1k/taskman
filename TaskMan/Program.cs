@@ -3,6 +3,7 @@ using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Resources;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
 using System;
@@ -27,16 +28,10 @@ namespace TaskMan
 			Assembly.GetEntryAssembly().GetName().Name;
 
 		static readonly string TASKS_FILE = "taskman_tasks.tmf";
-		static readonly string HELP_FILE = "taskman_service.tmf";
-		static readonly string HELP_TEXT_FILE = "taskman_input.txt";
-
 		static readonly string TASKS_FULL_NAME = APP_DATA_PATH + Path.DirectorySeparatorChar + TASKS_FILE;
-		static readonly string HELP_FULL_NAME = APP_DATA_PATH + Path.DirectorySeparatorChar + HELP_FILE;
-		static readonly string HELP_TEXT_FULL_NAME = APP_DATA_PATH + Path.DirectorySeparatorChar + HELP_TEXT_FILE;
 
 		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static readonly Regex HelpMakeRegex = new Regex(@"^-mkhelp$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static readonly Regex HelpRequestRegex = new Regex(@"(^/\?$)|(^-?-?h(elp)?$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex HelpRequestRegex = new Regex(@"(^/\?$)|(^-?-?help$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static readonly Regex SingleIdRegex = new Regex(@"^([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static readonly Regex TaskAddRegex = new Regex(@"(^add$)|(^new$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -68,56 +63,13 @@ namespace TaskMan
 			FileStream inputFileStream = null;
 			string[] helpTextLines = null;
 
-			// Generate the help output from the help binary file.
-			// -
-			try
+			using (Stream helpTextStream = Assembly.GetEntryAssembly().GetManifestResourceStream("Taskman.Help.txt"))
 			{
-				inputFileStream = new FileStream(HELP_FULL_NAME, FileMode.Open, FileAccess.Read);
-				helpTextLines = (string[])(new BinaryFormatter()).Deserialize(inputFileStream);
-			}
-			catch 
-			{ 
-				Console.Error.WriteLine(Messages.FatalErrorReadingFile, HELP_FILE); 
-				return; 
-			}
-			finally 
-			{ 
-				if (inputFileStream != null) 
+				using (StreamReader helpTextStreamReader = new StreamReader(helpTextStream))
 				{
-					inputFileStream.Close(); 
+					Console.WriteLine(helpTextStreamReader.ReadToEnd());
 				}
 			}
-
-			helpTextLines.ForEach(action: Console.WriteLine);
-		}
-
-		/// <summary>
-		/// Makes the help binary file from the input text file.
-		/// </summary>
-		static void MakeHelp()
-		{
-			using (StreamReader inputTextReader = new StreamReader(HELP_TEXT_FULL_NAME))
-			{
-				List<string> inputTextLines = new List<string>();
-
-				while (!inputTextReader.EndOfStream)
-				{
-					inputTextLines.Add(inputTextReader.ReadLine());
-				}
-
-				using (FileStream outputStream = new FileStream(HELP_FULL_NAME, FileMode.Create, FileAccess.Write))
-				{
-					BinaryFormatter binaryFormatter = new BinaryFormatter();
-					binaryFormatter.Serialize(outputStream, inputTextLines.ToArray());
-
-					Console.WriteLine(Messages.MakeHelpSucceeded);
-					outputStream.Close();
-				}
-
-				inputTextReader.Close();
-			}
-
-			return;
 		}
 
 		/// <summary>
@@ -195,13 +147,7 @@ namespace TaskMan
 			string commandName = arguments.First.Value;
 			arguments.RemoveFirst();
 
-			if (HelpMakeRegex.IsMatch(commandName))
-			{
-				Program.CurrentOperation = "generate help binary file";
-				MakeHelp();
-				return;
-			}
-			else if (HelpRequestRegex.IsMatch(commandName))
+			if (HelpRequestRegex.IsMatch(commandName))
 			{
 				Program.CurrentOperation = "display help text";
 				DisplayHelpText();
