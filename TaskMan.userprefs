@@ -1,14 +1,15 @@
 ﻿<Properties StartupItem="TaskMan/TaskMan.csproj" RefactoringSettings.EnableRefactorings="True">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="TaskMan/Program.cs">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Release" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="TaskMan/Messages.cs">
     <Files>
       <File FileName="TaskMan/Task.cs" Line="1" Column="1" />
-      <File FileName="TaskMan/IEnumerableExtensions.cs" Line="37" Column="50" />
-      <File FileName="TaskMan/Messages.cs" Line="16" Column="44" />
+      <File FileName="TaskMan/IEnumerableExtensions.cs" Line="12" Column="1" />
+      <File FileName="TaskMan/Messages.cs" Line="16" Column="61" />
       <File FileName="TaskMan/StringExtensions.cs" Line="1" Column="1" />
       <File FileName="TaskMan/Properties/AssemblyInfo.cs" Line="32" Column="52" />
-      <File FileName="TaskMan/Program.cs" Line="260" Column="50" />
+      <File FileName="TaskMan/Program.cs" Line="115" Column="49" />
       <File FileName="LICENSE.md" Line="11" Column="24" />
+      <File FileName="TaskMan/LinkedListExtensions.cs" Line="23" Column="23" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
@@ -16,7 +17,7 @@
           <Node name="TaskMan" expanded="True">
             <Node name="TaskMan" expanded="True">
               <Node name="Properties" expanded="True" />
-              <Node name="Program.cs" selected="True" />
+              <Node name="Task.cs" selected="True" />
             </Node>
           </Node>
         </State>

@@ -30,4 +30,3 @@ namespace TaskMan
 		public const string TaskWithIdDoesNotMatchTheCondition = "The task with ID {0} does not match the display condition and will not be shown.";
 	}
 }
-

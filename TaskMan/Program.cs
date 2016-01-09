@@ -110,9 +110,9 @@ namespace TaskMan
 		}
 
 		/// <summary>
-		/// Retrieves the task list from the tasks file.
+		/// Retrieves the task list from the tasks binary file.
 		/// </summary>
-		/// <returns>The tasks list.</returns>
+		/// <returns>The tasks list read from the file.</returns>
 		static List<Task> ReadTasks()
 		{
 			using (FileStream inputFileStream = new FileStream(TASKS_FULL_NAME, FileMode.OpenOrCreate, FileAccess.Read))
@@ -149,6 +149,9 @@ namespace TaskMan
 
 		static int Main(params string[] args)
 		{
+			Console.WriteLine(Assembly.GetEntryAssembly().CodeBase);
+			Console.WriteLine(Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase));
+
 			try
 			{
 				RunTaskman(new LinkedList<string>(args));
@@ -198,42 +201,13 @@ namespace TaskMan
 			{
 				Program.currentOperation = "add a new task";
 
-				if (!arguments.Any())
-				{
-					throw new Exception(Messages.NoDescriptionSpecified);
-				}
-
-				string description = string.Join(
-					" ", 
-					arguments
-						.Where(argument => !TaskPriorityRegex.IsMatch(argument)));
-
-				int priorityLevel = 1;
-				string priorityArgument = arguments.FirstOrDefault(TaskPriorityRegex.IsMatch);
-
-				if (priorityArgument != null)
-				{
-					string priorityValueString = TaskPriorityRegex.Match(priorityArgument).Groups[1].ToString();
-
-					if (!int.TryParse(priorityValueString, out priorityLevel) ||
-						priorityLevel < 1 || 
-						priorityLevel > 3)
-					{
-						throw new Exception(string.Format(
-							Messages.UnknownPriorityLevel, 
-							priorityArgument)); 
-					}
-				}
-					
-				taskList.Add(new Task(taskList.Count, description, (Priority)priorityLevel));
+				Task addedTask = AddTask(arguments, taskList);
 				SaveTasksIntoFile(taskList);
 
 				Console.WriteLine(
-					Messages.TaskWasAdded,
-					description,
-					(Priority)priorityLevel);
-
-				return;
+					Messages.TaskWasAdded, 
+					addedTask.Description, 
+					(Priority)addedTask.PriorityLevel);
 			}
 			else if (TaskDisplayRegex.IsMatch(commandName))
 			{
@@ -254,13 +228,18 @@ namespace TaskMan
 				{
 					DisplayTasks(arguments, taskList, TaskDisplayCondition.Finished);
 				}
-
-				return;
 			}
 			else if (TaskDeleteRegex.IsMatch(commandName))
 			{
 				Program.currentOperation = "delete tasks";
-				DeleteTasks(arguments, taskList);
+
+				Task deletedTask = DeleteTask(arguments, taskList);
+				SaveTasksIntoFile(taskList);
+
+				Console.WriteLine(
+					Messages.TaskWithIdWasDeleted, 
+					deletedTask.ID, 
+					deletedTask.Description);
 			}
 			else if (commandName.Equals("set"))
 			{
@@ -511,16 +490,57 @@ namespace TaskMan
 		}
 
 		/// <summary>
+		/// Encapsulates the task adding logic in one method.
+		/// </summary>
+		/// <param name="cliArguments">Command line arguments.</param>
+		/// <param name="taskList">Task list.</param>
+		/// <returns>The <see cref="Task"/> object that was added into the <paramref name="taskList"/></returns>
+		public static Task AddTask(LinkedList<string> cliArguments, List<Task> taskList)
+		{
+			if (!cliArguments.Any())
+			{
+				throw new Exception(Messages.NoDescriptionSpecified);
+			}
+
+			string description = string.Join(
+				" ", 
+				cliArguments
+				.Where(argument => !TaskPriorityRegex.IsMatch(argument)));
+
+			int priorityLevel = 1;
+			string priorityArgument = cliArguments.FirstOrDefault(TaskPriorityRegex.IsMatch);
+
+			if (priorityArgument != null)
+			{
+				string priorityValueString = TaskPriorityRegex.Match(priorityArgument).Groups[1].ToString();
+
+				if (!int.TryParse(priorityValueString, out priorityLevel) ||
+					priorityLevel < 1 || 
+					priorityLevel > 3)
+				{
+					throw new Exception(string.Format(
+						Messages.UnknownPriorityLevel, 
+						priorityArgument)); 
+				}
+			}
+
+			Task newTask = new Task(taskList.Count, description, (Priority)priorityLevel);
+			taskList.Add(newTask);
+
+			return newTask;
+		}
+
+		/// <summary>
 		/// Encapsulates the task deletion logic in one method.
 		/// </summary>
 		/// <param name="cliArguments">Command line arguments.</param>
 		/// <param name="taskList">Task list.</param>
-		public static void DeleteTasks(LinkedList<string> cliArguments, List<Task> taskList)
+		/// <returns>The <see cref="Task"/> object that has been deleted.</returns>
+		public static Task DeleteTask(LinkedList<string> cliArguments, List<Task> taskList)
 		{
 			if (!cliArguments.Any())
 			{
-				Console.WriteLine(Messages.NoTaskIdProvided, Program.currentOperation);
-				return;
+				throw new Exception(string.Format(Messages.NoTaskIdProvided, Program.currentOperation));
 			}
 
 			int idToDelete;
@@ -533,12 +553,8 @@ namespace TaskMan
 			taskList
 				.Where(task => task.ID > idToDelete)
 				.ForEach(task => (task.ID -= 1));
-			
-			Console.WriteLine(Messages.TaskWithIdWasDeleted, taskToDelete.ID, taskToDelete.Description);
 
-			SaveTasksIntoFile(taskList);
-
-			return;
+			return taskToDelete;
 		}
 	}
 }
