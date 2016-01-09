@@ -32,6 +32,7 @@ namespace TaskMan
 
 		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static readonly Regex HelpRequestRegex = new Regex(@"(^/\?$)|(^-?-?help$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly Regex LicenseRequestRegex = new Regex(@"^-?-?license$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static readonly Regex SingleIdRegex = new Regex(@"^([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 		static readonly Regex TaskAddRegex = new Regex(@"(^add$)|(^new$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -54,22 +55,36 @@ namespace TaskMan
 			T attribute = (T)Attribute.GetCustomAttribute(Assembly.GetEntryAssembly(), typeof (T));
 			return extractValueFunction.Invoke(attribute);
 		}
-
+			
 		/// <summary>
-		/// Displays the TaskMan help text in the console.
+		/// Outputs the contents of an embedded resource into the standard output stream.
 		/// </summary>
-		static void DisplayHelpText()
+		/// <param name="resourceName">The full name of the embedded resource.</param>
+		static void DisplayResourceText(string resourceName)
 		{
-			FileStream inputFileStream = null;
-			string[] helpTextLines = null;
-
-			using (Stream helpTextStream = Assembly.GetEntryAssembly().GetManifestResourceStream("Taskman.Help.txt"))
+			using (Stream helpTextStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
 			{
 				using (StreamReader helpTextStreamReader = new StreamReader(helpTextStream))
 				{
 					Console.WriteLine(helpTextStreamReader.ReadToEnd());
 				}
 			}
+		}
+
+		/// <summary>
+		/// Outputs the application help into the standard output stream. 
+		/// </summary>
+		static void DisplayHelpText()
+		{
+			DisplayResourceText("TaskMan.HELP.txt");
+		}
+
+		/// <summary>
+		/// Outputs the application license into the standard output stream.
+		/// </summary>
+		static void DisplayLicenseText()
+		{
+			DisplayResourceText("TaskMan.LICENSE.txt");
 		}
 
 		/// <summary>
@@ -151,6 +166,12 @@ namespace TaskMan
 			{
 				Program.CurrentOperation = "display help text";
 				DisplayHelpText();
+				return;
+			}
+			else if (LicenseRequestRegex.IsMatch(commandName))
+			{
+				Program.CurrentOperation = "display license text";
+				DisplayLicenseText();
 				return;
 			}
 
