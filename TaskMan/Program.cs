@@ -29,17 +29,24 @@ namespace TaskMan
 		static readonly string TASKS_FILE = "taskman_tasks.tmf";
 		static readonly string TASKS_FULL_NAME = Path.Combine(APP_DATA_PATH, TASKS_FILE);
 
-		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static readonly Regex HelpRequestRegex = new Regex(@"(^/\?$)|(^-?-?help$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static readonly Regex LicenseRequestRegex = new Regex(@"^-?-?license$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static readonly Regex SingleIdRegex = new Regex(@"^([0-9]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static readonly Regex TaskAddRegex = new Regex(@"(^add$)|(^new$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static readonly Regex TaskCompleteRegex = new Regex(@"(^complete$)|(^finish$)|(^accomplish$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static readonly Regex TaskDeleteRegex = new Regex(@"(^delete$)|(^remove$)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static readonly Regex TaskDisplayRegex = new Regex(@"^(show|display|view)(p|f|all)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static readonly Regex TaskPriorityRegex = new Regex(@"^\[([0-9]+)\]$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-		static readonly Regex VersionRequestRegex = new Regex(@"^--version$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+		static readonly RegexOptions StandardRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
+
+		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", StandardRegexOptions);
+		static readonly Regex HelpRequestRegex = new Regex(@"(^/\?$)|(^-?-?help$)", StandardRegexOptions);
+		static readonly Regex LicenseRequestRegex = new Regex(@"^-?-?license$", StandardRegexOptions);
+		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
+		static readonly Regex SingleIdRegex = new Regex(@"^([0-9]+)$", StandardRegexOptions);
+		static readonly Regex TaskAddRegex = new Regex(@"(^add$)|(^new$)", StandardRegexOptions);
+		static readonly Regex TaskCompleteRegex = new Regex(@"(^complete$)|(^finish$)|(^accomplish$)", StandardRegexOptions);
+		static readonly Regex TaskDeleteRegex = new Regex(@"(^delete$)|(^remove$)", StandardRegexOptions);
+		static readonly Regex TaskDisplayRegex = new Regex(@"^(show|display|view)(p|f|all)?$", StandardRegexOptions);
+		static readonly Regex TaskPriorityRegex = new Regex(@"^\[([0-9]+)\]$", StandardRegexOptions);
+		static readonly Regex VersionRequestRegex = new Regex(@"^--version$", StandardRegexOptions);
+		static readonly Regex TaskSetPriorityRegex = new Regex(@"(^priority$)|(^importance$)", StandardRegexOptions);
+		static readonly Regex TaskSetDescriptionRegex = new Regex(@"^description$", StandardRegexOptions);
+		static readonly Regex TaskSetFinishedRegex = new Regex(@"(^finished$)|(^completed$)|(^accomplished$)", StandardRegexOptions);
+
+		// set description
 
 		/// <summary>
 		/// Extracts the value from the given assembly attribute.
@@ -47,7 +54,7 @@ namespace TaskMan
 		/// <returns>The value extracted from the assembly attribute.</returns>
 		/// <param name="extractValueFunction">The function to extract the value from the attribute.</param>
 		/// <typeparam name="T">The type of assembly attribute.</typeparam>
-		public static V GetAssemblyAttributeValue<T, V>(Func<T, V> extractValueFunction) where T : Attribute
+		static V GetAssemblyAttributeValue<T, V>(Func<T, V> extractValueFunction) where T : Attribute
 		{
 			T attribute = (T)Attribute.GetCustomAttribute(Assembly.GetEntryAssembly(), typeof (T));
 			return extractValueFunction.Invoke(attribute);
@@ -423,7 +430,7 @@ namespace TaskMan
 
 			Task taskToUpdate = taskList.TaskWithId(taskId);
 
-			if (whatToChange == "priority")
+			if (TaskSetPriorityRegex.IsMatch(whatToChange))
 			{
 				int priorityLevel;
 
@@ -439,7 +446,7 @@ namespace TaskMan
 				Console.WriteLine("Congrats! Task with Id {0} has changed its priority to {1}", taskToUpdate.ID, taskToUpdate.PriorityLevel);
 				return;
 			}
-			else if (whatToChange.StartsWith("desc", StringComparison.CurrentCultureIgnoreCase))
+			else if (TaskSetDescriptionRegex.IsMatch(whatToChange))
 			{
 				taskToUpdate.Description = string.Join(" ", cliArguments);
 
@@ -448,7 +455,7 @@ namespace TaskMan
 
 				return;
 			}
-			else if (whatToChange == "finished")
+			else if (TaskSetFinishedRegex.IsMatch(whatToChange))
 			{
 				bool finishedFlag;
 
@@ -475,7 +482,7 @@ namespace TaskMan
 		/// <param name="cliArguments">Command line arguments.</param>
 		/// <param name="taskList">Task list.</param>
 		/// <returns>The <see cref="Task"/> object that was added into the <paramref name="taskList"/></returns>
-		public static Task AddTask(LinkedList<string> cliArguments, List<Task> taskList)
+		static Task AddTask(LinkedList<string> cliArguments, List<Task> taskList)
 		{
 			if (!cliArguments.Any())
 			{

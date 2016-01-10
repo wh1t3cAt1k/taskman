@@ -16,12 +16,14 @@
 
 --> to change properties of a task:
 	
-	taskman set id parameter args
+	taskman set ID parameter args
 	
-	> if 'parameter' is 'desc',
-	then 'args' is the new description.	
+	> if 'parameter' is 'description',
+	then 'args' should be the new description.	
 	> if 'parameter' is 'importance' or 'priority'
-	then 'args' is a number from 1 to 3.
+	then 'args' should be a number from 1 to 3.
+	> if 'parameter' is 'finished'/'completed'/'accomplished'
+	then 'args' should be 'true' or 'false'
 	> currently, you can only change properties of one task at a time.
 
 --> to show tasks:
