@@ -19,12 +19,12 @@ namespace TaskMan
 		public const string NoTaskWithSpecifiedId = "There is no task with the specified ID: {0}.";
 		public const string NoTaskIdProvided = "You should specify a task ID to {0}.";
 		public const string NoTasksInSpecifiedIdRangeWithCondition = "There are no tasks with ID in the specified range that match the display condition: {0}.";
-		public const string TaskWasAdded = "Task [{0}] was added with a priority of {1}.";
+		public const string TaskWasAdded = "Task [{0}] was added with an ID of {1}, priority: {2}.";
 		public const string TaskWasFinished = "Task with id {0} [{1}] was marked as finished!";
 		public const string TaskListIsEmpty = "The task list is empty.";
 		public const string TaskListClearCancelled = "Task list clearing has been cancelled.";
 		public const string TaskListCleared = "Task list has been cleared.";
-		public const string TaskWithIdChangedParameter = "Task with ID {0} [{1}] has changed its {2} to {3}.";
+		public const string TaskWithIdChangedParameter = "Task with ID {0} [{1}] has changed its {2} to '{3}'.";
 		public const string TaskWithIdWasDeleted = "Task with ID {0} [{1}] was successfully deleted.";
 		public const string TypeHelpForCommandSyntax = "Type 'taskman help' to view command syntax.";
 		public const string UnknownBoolValue = "Unknown bool value. Should be true or false.";

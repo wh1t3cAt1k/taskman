@@ -159,9 +159,10 @@ namespace TaskMan
 				SaveTasksIntoFile(taskList);
 
 				Console.WriteLine(
-					Messages.TaskWasAdded, 
-					addedTask.Description, 
-					(Priority)addedTask.PriorityLevel);
+					Messages.TaskWasAdded,
+					addedTask.Description,
+					addedTask.ID,
+					addedTask.PriorityLevel);
 			}
 			else if (TaskDisplayRegex.IsMatch(commandName))
 			{
@@ -422,7 +423,7 @@ namespace TaskMan
 					priorityLevel < 1 || 
 					priorityLevel > 3)
 				{
-					throw new Exception(string.Format(Messages.UnknownPriorityLevel, cliArguments.ElementAt(2)));
+					throw new Exception(string.Format(Messages.UnknownPriorityLevel, cliArguments.First()));
 				}
 
 				taskToUpdate.PriorityLevel = (Priority)priorityLevel;
