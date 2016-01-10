@@ -249,7 +249,7 @@ namespace TaskMan
 					.GetAssemblyAttributeValue<AssemblyProductAttribute, string>(attribute => attribute.Product);
 
 				Console.WriteLine(
-					"{0} v. {1}.{2}.{3}",
+					"{0} version {1}.{2}.{3}",
 					productName,
 					assemblyName.Version.Major,
 					assemblyName.Version.Minor,
@@ -290,7 +290,12 @@ namespace TaskMan
 		/// <param name="id">The ID of the task to be returned.</param>
 		static Task TaskWithId(this List<Task> tasks, int id)
 		{
-			try 
+			if (!tasks.Any())
+			{
+				throw new Exception(Messages.TaskListIsEmpty);
+			}
+
+			try
 			{
 				return tasks.Single(task => (task.ID == id));
 			}
@@ -384,6 +389,11 @@ namespace TaskMan
 			}
 		}
 
+		/// <summary>
+		/// Encapsulates the task modification logic in one method.
+		/// </summary>
+		/// <param name="cliArguments">Command line arguments.</param>
+		/// <param name="taskList">Task list.</param>
 		static void SetTaskParameters(LinkedList<string> cliArguments, List<Task> taskList)
 		{
 			if (!cliArguments.Any())
@@ -417,17 +427,28 @@ namespace TaskMan
 
 				taskToUpdate.PriorityLevel = (Priority)priorityLevel;
 				SaveTasksIntoFile(taskList);
-				Console.WriteLine("Congrats! Task with Id {0} has changed its priority to {1}", taskToUpdate.ID, taskToUpdate.PriorityLevel);
+
+				Console.WriteLine(
+					Messages.TaskWithIdChangedParameter, 
+					taskToUpdate.ID,
+					taskToUpdate.Description,
+					nameof(Priority).DecapitaliseFirstLetter(),
+					taskToUpdate.PriorityLevel);
+				
 				return;
 			}
 			else if (TaskSetDescriptionRegex.IsMatch(whatToChange))
 			{
+				string oldDescription = taskToUpdate.Description;
 				taskToUpdate.Description = string.Join(" ", cliArguments);
 
 				SaveTasksIntoFile(taskList);
-				Console.WriteLine("Congrats! Task with Id {0} has changed its description to [{1}].", taskToUpdate.ID, taskToUpdate.Description);
-
-				return;
+				Console.WriteLine(
+					Messages.TaskWithIdChangedParameter,
+					taskToUpdate.ID,
+					oldDescription,
+					nameof(Task.Description).DecapitaliseFirstLetter(),
+					taskToUpdate.Description);
 			}
 			else if (TaskSetFinishedRegex.IsMatch(whatToChange))
 			{
@@ -437,12 +458,16 @@ namespace TaskMan
 				{
 					throw new Exception(Messages.UnknownBoolValue);
 				}
+
 				taskToUpdate.IsFinished = finishedFlag;
 
 				SaveTasksIntoFile(taskList);
-				Console.WriteLine("Congrats! Task with id {0} has changed its finished state to {1}.", taskToUpdate.ID, taskToUpdate.IsFinished);
-
-				return;
+				Console.WriteLine(
+					Messages.TaskWithIdChangedParameter,
+					taskToUpdate.ID,
+					taskToUpdate.Description,
+					"finished state",
+					taskToUpdate.IsFinished);
 			}
 			else
 			{

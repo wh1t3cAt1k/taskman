@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 
 namespace TaskMan
 {
 	/// <summary>
 	/// A static class providing various extension methods for
-	/// <see cref="IEnumerable"/> generic sequences.
+	/// <see cref="IEnumerable&lt;T&gt;"/> generic sequences.
 	/// </summary>
 	public static class IEnumerableExtensions
 	{

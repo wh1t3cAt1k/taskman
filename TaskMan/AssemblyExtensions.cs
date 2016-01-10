@@ -4,6 +4,9 @@ using System.Reflection;
 
 namespace TaskMan
 {
+	/// <summary>
+	/// A static class providing various extension methods for <see cref="Assembly"/>.
+	/// </summary>
 	public static class AssemblyExtensions
 	{
 		/// <summary>
