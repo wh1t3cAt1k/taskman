@@ -39,11 +39,11 @@
 
 --> to mark a task 'finished':
 
-	taskman (finish|complete|accomplish) id
+	taskman (finish|complete|accomplish) ID
 
 --> to remove a task:
 
-	taskman delete id
+	taskman delete ID
 	> currently, you can only delete one task at a time.
 
 --> to clear the task list:
