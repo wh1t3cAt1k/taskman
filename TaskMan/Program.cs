@@ -51,7 +51,7 @@ namespace TaskMan
 		/// </summary>
 		static void DisplayHelpText()
 		{
-			Console.WriteLine(Assembly.GetEntryAssembly().GetResourceText("TaskMan.README.txt"));
+			Console.WriteLine(Assembly.GetEntryAssembly().GetResourceText("TaskMan.HELP.txt"));
 		}
 
 		/// <summary>
