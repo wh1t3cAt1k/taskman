@@ -80,6 +80,7 @@
     <Compile Include="StringExtensions.cs" />
     <Compile Include="LinkedListExtensions.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="AssemblyExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">

@@ -33,54 +33,25 @@ namespace TaskMan
 
 		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", StandardRegexOptions);
 		static readonly Regex HelpRequestRegex = new Regex(@"(^/\?$)|(^-?-?help$)", StandardRegexOptions);
-		static readonly Regex LicenseRequestRegex = new Regex(@"^-?-?license$", StandardRegexOptions);
 		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
+		static readonly Regex LicenseRequestRegex = new Regex(@"^-?-?license$", StandardRegexOptions);
 		static readonly Regex SingleIdRegex = new Regex(@"^([0-9]+)$", StandardRegexOptions);
 		static readonly Regex TaskAddRegex = new Regex(@"(^add$)|(^new$)", StandardRegexOptions);
 		static readonly Regex TaskCompleteRegex = new Regex(@"(^complete$)|(^finish$)|(^accomplish$)", StandardRegexOptions);
 		static readonly Regex TaskDeleteRegex = new Regex(@"(^delete$)|(^remove$)", StandardRegexOptions);
 		static readonly Regex TaskDisplayRegex = new Regex(@"^(show|display|view)(p|f|all)?$", StandardRegexOptions);
 		static readonly Regex TaskPriorityRegex = new Regex(@"^\[([0-9]+)\]$", StandardRegexOptions);
-		static readonly Regex VersionRequestRegex = new Regex(@"^--version$", StandardRegexOptions);
-		static readonly Regex TaskSetPriorityRegex = new Regex(@"(^priority$)|(^importance$)", StandardRegexOptions);
 		static readonly Regex TaskSetDescriptionRegex = new Regex(@"^description$", StandardRegexOptions);
 		static readonly Regex TaskSetFinishedRegex = new Regex(@"(^finished$)|(^completed$)|(^accomplished$)", StandardRegexOptions);
-
-		// set description
-
-		/// <summary>
-		/// Extracts the value from the given assembly attribute.
-		/// </summary>
-		/// <returns>The value extracted from the assembly attribute.</returns>
-		/// <param name="extractValueFunction">The function to extract the value from the attribute.</param>
-		/// <typeparam name="T">The type of assembly attribute.</typeparam>
-		static V GetAssemblyAttributeValue<T, V>(Func<T, V> extractValueFunction) where T : Attribute
-		{
-			T attribute = (T)Attribute.GetCustomAttribute(Assembly.GetEntryAssembly(), typeof (T));
-			return extractValueFunction.Invoke(attribute);
-		}
-			
-		/// <summary>
-		/// Outputs the contents of an embedded resource into the standard output stream.
-		/// </summary>
-		/// <param name="resourceName">The full name of the embedded resource.</param>
-		static void DisplayResourceText(string resourceName)
-		{
-			using (Stream helpTextStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
-			{
-				using (StreamReader helpTextStreamReader = new StreamReader(helpTextStream))
-				{
-					Console.WriteLine(helpTextStreamReader.ReadToEnd());
-				}
-			}
-		}
+		static readonly Regex TaskSetPriorityRegex = new Regex(@"(^priority$)|(^importance$)", StandardRegexOptions);
+		static readonly Regex VersionRequestRegex = new Regex(@"^--version$", StandardRegexOptions);
 
 		/// <summary>
 		/// Outputs the application help into the standard output stream. 
 		/// </summary>
 		static void DisplayHelpText()
 		{
-			DisplayResourceText("TaskMan.README.txt");
+			Console.WriteLine(Assembly.GetEntryAssembly().GetResourceText("TaskMan.README.txt"));
 		}
 
 		/// <summary>
@@ -88,7 +59,7 @@ namespace TaskMan
 		/// </summary>
 		static void DisplayLicenseText()
 		{
-			DisplayResourceText("TaskMan.LICENSE.txt");
+			Console.WriteLine(Assembly.GetEntryAssembly().GetResourceText("TaskMan.LICENSE.txt"));
 		}
 
 		/// <summary>
@@ -271,12 +242,15 @@ namespace TaskMan
 			{
 				Program.CurrentOperation = "display the taskman version";
 
-				Assembly executingAssembly = Assembly.GetExecutingAssembly();
-				AssemblyName assemblyName = executingAssembly.GetName();
+				Assembly entryAssembly = Assembly.GetEntryAssembly();
+				AssemblyName assemblyName = entryAssembly.GetName();
+
+				string productName = entryAssembly
+					.GetAssemblyAttributeValue<AssemblyProductAttribute, string>(attribute => attribute.Product);
 
 				Console.WriteLine(
-					"{0} version {1}.{2}.{3}",
-					GetAssemblyAttributeValue<AssemblyProductAttribute, string>(attribute => attribute.Product),
+					"{0} v. {1}.{2}.{3}",
+					productName,
 					assemblyName.Version.Major,
 					assemblyName.Version.Minor,
 					assemblyName.Version.Build);
