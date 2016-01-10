@@ -114,13 +114,12 @@
     <None Include="taskman_install">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\LICENSE.txt">
       <Link>LICENSE.txt</Link>
     </EmbeddedResource>
-    <EmbeddedResource Include="..\HELP.txt">
+    <EmbeddedResource Include=".\HELP.txt">
       <Link>HELP.txt</Link>
     </EmbeddedResource>
   </ItemGroup>
