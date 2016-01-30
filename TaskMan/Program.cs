@@ -149,7 +149,7 @@ namespace TaskMan
 			}
 
 			Program.CurrentOperation = "read tasks from the task file";
-			List<Task> taskList = ReadTasks(); 
+			List<Task> taskList = ReadTasks();
 
 			if (TaskAddRegex.IsMatch(commandName))
 			{
@@ -189,7 +189,15 @@ namespace TaskMan
 				Program.CurrentOperation = "delete tasks";
 
 				Task deletedTask = DeleteTask(arguments, taskList);
-				SaveTasksIntoFile(taskList);
+
+				if (taskList.Any())
+				{
+					SaveTasksIntoFile(taskList);
+				}
+				else
+				{
+					File.Delete(TASKS_FULL_NAME);
+				}
 
 				Console.WriteLine(
 					Messages.TaskWithIdWasDeleted, 
@@ -210,7 +218,7 @@ namespace TaskMan
 				if (ConfirmActionRegex.IsMatch(Console.ReadLine()))
 				{
 					taskList.Clear();
-					SaveTasksIntoFile(taskList);
+					File.Delete(TASKS_FULL_NAME);
 					Console.WriteLine(Messages.TaskListCleared);
 				}
 				else
