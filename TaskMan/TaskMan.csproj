@@ -71,6 +71,9 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <Reference Include="nunit.framework">
+      <HintPath>External\nunit.framework.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -81,6 +84,7 @@
     <Compile Include="LinkedListExtensions.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="AssemblyExtensions.cs" />
+    <Compile Include="UnitTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
@@ -117,6 +121,7 @@
     <None Include="..\README.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="External\nunit.framework.dll" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\LICENSE.txt">
@@ -125,5 +130,8 @@
     <EmbeddedResource Include="HELP.txt">
       <Link>HELP.txt</Link>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="External\" />
   </ItemGroup>
 </Project>

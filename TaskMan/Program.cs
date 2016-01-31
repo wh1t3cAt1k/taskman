@@ -98,7 +98,7 @@ namespace TaskMan
 			outputFileStream.Close();
 		}
 
-		static int Main(params string[] args)
+		public static int Main(params string[] args)
 		{
 			try
 			{
