@@ -15,14 +15,6 @@ namespace TaskMan
 		[SetUp]
 		public void Setup()
 		{
-			IEnumerable<string> commands = new string[]
-			{
-				"add Remember the Milk [2]",
-				"add Pay the loan [3]",
-				"add Play Super Metroid",
-				"add Prepare for the party",
-			};
-
 			Program.TaskReadFunction = 
 				() => this._savedTasks;
 
