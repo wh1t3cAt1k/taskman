@@ -10,6 +10,8 @@ namespace TaskMan
 	[TestFixture]
 	public class UnitTests
 	{
+		List<Task> _savedTasks = new List<Task>();
+
 		[SetUp]
 		public void Setup()
 		{
@@ -21,9 +23,30 @@ namespace TaskMan
 				"add Prepare for the party",
 			};
 
-			// commands
-			//	.Select(command => command.Split(new [] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
-			//	.ForEach(arguments => Program.Main(arguments));
+			Program.TaskReadFunction = 
+				() => _savedTasks;
+
+			Program.TaskSaveFunction = 
+				taskList => _savedTasks = taskList;
+		}
+
+		public void RunWithCommand(string command)
+		{
+			Program.Main(
+				command.Split(new [] { " " }, 
+				StringSplitOptions.RemoveEmptyEntries));
+		}
+
+		[Test]
+		public void Test_SaveFunctionSubstitution_WorksProperly()
+		{
+			// Action
+			// -
+			RunWithCommand("add Remember the Milk");
+
+			// Assert
+			// -
+			Assert.IsNotEmpty(_savedTasks);
 		}
 	}
 }

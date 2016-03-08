@@ -49,7 +49,7 @@ namespace TaskMan
 		/// Can be used to override the default function that reads the tasks from file, 
 		/// e.g. for the purpose of unit testing.
 		/// </summary>
-		public static Func<List<Task>> TaskReadFunction { private get; set; } = Program.ReadTasks;
+		public static Func<List<Task>> TaskReadFunction { private get; set; } = Program.ReadTasksFromFile;
 
 		/// <summary>
 		/// Sets the function that saves the task list.
