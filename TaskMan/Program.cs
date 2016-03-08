@@ -1,16 +1,14 @@
-﻿using System.Collections.Generic;
-using System.Collections;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Resources;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
-using System;
 
 namespace TaskMan
 {
-	static class Program
+	public class Program
 	{
 		/// <summary>
 		/// Gets or sets the current operation performed by the program.
@@ -47,6 +45,20 @@ namespace TaskMan
 		static readonly Regex VersionRequestRegex = new Regex(@"^--version$", StandardRegexOptions);
 
 		/// <summary>
+		/// Sets the function that would be called to read the task list.
+		/// Can be used to override the default function that reads the tasks from file, 
+		/// e.g. for the purpose of unit testing.
+		/// </summary>
+		public static Func<List<Task>> TaskReadFunction { private get; set; } = Program.ReadTasks;
+
+		/// <summary>
+		/// Sets the function that saves the task list.
+		/// Can be used to override the default function that saves the tasks into file,
+		/// e.g. for the purpose of unit testing.
+		/// </summary>
+		public static Action<List<Task>> TaskSaveFunction { private get; set; } = Program.SaveTasksIntoFile;
+
+		/// <summary>
 		/// Outputs the application help into the standard output stream. 
 		/// </summary>
 		static void DisplayHelpText()
@@ -66,7 +78,7 @@ namespace TaskMan
 		/// Retrieves the task list from the tasks binary file.
 		/// </summary>
 		/// <returns>The tasks list read from the file.</returns>
-		static List<Task> ReadTasks()
+		static List<Task> ReadTasksFromFile()
 		{
 			using (FileStream inputFileStream = new FileStream(TASKS_FULL_NAME, FileMode.OpenOrCreate, FileAccess.Read))
 			{
@@ -149,14 +161,14 @@ namespace TaskMan
 			}
 
 			Program.CurrentOperation = "read tasks from the task file";
-			List<Task> taskList = ReadTasks();
+			List<Task> taskList = TaskReadFunction();
 
 			if (TaskAddRegex.IsMatch(commandName))
 			{
 				Program.CurrentOperation = "add a new task";
 
 				Task addedTask = AddTask(arguments, taskList);
-				SaveTasksIntoFile(taskList);
+				TaskSaveFunction(taskList);
 
 				Console.WriteLine(
 					Messages.TaskWasAdded,
@@ -192,7 +204,7 @@ namespace TaskMan
 
 				if (taskList.Any())
 				{
-					SaveTasksIntoFile(taskList);
+					TaskSaveFunction(taskList);
 				}
 				else
 				{
@@ -239,10 +251,10 @@ namespace TaskMan
 
 				ExtractTaskIdNumber(arguments.First(), out idToFinish);
 
-				Task taskToFinish = TaskWithId(taskList, idToFinish);
+				Task taskToFinish = taskList.TaskWithId(idToFinish);
 				taskToFinish.IsFinished = true;
 
-				SaveTasksIntoFile(taskList);
+				TaskSaveFunction(taskList);
 
 				Console.WriteLine(Messages.TaskWasFinished, taskToFinish.ID, taskToFinish.Description);
 				return;
@@ -284,33 +296,6 @@ namespace TaskMan
 			if (!int.TryParse(taskIdString, out taskId))
 			{
 				throw new Exception(Messages.InvalidTaskId);
-			}
-		}
-
-		/// <summary>
-		/// Returns a task with the specified id, if it is present
-		/// in the task list, throws an exception otherwise.
-		/// </summary>
-		/// <returns>
-		/// Task with the specified ID, if it is present 
-		/// in <paramref name="tasks"/> list.
-		/// </returns>
-		/// <param name="tasks">The task list.</param>
-		/// <param name="id">The ID of the task to be returned.</param>
-		static Task TaskWithId(this List<Task> tasks, int id)
-		{
-			if (!tasks.Any())
-			{
-				throw new Exception(Messages.TaskListIsEmpty);
-			}
-
-			try
-			{
-				return tasks.Single(task => (task.ID == id));
-			}
-			catch
-			{
-				throw new Exception(string.Format(Messages.NoTaskWithSpecifiedId, id));
 			}
 		}
 
@@ -435,7 +420,7 @@ namespace TaskMan
 				}
 
 				taskToUpdate.PriorityLevel = (Priority)priorityLevel;
-				SaveTasksIntoFile(taskList);
+				TaskSaveFunction(taskList);
 
 				Console.WriteLine(
 					Messages.TaskWithIdChangedParameter, 
@@ -451,7 +436,7 @@ namespace TaskMan
 				string oldDescription = taskToUpdate.Description;
 				taskToUpdate.Description = string.Join(" ", cliArguments);
 
-				SaveTasksIntoFile(taskList);
+				TaskSaveFunction(taskList);
 				Console.WriteLine(
 					Messages.TaskWithIdChangedParameter,
 					taskToUpdate.ID,
@@ -470,7 +455,7 @@ namespace TaskMan
 
 				taskToUpdate.IsFinished = finishedFlag;
 
-				SaveTasksIntoFile(taskList);
+				TaskSaveFunction(taskList);
 				Console.WriteLine(
 					Messages.TaskWithIdChangedParameter,
 					taskToUpdate.ID,

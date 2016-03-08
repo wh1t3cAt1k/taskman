@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using NUnit.Framework;
+using Moq;
 
 namespace TaskMan
 {
@@ -20,9 +21,9 @@ namespace TaskMan
 				"add Prepare for the party",
 			};
 
-			commands
-				.Select(command => command.Split(new [] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
-				.ForEach(arguments => Program.Main(arguments));
+			// commands
+			//	.Select(command => command.Split(new [] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+			//	.ForEach(arguments => Program.Main(arguments));
 		}
 	}
 }
