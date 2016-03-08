@@ -24,10 +24,10 @@ namespace TaskMan
 			};
 
 			Program.TaskReadFunction = 
-				() => _savedTasks;
+				() => this._savedTasks;
 
 			Program.TaskSaveFunction = 
-				taskList => _savedTasks = taskList;
+				taskList => this._savedTasks = taskList;
 		}
 
 		public void RunWithCommand(string command)

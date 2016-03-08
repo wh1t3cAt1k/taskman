@@ -125,7 +125,6 @@
     <None Include="..\README.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="External\nunit.framework.dll" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -135,8 +134,5 @@
     <EmbeddedResource Include="HELP.txt">
       <Link>HELP.txt</Link>
     </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="External\" />
   </ItemGroup>
 </Project>
