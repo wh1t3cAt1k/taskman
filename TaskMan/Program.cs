@@ -22,7 +22,7 @@ namespace TaskMan
 		/// </summary>
 		static readonly string APP_DATA_PATH = Path.Combine(
 			Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-			Assembly.GetEntryAssembly().GetName().Name);
+			Assembly.GetExecutingAssembly().GetName().Name);
 
 		static readonly string TASKS_FILE = "taskman_tasks.tmf";
 		static readonly string TASKS_FULL_NAME = Path.Combine(APP_DATA_PATH, TASKS_FILE);
@@ -34,7 +34,7 @@ namespace TaskMan
 		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
 		static readonly Regex LicenseRequestRegex = new Regex(@"^-?-?license$", StandardRegexOptions);
 		static readonly Regex SingleIdRegex = new Regex(@"^([0-9]+)$", StandardRegexOptions);
-		static readonly Regex TaskAddRegex = new Regex(@"(^add$)|(^new$)", StandardRegexOptions);
+		static readonly Regex TaskAddRegex = new Regex(@"(^add$)|(^new$)|(^create$)", StandardRegexOptions);
 		static readonly Regex TaskCompleteRegex = new Regex(@"(^complete$)|(^finish$)|(^accomplish$)", StandardRegexOptions);
 		static readonly Regex TaskDeleteRegex = new Regex(@"(^delete$)|(^remove$)", StandardRegexOptions);
 		static readonly Regex TaskDisplayRegex = new Regex(@"^(show|display|view)(p|f|all)?$", StandardRegexOptions);
@@ -49,21 +49,21 @@ namespace TaskMan
 		/// Can be used to override the default function that reads the tasks from file, 
 		/// e.g. for the purpose of unit testing.
 		/// </summary>
-		public static Func<List<Task>> TaskReadFunction { private get; set; } = Program.ReadTasksFromFile;
+		internal static Func<List<Task>> TaskReadFunction { private get; set; } = Program.ReadTasksFromFile;
 
 		/// <summary>
 		/// Sets the function that saves the task list.
 		/// Can be used to override the default function that saves the tasks into file,
 		/// e.g. for the purpose of unit testing.
 		/// </summary>
-		public static Action<List<Task>> TaskSaveFunction { private get; set; } = Program.SaveTasksIntoFile;
+		internal static Action<List<Task>> TaskSaveFunction { private get; set; } = Program.SaveTasksIntoFile;
 
 		/// <summary>
 		/// Outputs the application help into the standard output stream. 
 		/// </summary>
 		static void DisplayHelpText()
 		{
-			Console.WriteLine(Assembly.GetEntryAssembly().GetResourceText("TaskMan.HELP.txt"));
+			Console.WriteLine(Assembly.GetExecutingAssembly().GetResourceText("TaskMan.HELP.txt"));
 		}
 
 		/// <summary>
@@ -71,7 +71,7 @@ namespace TaskMan
 		/// </summary>
 		static void DisplayLicenseText()
 		{
-			Console.WriteLine(Assembly.GetEntryAssembly().GetResourceText("TaskMan.LICENSE.txt"));
+			Console.WriteLine(Assembly.GetExecutingAssembly().GetResourceText("TaskMan.LICENSE.txt"));
 		}
 
 		/// <summary>
@@ -263,7 +263,7 @@ namespace TaskMan
 			{
 				Program.CurrentOperation = "display the taskman version";
 
-				Assembly entryAssembly = Assembly.GetEntryAssembly();
+				Assembly entryAssembly = Assembly.GetExecutingAssembly();
 				AssemblyName assemblyName = entryAssembly.GetName();
 
 				string productName = entryAssembly
