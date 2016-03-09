@@ -30,6 +30,14 @@ namespace TaskMan
 				StringSplitOptions.RemoveEmptyEntries));
 		}
 
+		public void RunWithCommands(params string[] commands)
+		{
+			foreach (string command in commands)
+			{
+				RunWithCommand(command);
+			}
+		}
+
 		[Test]
 		public void Test_AddWorks()
 		{
@@ -50,10 +58,9 @@ namespace TaskMan
 		{
 			// Action
 			// -
-			RunWithCommand("add Remember the milk");
-			RunWithCommand("new Remember the milk");
-
-			RunWithCommand("show");
+			RunWithCommands(
+				"add Remember the milk",
+				"new Remember the milk");
 
 			// Assert
 			// -
@@ -68,8 +75,9 @@ namespace TaskMan
 		{
 			// Action
 			// -
-			RunWithCommand("add Remember the milk");
-			RunWithCommand("create Remember the milk");
+			RunWithCommands(
+				"add Remember the milk",
+				"create Remember the milk");
 
 			// Assert
 			// -
