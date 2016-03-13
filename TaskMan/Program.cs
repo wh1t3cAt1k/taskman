@@ -32,9 +32,7 @@ namespace TaskMan
 		static readonly RegexOptions StandardRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
 
 		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", StandardRegexOptions);
-		static readonly Regex HelpRequestRegex = new Regex(@"(^/\?$)|(^-?-?help$)", StandardRegexOptions);
 		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
-		static readonly Regex LicenseRequestRegex = new Regex(@"^-?-?license$", StandardRegexOptions);
 		static readonly Regex SingleIdRegex = new Regex(@"^([0-9]+)$", StandardRegexOptions);
 		static readonly Regex TaskAddRegex = new Regex(@"(^add$)|(^new$)|(^create$)", StandardRegexOptions);
 		static readonly Regex TaskCompleteRegex = new Regex(@"(^complete$)|(^finish$)|(^accomplish$)", StandardRegexOptions);
@@ -44,14 +42,15 @@ namespace TaskMan
 		static readonly Regex TaskSetDescriptionRegex = new Regex(@"^description$", StandardRegexOptions);
 		static readonly Regex TaskSetFinishedRegex = new Regex(@"(^finished$)|(^completed$)|(^accomplished$)", StandardRegexOptions);
 		static readonly Regex TaskSetPriorityRegex = new Regex(@"(^priority$)|(^importance$)", StandardRegexOptions);
-		static readonly Regex VersionRequestRegex = new Regex(@"^--version$", StandardRegexOptions);
 
-		static bool DisplayHelp = false;
-		static bool DisplayLicense = false;
+		static bool _displayHelp = false;
+		static bool _displayLicense = false;
+		static bool _displayVersion = false;
 
-		static OptionSet options = new OptionSet() {
-			{ "h|help", string.Empty, value => DisplayHelp = (value != null) }, 
-			{ "license", string.Empty, value => DisplayLicense = (value != null) }
+		static OptionSet Options = new OptionSet() {
+			{ "h|help", string.Empty, value => _displayHelp = (value != null) }, 
+			{ "license", string.Empty, value => _displayLicense = (value != null) },
+			{ "version", string.Empty, value => _displayVersion = (value != null) },
 		};
 
 		/// <summary>
@@ -157,18 +156,40 @@ namespace TaskMan
 			string commandName = arguments.First.Value;
 			arguments.RemoveFirst();
 
-			if (HelpRequestRegex.IsMatch(commandName))
+			if (Program._displayHelp)
 			{
-				Program.CurrentOperation = "display help text";
 				DisplayHelpText();
+				Program.CurrentOperation = "display help text";
+
 				return;
 			}
-			else if (LicenseRequestRegex.IsMatch(commandName))
+			else if (Program._displayLicense)
 			{
 				Program.CurrentOperation = "display license text";
 				DisplayLicenseText();
+
 				return;
 			}
+			else if (Program._displayVersion)
+			{
+				Program.CurrentOperation = "display the taskman version";
+
+				Assembly entryAssembly = Assembly.GetExecutingAssembly();
+				AssemblyName assemblyName = entryAssembly.GetName();
+
+				string productName = entryAssembly
+					.GetAssemblyAttributeValue<AssemblyProductAttribute, string>(attribute => attribute.Product);
+
+				Console.WriteLine(
+					"{0} version {1}.{2}.{3}",
+					productName,
+					assemblyName.Version.Major,
+					assemblyName.Version.Minor,
+					assemblyName.Version.Build);
+
+				return;
+			}
+
 
 			Program.CurrentOperation = "read tasks from the task file";
 			List<Task> taskList = TaskReadFunction();
@@ -268,23 +289,6 @@ namespace TaskMan
 
 				Console.WriteLine(Messages.TaskWasFinished, taskToFinish.ID, taskToFinish.Description);
 				return;
-			}
-			else if (VersionRequestRegex.IsMatch(commandName))
-			{
-				Program.CurrentOperation = "display the taskman version";
-
-				Assembly entryAssembly = Assembly.GetExecutingAssembly();
-				AssemblyName assemblyName = entryAssembly.GetName();
-
-				string productName = entryAssembly
-					.GetAssemblyAttributeValue<AssemblyProductAttribute, string>(attribute => attribute.Product);
-
-				Console.WriteLine(
-					"{0} version {1}.{2}.{3}",
-					productName,
-					assemblyName.Version.Major,
-					assemblyName.Version.Minor,
-					assemblyName.Version.Build);
 			}
 			else 
 			{
