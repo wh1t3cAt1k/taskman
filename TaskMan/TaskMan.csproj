@@ -89,6 +89,7 @@
     <Compile Include="AssemblyExtensions.cs" />
     <Compile Include="UnitTests.cs" />
     <Compile Include="TaskExtensions.cs" />
+    <Compile Include="External\Options.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
