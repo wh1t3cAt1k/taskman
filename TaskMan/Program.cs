@@ -6,6 +6,8 @@ using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
 
+using NDesk.Options;
+
 namespace TaskMan
 {
 	public class Program
@@ -43,6 +45,14 @@ namespace TaskMan
 		static readonly Regex TaskSetFinishedRegex = new Regex(@"(^finished$)|(^completed$)|(^accomplished$)", StandardRegexOptions);
 		static readonly Regex TaskSetPriorityRegex = new Regex(@"(^priority$)|(^importance$)", StandardRegexOptions);
 		static readonly Regex VersionRequestRegex = new Regex(@"^--version$", StandardRegexOptions);
+
+		static bool DisplayHelp = false;
+		static bool DisplayLicense = false;
+
+		static OptionSet options = new OptionSet() {
+			{ "h|help", string.Empty, value => DisplayHelp = (value != null) }, 
+			{ "license", string.Empty, value => DisplayLicense = (value != null) }
+		};
 
 		/// <summary>
 		/// Sets the function that would be called to read the task list.
