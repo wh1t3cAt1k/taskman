@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading;
 
 using NUnit.Framework;
 
@@ -15,19 +17,25 @@ namespace TaskMan
 		public void Setup()
 		{
 			_savedTasks = new List<Task>();
-
-			Program.TaskReadFunction = 
-				() => this._savedTasks;
-			
-			Program.TaskSaveFunction = 
-				taskList => this._savedTasks = taskList;
 		}
 
 		public void RunWithCommand(string command)
 		{
-			Program.Main(command.Split(
-				new [] { ' ' },
-				StringSplitOptions.RemoveEmptyEntries));
+			using (StringWriter outputRedirect = new StringWriter())
+			{
+				using (StringWriter errorRedirect = new StringWriter())
+				{
+					TaskMan program = new TaskMan(
+						taskReadFunction: () => this._savedTasks,
+						taskSaveFunction: taskList => this._savedTasks = taskList,
+						outputStream: outputRedirect,
+						errorStream: errorRedirect);
+			
+					program.Run(command.Split(
+						new [] { ' ' },
+						StringSplitOptions.RemoveEmptyEntries));
+				}
+			}
 		}
 
 		public void RunWithCommands(params string[] commands)
@@ -86,6 +94,45 @@ namespace TaskMan
 				_savedTasks.First().Description, 
 				Is.EqualTo(_savedTasks.Last().Description));
 		}
+
+		/*
+		[Test]
+		public void Test_LicenseFlag_OutputsLicense()
+		{
+			using (StringWriter output = new StringWriter())
+			{
+				Console.SetOut(output);
+
+				RunWithCommand("--license");
+
+				Assert.That(
+					output.ToString(),
+					Contains.Substring("GNU GENERAL PUBLIC LICENSE"));
+			}
+
+			using (StringWriter output = new StringWriter())
+			{
+				Console.SetOut(output);
+
+				RunWithCommand("/license");
+
+				Assert.That(
+					output.ToString(),
+					Contains.Substring("GNU GENERAL PUBLIC LICENSE"));
+			}
+
+			using (StringWriter output = new StringWriter())
+			{
+				Console.SetOut(output);
+
+				RunWithCommand("-license");
+
+				Assert.That(
+					output.ToString(),
+					Contains.Substring("GNU GENERAL PUBLIC LICENSE"));
+			}
+		}
+		*/
 	}
 }
 

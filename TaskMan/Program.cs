@@ -6,17 +6,73 @@ using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.RegularExpressions;
 
-using NDesk.Options;
+using Mono.Options;
 
 namespace TaskMan
 {
 	public class Program
 	{
+		public static int Main(string[] args)
+		{
+			TaskMan program = new TaskMan();
+
+			try
+			{
+				program.Run(args);
+			}
+			catch (Exception exception)
+			{
+				Console.Error.WriteLine(
+					Messages.ErrorPerformingOperation,
+					program.CurrentOperation,
+					exception.Message.DecapitaliseFirstLetter());
+
+				return -1;
+			}
+
+			return 0;
+		}
+	}
+
+	/// <summary>
+	/// The main entity responsible for interacting with the user. 
+	/// Also encapsulates the options for a particular run.
+	/// </summary>
+	public class TaskMan
+	{
 		/// <summary>
 		/// Gets or sets the current operation performed by the program.
 		/// </summary>
 		/// <value>The current operation.</value>
-		static string CurrentOperation { get; set; }
+		public string CurrentOperation { get; private set; }
+
+		bool _displayHelp = false;
+		bool _displayLicense = false;
+		bool _displayVersion = false;
+
+		private OptionSet OptionSet;
+
+		TextWriter _output = Console.Out;
+		TextWriter _error = Console.Error;
+
+		public TaskMan(
+			Func<List<Task>> taskReadFunction = null,
+			Action<List<Task>> taskSaveFunction = null,
+			TextWriter outputStream = null,
+			TextWriter errorStream = null)
+		{
+			this.OptionSet = new OptionSet {
+				{ "h|help", value => _displayHelp = (value != null) },
+				{ "license", value => _displayLicense = (value != null) },
+				{ "version", value => _displayVersion = (value != null) },
+			};
+
+			this._readTasks = taskReadFunction ?? this._readTasks;
+			this._saveTasks = taskSaveFunction ?? this._saveTasks;
+
+			this._output = outputStream ?? this._output;
+			this._error = errorStream ?? this._error;
+		}
 
 		/// <summary>
 		/// The folder where the task list and app configuration files will be stored,
@@ -43,44 +99,34 @@ namespace TaskMan
 		static readonly Regex TaskSetFinishedRegex = new Regex(@"(^finished$)|(^completed$)|(^accomplished$)", StandardRegexOptions);
 		static readonly Regex TaskSetPriorityRegex = new Regex(@"(^priority$)|(^importance$)", StandardRegexOptions);
 
-		static bool _displayHelp = false;
-		static bool _displayLicense = false;
-		static bool _displayVersion = false;
-
-		static OptionSet Options = new OptionSet() {
-			{ "h|help", string.Empty, value => _displayHelp = (value != null) }, 
-			{ "license", string.Empty, value => _displayLicense = (value != null) },
-			{ "version", string.Empty, value => _displayVersion = (value != null) },
-		};
-
 		/// <summary>
 		/// Sets the function that would be called to read the task list.
 		/// Can be used to override the default function that reads the tasks from file, 
 		/// e.g. for the purpose of unit testing.
 		/// </summary>
-		internal static Func<List<Task>> TaskReadFunction { private get; set; } = Program.ReadTasksFromFile;
+		Func<List<Task>> _readTasks = TaskMan.ReadTasksFromFile;
 
 		/// <summary>
 		/// Sets the function that saves the task list.
 		/// Can be used to override the default function that saves the tasks into file,
 		/// e.g. for the purpose of unit testing.
 		/// </summary>
-		internal static Action<List<Task>> TaskSaveFunction { private get; set; } = Program.SaveTasksIntoFile;
+		Action<List<Task>> _saveTasks = TaskMan.SaveTasksIntoFile;
 
 		/// <summary>
 		/// Outputs the application help into the standard output stream. 
 		/// </summary>
-		static void DisplayHelpText()
+		void DisplayHelpText()
 		{
-			Console.WriteLine(Assembly.GetExecutingAssembly().GetResourceText("TaskMan.HELP.txt"));
+			_output.WriteLine(Assembly.GetExecutingAssembly().GetResourceText("TaskMan.HELP.txt"));
 		}
 
 		/// <summary>
 		/// Outputs the application license into the standard output stream.
 		/// </summary>
-		static void DisplayLicenseText()
+		void DisplayLicenseText()
 		{
-			Console.WriteLine(Assembly.GetExecutingAssembly().GetResourceText("TaskMan.LICENSE.txt"));
+			_output.WriteLine(Assembly.GetExecutingAssembly().GetResourceText("TaskMan.LICENSE.txt"));
 		}
 
 		/// <summary>
@@ -119,36 +165,21 @@ namespace TaskMan
 			outputFileStream.Close();
 		}
 
-		public static int Main(params string[] args)
+		public void Run(IEnumerable<string> commandLineArguments)
 		{
-			try
-			{
-				RunTaskman(new LinkedList<string>(args));
-			}
-			catch (Exception exception)
-			{
-				Console.Error.WriteLine(
-					Messages.ErrorPerformingOperation,
-					Program.CurrentOperation,
-					exception.Message.DecapitaliseFirstLetter());
-				
-				return -1;
-			}
+			List<string> optionsRemainder = OptionSet.Parse(commandLineArguments);
 
-			return 0;
-		}
+			LinkedList<string> arguments = new LinkedList<string>(optionsRemainder);
 
-		static void RunTaskman(LinkedList<string> arguments)
-		{
 			if (!arguments.Any()) 
 			{
 				arguments = new LinkedList<string>(new [] { "showall" }); 
 			}
 
-			if (!Directory.Exists(Program.APP_DATA_PATH))
+			if (!Directory.Exists(TaskMan.APP_DATA_PATH))
 			{
-				Program.CurrentOperation = "create the app subdirectory in the application data folder";
-				Directory.CreateDirectory(Program.APP_DATA_PATH);
+				this.CurrentOperation = "create the app subdirectory in the application data folder";
+				Directory.CreateDirectory(TaskMan.APP_DATA_PATH);
 			}
 
 			// Retrieve and pop the command name from the arguments.
@@ -156,23 +187,23 @@ namespace TaskMan
 			string commandName = arguments.First.Value;
 			arguments.RemoveFirst();
 
-			if (Program._displayHelp)
+			if (this._displayHelp)
 			{
 				DisplayHelpText();
-				Program.CurrentOperation = "display help text";
+				this.CurrentOperation = "display help text";
 
 				return;
 			}
-			else if (Program._displayLicense)
+			else if (this._displayLicense)
 			{
-				Program.CurrentOperation = "display license text";
+				this.CurrentOperation = "display license text";
 				DisplayLicenseText();
 
 				return;
 			}
-			else if (Program._displayVersion)
+			else if (this._displayVersion)
 			{
-				Program.CurrentOperation = "display the taskman version";
+				this.CurrentOperation = "display the taskman version";
 
 				Assembly entryAssembly = Assembly.GetExecutingAssembly();
 				AssemblyName assemblyName = entryAssembly.GetName();
@@ -180,7 +211,7 @@ namespace TaskMan
 				string productName = entryAssembly
 					.GetAssemblyAttributeValue<AssemblyProductAttribute, string>(attribute => attribute.Product);
 
-				Console.WriteLine(
+				_output.WriteLine(
 					"{0} version {1}.{2}.{3}",
 					productName,
 					assemblyName.Version.Major,
@@ -191,17 +222,17 @@ namespace TaskMan
 			}
 
 
-			Program.CurrentOperation = "read tasks from the task file";
-			List<Task> taskList = TaskReadFunction();
+			this.CurrentOperation = "read tasks from the task file";
+			List<Task> taskList = _readTasks();
 
 			if (TaskAddRegex.IsMatch(commandName))
 			{
-				Program.CurrentOperation = "add a new task";
+				this.CurrentOperation = "add a new task";
 
 				Task addedTask = AddTask(arguments, taskList);
-				TaskSaveFunction(taskList);
+				_saveTasks(taskList);
 
-				Console.WriteLine(
+				_output.WriteLine(
 					Messages.TaskWasAdded,
 					addedTask.Description,
 					addedTask.ID,
@@ -209,7 +240,7 @@ namespace TaskMan
 			}
 			else if (TaskDisplayRegex.IsMatch(commandName))
 			{
-				Program.CurrentOperation = "display tasks";
+				this.CurrentOperation = "display tasks";
 
 				Match regexMatch = TaskDisplayRegex.Match(commandName);
 				string displayEnding = regexMatch.Groups[2].ToString();
@@ -229,49 +260,49 @@ namespace TaskMan
 			}
 			else if (TaskDeleteRegex.IsMatch(commandName))
 			{
-				Program.CurrentOperation = "delete tasks";
+				this.CurrentOperation = "delete tasks";
 
 				Task deletedTask = DeleteTask(arguments, taskList);
 
 				if (taskList.Any())
 				{
-					TaskSaveFunction(taskList);
+					_saveTasks(taskList);
 				}
 				else
 				{
 					File.Delete(TASKS_FULL_NAME);
 				}
 
-				Console.WriteLine(
+				_output.WriteLine(
 					Messages.TaskWithIdWasDeleted, 
 					deletedTask.ID, 
 					deletedTask.Description);
 			}
 			else if (commandName.Equals("set"))
 			{
-				Program.CurrentOperation = "set task parameters";
+				this.CurrentOperation = "set task parameters";
 				SetTaskParameters(arguments, taskList);
 			}
 			else if (commandName.Equals("clear"))
 			{
-				Program.CurrentOperation = "clear the task list";
+				this.CurrentOperation = "clear the task list";
 
-				Console.Write(Messages.ClearConfirmationMessage);
+				_output.Write(Messages.ClearConfirmationMessage);
 
 				if (ConfirmActionRegex.IsMatch(Console.ReadLine()))
 				{
 					taskList.Clear();
 					File.Delete(TASKS_FULL_NAME);
-					Console.WriteLine(Messages.TaskListCleared);
+					_output.WriteLine(Messages.TaskListCleared);
 				}
 				else
 				{
-					Console.WriteLine(Messages.TaskListClearCancelled);
+					_output.WriteLine(Messages.TaskListClearCancelled);
 				}
 			}
 			else if (TaskCompleteRegex.IsMatch(commandName))
 			{
-				Program.CurrentOperation = "finish a task";
+				this.CurrentOperation = "finish a task";
 
 				int idToFinish;
 
@@ -285,14 +316,14 @@ namespace TaskMan
 				Task taskToFinish = taskList.TaskWithId(idToFinish);
 				taskToFinish.IsFinished = true;
 
-				TaskSaveFunction(taskList);
+				_saveTasks(taskList);
 
-				Console.WriteLine(Messages.TaskWasFinished, taskToFinish.ID, taskToFinish.Description);
+				_output.WriteLine(Messages.TaskWasFinished, taskToFinish.ID, taskToFinish.Description);
 				return;
 			}
 			else 
 			{
-				Program.CurrentOperation = "recognize the command";
+				this.CurrentOperation = "recognize the command";
 				throw new Exception(Messages.UnknownCommand);
 			}
 
@@ -319,7 +350,7 @@ namespace TaskMan
 		/// <param name="cliArguments">Command line arguments.</param>
 		/// <param name="taskList">Task list.</param>
 		/// <param name="displayCondition">Display condition.</param>
-		static void DisplayTasks(
+		void DisplayTasks(
 			LinkedList<string> cliArguments, 
 			List<Task> taskList, 
 			TaskDisplayCondition displayCondition)
@@ -328,7 +359,7 @@ namespace TaskMan
 			{ 
 				if (taskList.Count == 0)
 				{
-					Console.WriteLine(Messages.TaskListIsEmpty);
+					_output.WriteLine(Messages.TaskListIsEmpty);
 				}
 				else
 				{
@@ -353,14 +384,14 @@ namespace TaskMan
 
 				if (!taskToDisplay.MatchesDisplayCondition(displayCondition))
 				{
-					Console.WriteLine(Messages.TaskWithIdDoesNotMatchTheCondition, taskToDisplayId);
+					_output.WriteLine(Messages.TaskWithIdDoesNotMatchTheCondition, taskToDisplayId);
 				}
 
 				return;
 			}
 			else if (idRangeMatch.Success)
 			{
-				Program.CurrentOperation = "display tasks in the ID range";
+				this.CurrentOperation = "display tasks in the ID range";
 
 				int startingId;
 				int endingId;
@@ -384,7 +415,7 @@ namespace TaskMan
 				}
 				else
 				{
-					Console.WriteLine(
+					_output.WriteLine(
 						Messages.NoTasksInSpecifiedIdRangeWithCondition, 
 						displayCondition);
 				}
@@ -402,7 +433,7 @@ namespace TaskMan
 		/// </summary>
 		/// <param name="cliArguments">Command line arguments.</param>
 		/// <param name="taskList">Task list.</param>
-		static void SetTaskParameters(LinkedList<string> cliArguments, List<Task> taskList)
+		void SetTaskParameters(LinkedList<string> cliArguments, List<Task> taskList)
 		{
 			if (!cliArguments.Any())
 			{
@@ -434,9 +465,9 @@ namespace TaskMan
 				}
 
 				taskToUpdate.PriorityLevel = (Priority)priorityLevel;
-				TaskSaveFunction(taskList);
+				this._saveTasks(taskList);
 
-				Console.WriteLine(
+				_output.WriteLine(
 					Messages.TaskWithIdChangedParameter, 
 					taskToUpdate.ID,
 					taskToUpdate.Description,
@@ -450,8 +481,8 @@ namespace TaskMan
 				string oldDescription = taskToUpdate.Description;
 				taskToUpdate.Description = string.Join(" ", cliArguments);
 
-				TaskSaveFunction(taskList);
-				Console.WriteLine(
+				this._saveTasks(taskList);
+				_output.WriteLine(
 					Messages.TaskWithIdChangedParameter,
 					taskToUpdate.ID,
 					oldDescription,
@@ -469,8 +500,8 @@ namespace TaskMan
 
 				taskToUpdate.IsFinished = finishedFlag;
 
-				TaskSaveFunction(taskList);
-				Console.WriteLine(
+				_saveTasks(taskList);
+				_output.WriteLine(
 					Messages.TaskWithIdChangedParameter,
 					taskToUpdate.ID,
 					taskToUpdate.Description,
@@ -530,11 +561,11 @@ namespace TaskMan
 		/// <param name="cliArguments">Command line arguments.</param>
 		/// <param name="taskList">Task list.</param>
 		/// <returns>The <see cref="Task"/> object that has been deleted.</returns>
-		public static Task DeleteTask(LinkedList<string> cliArguments, List<Task> taskList)
+		public Task DeleteTask(LinkedList<string> cliArguments, List<Task> taskList)
 		{
 			if (!cliArguments.Any())
 			{
-				throw new Exception(string.Format(Messages.NoTaskIdProvided, Program.CurrentOperation));
+				throw new Exception(string.Format(Messages.NoTaskIdProvided, this.CurrentOperation));
 			}
 
 			int idToDelete;
