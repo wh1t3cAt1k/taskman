@@ -13,6 +13,9 @@ namespace TaskMan
 	{
 		List<Task> _savedTasks;
 
+		string _output;
+		string _errors;
+
 		[SetUp]
 		public void Setup()
 		{
@@ -34,6 +37,9 @@ namespace TaskMan
 					program.Run(command.Split(
 						new [] { ' ' },
 						StringSplitOptions.RemoveEmptyEntries));
+
+					_output = outputRedirect.ToString();
+					_errors = errorRedirect.ToString();
 				}
 			}
 		}
@@ -95,44 +101,29 @@ namespace TaskMan
 				Is.EqualTo(_savedTasks.Last().Description));
 		}
 
-		/*
 		[Test]
 		public void Test_LicenseFlag_OutputsLicense()
 		{
-			using (StringWriter output = new StringWriter())
-			{
-				Console.SetOut(output);
+			const string expectedSubstring = "GNU GENERAL PUBLIC LICENSE";
 
-				RunWithCommand("--license");
+			RunWithCommand("--license");
 
-				Assert.That(
-					output.ToString(),
-					Contains.Substring("GNU GENERAL PUBLIC LICENSE"));
-			}
+			Assert.That(
+				_output,
+				Contains.Substring(expectedSubstring));
+				
+			RunWithCommand("/license");
 
-			using (StringWriter output = new StringWriter())
-			{
-				Console.SetOut(output);
+			Assert.That(
+				_output,
+				Contains.Substring(expectedSubstring));
 
-				RunWithCommand("/license");
+			RunWithCommand("-license");
 
-				Assert.That(
-					output.ToString(),
-					Contains.Substring("GNU GENERAL PUBLIC LICENSE"));
-			}
-
-			using (StringWriter output = new StringWriter())
-			{
-				Console.SetOut(output);
-
-				RunWithCommand("-license");
-
-				Assert.That(
-					output.ToString(),
-					Contains.Substring("GNU GENERAL PUBLIC LICENSE"));
-			}
+			Assert.That(
+				_output,
+				Contains.Substring(expectedSubstring));
 		}
-		*/
 	}
 }
 
