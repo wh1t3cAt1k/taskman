@@ -46,62 +46,6 @@ namespace TaskMan
 		/// <value>The current operation.</value>
 		public string CurrentOperation { get; private set; }
 
-		private abstract class Flag
-		{
-			public string Name { get; private set; }
-			public string Alias { get; private set; }
-			public IEnumerable<string> MakesSenseWith { get; private set; }
-			public bool IsSet { get; protected set; }
-
-			public Flag(string name, string alias, IEnumerable<string> makesSenseWith = null)
-			{
-				this.Name = name;
-				this.Alias = alias;
-				this.IsSet = false;
-				this.MakesSenseWith = makesSenseWith ?? new string[0];
-			}
-
-			public abstract void AddToOptionSet(OptionSet optionSet);
-		}
-
-		private class Flag<T> : Flag
-		{
-			public T Value { get; private set; }
-
-			public Flag(string name, string alias, IEnumerable<string> makesSenseWith = null)
-				: base(name, alias, makesSenseWith)
-			{
-				this.Value = default(T);
-			}
-				
-			public static Flag<T> Create(string name, string alias, params string[] makesSenseWith)
-			{
-				return new Flag<T>(name, alias, makesSenseWith);
-			}
-
-			public static implicit operator T(Flag<T> flag)
-			{
-				return flag.Value;
-			}
-
-			public void Set(T value)
-			{
-				this.IsSet = true;
-				this.Value = value;
-			}
-
-			public Flag<T> RegisterIn(ICollection<Flag> flagCollection)
-			{
-				flagCollection.Add(this);
-				return this;
-			}
-
-			public override void AddToOptionSet(OptionSet optionSet)
-			{
-				optionSet.Add(this.Alias, (T value) => this.Set(value));
-			}
-		}
-
 		List<Flag> flags;
 
 		Flag<bool> _displayHelp = Flag<bool>.Create(nameof(_displayHelp), "?|help");
@@ -119,14 +63,14 @@ namespace TaskMan
 			TextWriter outputStream = null,
 			TextWriter errorStream = null)
 		{
+			this.OptionSet = new OptionSet();
+
 			flags = new List<Flag> {
 				_displayHelp,
 				_displayLicense,
 				_displayVersion
 			};
-
-			this.OptionSet = new OptionSet();
-
+				
 			flags.ForEach(flag => flag.AddToOptionSet(this.OptionSet));
 
 			this._readTasks = taskReadFunction ?? this._readTasks;

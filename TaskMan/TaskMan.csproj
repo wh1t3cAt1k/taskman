@@ -91,6 +91,7 @@
     <Compile Include="UnitTests.cs" />
     <Compile Include="TaskExtensions.cs" />
     <Compile Include="External\Mono.Options-PCL.cs" />
+    <Compile Include="Flag.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
