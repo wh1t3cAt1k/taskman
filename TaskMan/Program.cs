@@ -62,7 +62,7 @@ namespace TaskMan
 			TextWriter errorStream = null)
 		{
 			this.OptionSet = new OptionSet {
-				{ "h|help", value => _displayHelp = (value != null) },
+				{ "?|help", value => _displayHelp = (value != null) },
 				{ "license", value => _displayLicense = (value != null) },
 				{ "version", value => _displayVersion = (value != null) },
 			};
