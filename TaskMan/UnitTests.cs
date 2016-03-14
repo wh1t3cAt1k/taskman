@@ -108,21 +108,63 @@ namespace TaskMan
 
 			RunWithCommand("--license");
 
-			Assert.That(
-				_output,
-				Contains.Substring(expectedSubstring));
-				
+			string firstOutput = _output;
+
 			RunWithCommand("/license");
 
-			Assert.That(
-				_output,
-				Contains.Substring(expectedSubstring));
+			string secondOutput = _output;
 
 			RunWithCommand("-license");
 
+			string thirdOutput = _output;
+
 			Assert.That(
-				_output,
+				firstOutput,
 				Contains.Substring(expectedSubstring));
+
+			Assert.That(
+				secondOutput,
+				Contains.Substring(expectedSubstring));
+
+			Assert.That(
+				thirdOutput,
+				Contains.Substring(expectedSubstring));
+
+			Assert.AreEqual(firstOutput, secondOutput);
+			Assert.AreEqual(firstOutput, thirdOutput);
+		}
+
+		[Test]
+		public void Test_VersionFlag_OutputsVersion()
+		{
+			const string expectedSubstring = "version";
+
+			RunWithCommand("--version");
+
+			string firstOutput = _output;
+
+			RunWithCommand("/version");
+
+			string secondOutput = _output;
+
+			RunWithCommand("-version");
+
+			string thirdOutput = _output;
+
+			Assert.That(
+				firstOutput,
+				Contains.Substring(expectedSubstring));
+
+			Assert.That(
+				secondOutput,
+				Contains.Substring(expectedSubstring));
+
+			Assert.That(
+				thirdOutput,
+				Contains.Substring(expectedSubstring));
+
+			Assert.AreEqual(firstOutput, secondOutput);
+			Assert.AreEqual(firstOutput, thirdOutput);
 		}
 	}
 }
