@@ -9,12 +9,14 @@ namespace TaskMan
 		public const string CouldNotReadTaskList = "An error occurred while trying to read task list: {0}";
 		public const string ErrorPerformingOperation = "Cannot {0}: {1}";
 		public const string FatalErrorReadingFile = "Fatal error occurred while reading {0}. File can be corrupt.";
+		public const string EntityDoesNotMakeSenseWithEntity = "{0} does not make sense with {1}.";
 		public const string InsufficientSetParameters = "Insufficient parameters in 'set' command. " + Messages.TypeHelpForCommandSyntax;
 		public const string InvalidTaskId = "Invalid task ID provided.";
 		public const string InvalidTaskIdRange = "Invalid task ID range: the starting ID should not exceed the ending ID.";
 		public const string InvalidSetParameters = "Invalid 'set' command syntax. " + Messages.TypeHelpForCommandSyntax;
 		public const string MakeHelpSucceeded = "Successfully created a help file.";
-		public const string NewTaskList = "New task list:";
+		public const string MoreThanOneCommandMatchesInput = "More than one command matches the given input. Please be more specific.";
+		public const string NewTaskList = "New task list: ";
 		public const string NoDescriptionSpecified = "A task description is missing.";
 		public const string NoTaskWithSpecifiedId = "There is no task with the specified ID: {0}.";
 		public const string NoTaskIdProvided = "You should specify a task ID to {0}.";

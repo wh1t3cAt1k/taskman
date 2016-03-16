@@ -46,13 +46,28 @@ namespace TaskMan
 		/// <value>The current operation.</value>
 		public string CurrentOperation { get; private set; }
 
-		List<Flag> flags;
+		List<Flag> _flags;
 
-		Flag<bool> _displayHelp = Flag<bool>.Create(nameof(_displayHelp), "?|help");
-		Flag<bool> _displayLicense = Flag<bool>.Create(nameof(_displayLicense), "license");
-		Flag<bool> _displayVersion = Flag<bool>.Create(nameof(_displayVersion), "version");
+		Flag<bool> _displayHelpFlag = new Flag<bool>(nameof(_displayHelpFlag), "?|help");
+		Flag<bool> _displayLicenseFlag = new Flag<bool>(nameof(_displayLicenseFlag), "license");
+		Flag<bool> _displayVersionFlag = new Flag<bool>(nameof(_displayVersionFlag), "version");
 
-		private OptionSet OptionSet;
+		Flag<string> _priorityFlag = new Flag<string>(nameof(_priorityFlag), "p|priority");
+		Flag<string> _descriptionFlag = new Flag<string>(nameof(_descriptionFlag), "d|description");
+
+		Flag<bool> _onlyPendingFilterFlag = new Flag<bool>(nameof(_onlyPendingFilterFlag), "P|pending|unfinished");
+		Flag<bool> _onlyFinishedFilterFlag = new Flag<bool>(nameof(_onlyFinishedFilterFlag), "F|finished|completed");
+		Flag<string> _descriptionRegexFilterFlag = new Flag<string>(nameof(_descriptionRegexFilterFlag), "r|like|matching");
+
+		List<Command> _commands;
+
+		Command _addTask = new Command(nameof(_addTask), TaskAddRegex);
+		Command _removeTasks = new Command(nameof(_removeTasks), TaskDeleteRegex);
+		Command _completeTasks = new Command(nameof(_completeTasks), TaskCompleteRegex);
+		Command _showTasks = new Command(nameof(_showTasks), TaskDisplayRegex);
+		Command _updateTasks = new Command(nameof(_updateTasks), TaskUpdateRegex);
+
+		private OptionSet _optionSet;
 
 		TextWriter _output = Console.Out;
 		TextWriter _error = Console.Error;
@@ -63,15 +78,28 @@ namespace TaskMan
 			TextWriter outputStream = null,
 			TextWriter errorStream = null)
 		{
-			this.OptionSet = new OptionSet();
+			this._optionSet = new OptionSet();
 
-			flags = new List<Flag> {
-				_displayHelp,
-				_displayLicense,
-				_displayVersion
+			_flags = new List<Flag> {
+				_displayHelpFlag,
+				_displayLicenseFlag,
+				_displayVersionFlag,
+				_priorityFlag,
+				_descriptionFlag,
+				_onlyPendingFilterFlag,
+				_onlyFinishedFilterFlag,
+				_descriptionRegexFilterFlag
 			};
 				
-			flags.ForEach(flag => flag.AddToOptionSet(this.OptionSet));
+			_flags.ForEach(flag => flag.AddToOptionSet(this._optionSet));
+
+			_commands = new List<Command> {
+				_addTask,
+				_removeTasks,
+				_completeTasks,
+				_showTasks,
+				_updateTasks,
+			};
 
 			this._readTasks = taskReadFunction ?? this._readTasks;
 			this._saveTasks = taskSaveFunction ?? this._saveTasks;
@@ -104,6 +132,7 @@ namespace TaskMan
 		static readonly Regex TaskSetDescriptionRegex = new Regex(@"^description$", StandardRegexOptions);
 		static readonly Regex TaskSetFinishedRegex = new Regex(@"(^finished$)|(^completed$)|(^accomplished$)", StandardRegexOptions);
 		static readonly Regex TaskSetPriorityRegex = new Regex(@"(^priority$)|(^importance$)", StandardRegexOptions);
+		static readonly Regex TaskUpdateRegex = new Regex(@"(^update$)|(^modify$)", StandardRegexOptions);
 
 		/// <summary>
 		/// Sets the function that would be called to read the task list.
@@ -173,41 +202,71 @@ namespace TaskMan
 
 		public void Run(IEnumerable<string> commandLineArguments)
 		{
-			List<string> optionsRemainder = OptionSet.Parse(commandLineArguments);
-
-			LinkedList<string> arguments = new LinkedList<string>(optionsRemainder);
-
-			if (!arguments.Any()) 
-			{
-				arguments = new LinkedList<string>(new [] { "showall" }); 
-			}
-
 			if (!Directory.Exists(TaskMan.APP_DATA_PATH))
 			{
 				this.CurrentOperation = "create the app subdirectory in the application data folder";
 				Directory.CreateDirectory(TaskMan.APP_DATA_PATH);
 			}
 
-			// Retrieve and pop the command name from the arguments.
-			// -
-			string commandName = arguments.First.Value;
+			this.CurrentOperation = "parse command line arguments";
+
+			LinkedList<string> arguments =
+				new LinkedList<string>(_optionSet.Parse(commandLineArguments));
+
+			this.CurrentOperation = "recognize the command";
+
+			if (!arguments.Any()) 
+			{
+				arguments = new LinkedList<string>(new [] { "show" }); 
+			}
+
+			string commandName = arguments.First?.Value;
+
+			IEnumerable<Command> matchingCommands = 
+				_commands.MatchingCommands(commandName);
+
+			if (!matchingCommands.Any())
+			{
+				throw new Exception(Messages.UnknownCommand);
+			}
+			else if (!matchingCommands.IsSingleton())
+			{
+				throw new Exception(Messages.MoreThanOneCommandMatchesInput);
+			}
+
+			Command command = matchingCommands.First();
+
+			this.CurrentOperation = "ensure flag consistency";
+
+			IEnumerable<Flag> unsupportedFlags = _flags.Where(
+				flag => flag.IsSet && 
+				!command.SupportedFlags.Contains(flag));
+
+			if (unsupportedFlags.Any())
+			{
+				throw new Exception(string.Format(
+					Messages.EntityDoesNotMakeSenseWithEntity,
+					unsupportedFlags.First().Alias,
+					command.Name));
+			}
+
 			arguments.RemoveFirst();
 
-			if (this._displayHelp)
+			if (_displayHelpFlag)
 			{
-				DisplayHelpText();
 				this.CurrentOperation = "display help text";
+				DisplayHelpText();
 
 				return;
 			}
-			else if (this._displayLicense)
+			else if (_displayLicenseFlag)
 			{
 				this.CurrentOperation = "display license text";
 				DisplayLicenseText();
 
 				return;
 			}
-			else if (this._displayVersion)
+			else if (_displayVersionFlag)
 			{
 				this.CurrentOperation = "display the taskman version";
 

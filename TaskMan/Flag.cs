@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 using Mono.Options;
 
@@ -50,11 +51,6 @@ namespace TaskMan
 			this.Value = default(T);
 		}
 
-		public static Flag<T> Create(string name, string alias, params string[] makesSenseWith)
-		{
-			return new Flag<T>(name, alias, makesSenseWith);
-		}
-
 		public static implicit operator T(Flag<T> flag)
 		{
 			return flag.Value;
@@ -74,7 +70,19 @@ namespace TaskMan
 		/// </summary>
 		public override void AddToOptionSet(OptionSet optionSet)
 		{
-			optionSet.Add(this.Alias, (T value) => this.Set(value));
+			if (typeof(T) == typeof(bool))
+			{
+				// Special case for boolean flags, because
+				// Mono.Options parser doesn't actually convert
+				// boolean flags to type bool.
+				// -
+				optionSet.Add(this.Alias, value =>
+					this.Set((T)(object)(value != null)));
+			}
+			else
+			{
+				optionSet.Add(this.Alias, (T value) => this.Set(value));
+			}
 		}
 	}
 }

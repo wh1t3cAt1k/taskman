@@ -46,6 +46,15 @@ namespace TaskMan
 				}
 			}
 		}
+
+		/// <summary>
+		/// Determines if the specified sequence contains exactly one element.
+		/// </summary>
+		public static bool IsSingleton<T>(this IEnumerable<T> sequence)
+		{
+			IEnumerator<T> enumerator = sequence.GetEnumerator();
+			return enumerator.MoveNext() && !enumerator.MoveNext();
+		}
 	}
 }
 
