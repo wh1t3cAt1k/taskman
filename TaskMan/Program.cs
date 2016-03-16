@@ -46,7 +46,7 @@ namespace TaskMan
 		/// <value>The current operation.</value>
 		public string CurrentOperation { get; private set; }
 
-		List<Flag> _flags;
+		IEnumerable<Flag> _flags;
 
 		Flag<bool> _displayHelpFlag = new Flag<bool>(nameof(_displayHelpFlag), "?|help");
 		Flag<bool> _displayLicenseFlag = new Flag<bool>(nameof(_displayLicenseFlag), "license");
@@ -59,7 +59,7 @@ namespace TaskMan
 		Flag<bool> _onlyFinishedFilterFlag = new Flag<bool>(nameof(_onlyFinishedFilterFlag), "F|finished|completed");
 		Flag<string> _descriptionRegexFilterFlag = new Flag<string>(nameof(_descriptionRegexFilterFlag), "r|like|matching");
 
-		List<Command> _commands;
+		IEnumerable<Command> _commands;
 
 		Command _addTask = new Command(nameof(_addTask), TaskAddRegex);
 		Command _removeTasks = new Command(nameof(_removeTasks), TaskDeleteRegex);
@@ -80,26 +80,19 @@ namespace TaskMan
 		{
 			this._optionSet = new OptionSet();
 
-			_flags = new List<Flag> {
-				_displayHelpFlag,
-				_displayLicenseFlag,
-				_displayVersionFlag,
-				_priorityFlag,
-				_descriptionFlag,
-				_onlyPendingFilterFlag,
-				_onlyFinishedFilterFlag,
-				_descriptionRegexFilterFlag
-			};
+			_flags = typeof(TaskMan)
+				.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+				.Where(fieldInfo => typeof(Flag).IsAssignableFrom(fieldInfo.FieldType))
+				.Select(fieldInfo => fieldInfo.GetValue(this))
+				.Cast<Flag>();
 				
 			_flags.ForEach(flag => flag.AddToOptionSet(this._optionSet));
 
-			_commands = new List<Command> {
-				_addTask,
-				_removeTasks,
-				_completeTasks,
-				_showTasks,
-				_updateTasks,
-			};
+			_commands = typeof(TaskMan)
+				.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+				.Where(fieldInfo => fieldInfo.FieldType == typeof(Command))
+				.Select(fieldInfo => fieldInfo.GetValue(this))
+				.Cast<Command>();
 
 			this._readTasks = taskReadFunction ?? this._readTasks;
 			this._saveTasks = taskSaveFunction ?? this._saveTasks;
