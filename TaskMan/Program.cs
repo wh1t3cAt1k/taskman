@@ -8,6 +8,8 @@ using System.Text.RegularExpressions;
 
 using Mono.Options;
 
+using TaskMan.Control;
+
 namespace TaskMan
 {
 	public class Program
@@ -52,12 +54,27 @@ namespace TaskMan
 		Flag<bool> _displayLicenseFlag = new Flag<bool>(nameof(_displayLicenseFlag), "license");
 		Flag<bool> _displayVersionFlag = new Flag<bool>(nameof(_displayVersionFlag), "version");
 
-		Flag<string> _priorityFlag = new Flag<string>(nameof(_priorityFlag), "p|priority");
-		Flag<string> _descriptionFlag = new Flag<string>(nameof(_descriptionFlag), "d|description");
+		Flag<string> _descriptionFlag = new Flag<string>(nameof(_descriptionFlag), "d|desc|description");
 
-		Flag<bool> _onlyPendingFilterFlag = new Flag<bool>(nameof(_onlyPendingFilterFlag), "P|pending|unfinished");
-		Flag<bool> _onlyFinishedFilterFlag = new Flag<bool>(nameof(_onlyFinishedFilterFlag), "F|finished|completed");
-		Flag<string> _descriptionRegexFilterFlag = new Flag<string>(nameof(_descriptionRegexFilterFlag), "r|like|matching");
+		Flag<string> _priorityFlag = new FilterFlag<string>(
+			nameof(_priorityFlag), 
+			"p|priority",
+			filterPredicate: (flagValue, Task) => { throw new NotImplementedException(); });
+		
+		Flag<bool> _onlyPendingFilterFlag = new FilterFlag<bool>(
+			nameof(_onlyPendingFilterFlag), 
+			"P|pending|unfinished",
+			filterPredicate: (_, task) => task.IsFinished == false);
+		
+		Flag<bool> _onlyFinishedFilterFlag = new FilterFlag<bool>(
+			nameof(_onlyFinishedFilterFlag), 
+			"F|finished|completed",
+			filterPredicate: (_, task) => task.IsFinished == true);
+		
+		Flag<string> _descriptionRegexFilterFlag = new FilterFlag<string>(
+			nameof(_descriptionRegexFilterFlag), 
+			"r|like|matching",
+			filterPredicate: (pattern, task) => Regex.IsMatch(task.Description, pattern));
 
 		IEnumerable<Command> _commands;
 

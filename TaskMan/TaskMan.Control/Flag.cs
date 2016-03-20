@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 using Mono.Options;
 
-namespace TaskMan
+namespace TaskMan.Control
 {
 	/// <summary>
 	/// Represents a command line flag 
@@ -48,7 +48,7 @@ namespace TaskMan
 	/// <summary>
 	/// Represents a command line flag with an explicit type information.
 	/// </summary>
-	public sealed class Flag<T> : Flag
+	public class Flag<T> : Flag
 	{
 		T _value;
 
@@ -94,7 +94,7 @@ namespace TaskMan
 			this.Value = value;
 		}
 
-		public void Reset()
+		public override void Reset()
 		{
 			this.IsSet = false;
 			this.Value = default(T);

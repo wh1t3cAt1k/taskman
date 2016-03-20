@@ -2,9 +2,7 @@
 using System.Linq;
 using System.Text.RegularExpressions;
 
-using Mono.Options;
-
-namespace TaskMan
+namespace TaskMan.Control
 {
 	/// <summary>
 	/// Represents a TaskMan verb command (e.g. add, delete, etc.)

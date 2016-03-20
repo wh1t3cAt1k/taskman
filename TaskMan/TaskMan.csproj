@@ -90,9 +90,11 @@
     <Compile Include="UnitTests.cs" />
     <Compile Include="TaskExtensions.cs" />
     <Compile Include="External\Mono.Options-PCL.cs" />
-    <Compile Include="Flag.cs" />
-    <Compile Include="Command.cs" />
     <Compile Include="EnumerableExtensions.cs" />
+    <Compile Include="TaskMan.Control\Flag.cs" />
+    <Compile Include="TaskMan.Control\Command.cs" />
+    <Compile Include="TaskMan.Control\FilterFlag.cs" />
+    <Compile Include="TaskMan.Control\ITaskFilter.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
@@ -138,5 +140,8 @@
     <EmbeddedResource Include="HELP.txt">
       <Link>HELP.txt</Link>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="TaskMan.Control\" />
   </ItemGroup>
 </Project>
