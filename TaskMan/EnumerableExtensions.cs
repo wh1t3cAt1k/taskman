@@ -7,7 +7,7 @@ namespace TaskMan
 	/// A static class providing various extension methods for
 	/// <see cref="IEnumerable&lt;T&gt;"/> generic sequences.
 	/// </summary>
-	public static class IEnumerableExtensions
+	public static class EnumerableExtensions
 	{
 		/// <summary>
 		/// Peforms an action upon each member of a sequence.

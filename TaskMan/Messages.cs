@@ -9,6 +9,7 @@ namespace TaskMan
 		public const string CouldNotReadTaskList = "An error occurred while trying to read task list: {0}";
 		public const string ErrorPerformingOperation = "Cannot {0}: {1}";
 		public const string FatalErrorReadingFile = "Fatal error occurred while reading {0}. File can be corrupt.";
+		public const string FlagNotSet = "The {0} flag value has not been set.";
 		public const string EntityDoesNotMakeSenseWithEntity = "{0} does not make sense with {1}.";
 		public const string InsufficientSetParameters = "Insufficient parameters in 'set' command. " + Messages.TypeHelpForCommandSyntax;
 		public const string InvalidTaskId = "Invalid task ID provided.";

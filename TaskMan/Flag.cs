@@ -37,17 +37,51 @@ namespace TaskMan
 		/// Register this instance within a <see cref="Mono.Options.OptionSet"/>.
 		/// </summary>
 		public abstract void AddToOptionSet(OptionSet optionSet);
+
+		/// <summary>
+		/// Resets the flag so that <see cref="Flag.IsSet"/> 
+		/// property returns <c>false</c>.
+		/// </summary>
+		public abstract void Reset();
 	}
 
-	public class Flag<T> : Flag
+	/// <summary>
+	/// Represents a command line flag with an explicit type information.
+	/// </summary>
+	public sealed class Flag<T> : Flag
 	{
-		public T Value { get; private set; }
+		T _value;
+
+		/// <summary>
+		/// Gets the flag value.
+		/// </summary>
+		/// <exception cref="System.InvalidOperationException">
+		/// Thrown if the flag has not been explicitly set.
+		/// </exception>
+		public T Value 
+		{ 
+			get
+			{
+				if (this.IsSet)
+				{
+					return _value;
+				}
+				else
+				{
+					throw new InvalidOperationException(string.Format(
+						Messages.FlagNotSet,
+						this.Name));
+				}
+			}
+			private set 
+			{
+				_value = value;
+			}
+		}
 
 		public Flag(string name, string alias)
 			: base(name, alias)
-		{
-			this.Value = default(T);
-		}
+		{ }
 
 		public static implicit operator T(Flag<T> flag)
 		{
@@ -58,6 +92,12 @@ namespace TaskMan
 		{
 			this.IsSet = true;
 			this.Value = value;
+		}
+
+		public void Reset()
+		{
+			this.IsSet = false;
+			this.Value = default(T);
 		}
 
 		/// <summary>
