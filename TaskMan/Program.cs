@@ -62,9 +62,9 @@ namespace TaskMan
 		IEnumerable<Command> _commands;
 
 		Command _addTask = new Command(nameof(_addTask), TaskAddRegex);
-		Command _removeTasks = new Command(nameof(_removeTasks), TaskDeleteRegex);
+		Command _deleteTasks = new Command(nameof(_deleteTasks), TaskDeleteRegex);
 		Command _completeTasks = new Command(nameof(_completeTasks), TaskCompleteRegex);
-		Command _showTasks = new Command(nameof(_showTasks), TaskDisplayRegex);
+		Command _displayTasks = new Command(nameof(_displayTasks), TaskDisplayRegex);
 		Command _updateTasks = new Command(nameof(_updateTasks), TaskUpdateRegex);
 
 		private OptionSet _optionSet;
@@ -206,60 +206,26 @@ namespace TaskMan
 			LinkedList<string> arguments =
 				new LinkedList<string>(_optionSet.Parse(commandLineArguments));
 
-			this.CurrentOperation = "recognize the command";
-
-			if (!arguments.Any()) 
-			{
-				arguments = new LinkedList<string>(new [] { "show" }); 
-			}
-
 			string commandName = arguments.First?.Value;
 
-			IEnumerable<Command> matchingCommands = 
-				_commands.MatchingCommands(commandName);
-
-			if (!matchingCommands.Any())
-			{
-				throw new Exception(Messages.UnknownCommand);
-			}
-			else if (!matchingCommands.IsSingleton())
-			{
-				throw new Exception(Messages.MoreThanOneCommandMatchesInput);
-			}
-
-			Command command = matchingCommands.First();
-
-			this.CurrentOperation = "ensure flag consistency";
-
-			IEnumerable<Flag> unsupportedFlags = _flags.Where(
-				flag => flag.IsSet && 
-				!command.SupportedFlags.Contains(flag));
-
-			if (unsupportedFlags.Any())
-			{
-				throw new Exception(string.Format(
-					Messages.EntityDoesNotMakeSenseWithEntity,
-					unsupportedFlags.First().Alias,
-					command.Name));
-			}
-
-			arguments.RemoveFirst();
-
-			if (_displayHelpFlag)
+			// Handle version, license and general help flags
+			// that work without an explicit command name.
+			// -
+			if (commandName == null && _displayHelpFlag)
 			{
 				this.CurrentOperation = "display help text";
 				DisplayHelpText();
 
 				return;
 			}
-			else if (_displayLicenseFlag)
+			else if (commandName == null && _displayLicenseFlag)
 			{
 				this.CurrentOperation = "display license text";
 				DisplayLicenseText();
 
 				return;
 			}
-			else if (_displayVersionFlag)
+			else if (commandName == null && _displayVersionFlag)
 			{
 				this.CurrentOperation = "display the taskman version";
 
@@ -279,11 +245,46 @@ namespace TaskMan
 				return;
 			}
 
+			this.CurrentOperation = "recognize the command";
+
+			if (commandName == null)
+			{
+				arguments = new LinkedList<string>(new [] { "show" }); 
+			}
+
+			IEnumerable<Command> matchingCommands = _commands.Matching(commandName);
+
+			if (!matchingCommands.Any())
+			{
+				throw new Exception(Messages.UnknownCommand);
+			}
+			else if (!matchingCommands.IsSingleton())
+			{
+				throw new Exception(Messages.MoreThanOneCommandMatchesInput);
+			}
+
+			Command command = matchingCommands.Single();
+
+			this.CurrentOperation = "ensure flag consistency";
+
+			IEnumerable<Flag> unsupportedFlags = _flags.Where(
+				flag => flag.IsSet && 
+				!command.SupportedFlags.Contains(flag));
+
+			if (unsupportedFlags.Any())
+			{
+				throw new Exception(string.Format(
+					Messages.EntityDoesNotMakeSenseWithEntity,
+					unsupportedFlags.First().Alias,
+					command.Name));
+			}
+
+			arguments.RemoveFirst();
 
 			this.CurrentOperation = "read tasks from the task file";
 			List<Task> taskList = _readTasks();
 
-			if (TaskAddRegex.IsMatch(commandName))
+			if (command == _addTask)
 			{
 				this.CurrentOperation = "add a new task";
 
@@ -296,7 +297,7 @@ namespace TaskMan
 					addedTask.ID,
 					addedTask.PriorityLevel);
 			}
-			else if (TaskDisplayRegex.IsMatch(commandName))
+			else if (command == _displayTasks)
 			{
 				this.CurrentOperation = "display tasks";
 
@@ -316,7 +317,7 @@ namespace TaskMan
 					DisplayTasks(arguments, taskList, TaskDisplayCondition.Finished);
 				}
 			}
-			else if (TaskDeleteRegex.IsMatch(commandName))
+			else if (command == _deleteTasks)
 			{
 				this.CurrentOperation = "delete tasks";
 
@@ -336,7 +337,7 @@ namespace TaskMan
 					deletedTask.ID, 
 					deletedTask.Description);
 			}
-			else if (commandName.Equals("set"))
+			else if (command == _updateTasks)
 			{
 				this.CurrentOperation = "set task parameters";
 				SetTaskParameters(arguments, taskList);
@@ -358,7 +359,7 @@ namespace TaskMan
 					_output.WriteLine(Messages.TaskListClearCancelled);
 				}
 			}
-			else if (TaskCompleteRegex.IsMatch(commandName))
+			else if (command == _completeTasks)
 			{
 				this.CurrentOperation = "finish a task";
 
@@ -377,15 +378,7 @@ namespace TaskMan
 				_saveTasks(taskList);
 
 				_output.WriteLine(Messages.TaskWasFinished, taskToFinish.ID, taskToFinish.Description);
-				return;
 			}
-			else 
-			{
-				this.CurrentOperation = "recognize the command";
-				throw new Exception(Messages.UnknownCommand);
-			}
-
-			return;
 		}
 
 		/// <summary>

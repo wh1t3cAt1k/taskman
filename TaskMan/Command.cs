@@ -45,7 +45,7 @@ namespace TaskMan
 		/// Returns a set of commands whose regular
 		/// expressions make a match with the provided value.
 		/// </summary>
-		public static IEnumerable<Command> MatchingCommands(this IEnumerable<Command> commands, string expression)
+		public static IEnumerable<Command> Matching(this IEnumerable<Command> commands, string expression)
 		{
 			return
 				commands.Where(command => command.RegularExpression.IsMatch(expression));
