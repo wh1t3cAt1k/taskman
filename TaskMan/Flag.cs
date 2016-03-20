@@ -6,7 +6,8 @@ using Mono.Options;
 namespace TaskMan
 {
 	/// <summary>
-	/// Represents a command line flag (without actual type and value information).
+	/// Represents a command line flag 
+	/// (without any actual flag value type information).
 	/// </summary>
 	public abstract class Flag
 	{
@@ -14,25 +15,22 @@ namespace TaskMan
 		/// Gets the name of the flag.
 		/// </summary>
 		public string Name { get; private set; }
+
 		/// <summary>
 		/// Gets the alias in the format of <see cref="Mono.Options.Option"/> prototype.
 		/// </summary>
 		public string Alias { get; private set; }
-		/// <summary>
-		/// Gets the set of commands that this flag makes sense with.
-		/// </summary>
-		public IEnumerable<string> MakesSenseWith { get; private set; }
+
 		/// <summary>
 		/// Gets the value indicating whether the flag has been explicitly set.
 		/// </summary>
 		public bool IsSet { get; protected set; }
 
-		public Flag(string name, string alias, IEnumerable<string> makesSenseWith = null)
+		public Flag(string name, string alias)
 		{
 			this.Name = name;
 			this.Alias = alias;
 			this.IsSet = false;
-			this.MakesSenseWith = makesSenseWith ?? new string[0];
 		}
 
 		/// <summary>
@@ -45,8 +43,8 @@ namespace TaskMan
 	{
 		public T Value { get; private set; }
 
-		public Flag(string name, string alias, IEnumerable<string> makesSenseWith = null)
-			: base(name, alias, makesSenseWith)
+		public Flag(string name, string alias)
+			: base(name, alias)
 		{
 			this.Value = default(T);
 		}
@@ -83,6 +81,18 @@ namespace TaskMan
 			{
 				optionSet.Add(this.Alias, (T value) => this.Set(value));
 			}
+		}
+	}
+
+	public static class FlagCollectionExtensions
+	{
+		public static OptionSet GetOptionSet(this IEnumerable<Flag> flagCollection)
+		{
+			OptionSet resultOptionSet = new OptionSet();
+
+			flagCollection.ForEach(flag => flag.AddToOptionSet(resultOptionSet));
+
+			return resultOptionSet;
 		}
 	}
 }

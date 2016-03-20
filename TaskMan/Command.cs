@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Text.RegularExpressions;
 
+using Mono.Options;
+
 namespace TaskMan
 {
 	/// <summary>
@@ -22,7 +24,7 @@ namespace TaskMan
 		/// <summary>
 		/// Gets the set of flags supported by this command.
 		/// </summary>
-		public IEnumerable<Flag> SupportedFlags { get; private set; } 
+		public IEnumerable<Flag> SupportedFlags { get; private set; }
 
 		public Command(string name, string regexPattern, params Flag[] supportedFlags)
 			: this(
