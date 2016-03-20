@@ -115,7 +115,18 @@ namespace TaskMan.Control
 				// boolean flags to type bool.
 				// -
 				optionSet.Add(this.Alias, value =>
-					this.Set((T)(object)(value != null)));
+					this.Set(
+						(T)(object)(value != null)));
+			}
+			else if (typeof(T).IsSubclassOf(typeof(Enum)))
+			{
+				// Special case for enum-type flags, because
+				// we want to parse both integer and string
+				// representations of enum values.
+				// -
+				optionSet.Add(this.Alias, value => 
+					this.Set(
+						(T)Enum.Parse(typeof(T), value)));
 			}
 			else
 			{
