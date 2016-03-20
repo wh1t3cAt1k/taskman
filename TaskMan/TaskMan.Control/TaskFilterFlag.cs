@@ -10,7 +10,7 @@ namespace TaskMan.Control
 	/// A flag that is capable of filtering a task sequence
 	/// using the provided predicate function.
 	/// </summary>
-	public class FilterFlag<T>: Flag<T>, ITaskFilter
+	public class TaskFilterFlag<T>: Flag<T>, ITaskFilter
 	{
 		readonly Func<T, Task, bool> _filterPredicate;
 
@@ -23,7 +23,7 @@ namespace TaskMan.Control
 		/// function argument), must return a boolean value indicating whether 
 		/// the task object must be included into the filtered sequence.
 		/// </param>
-		public FilterFlag(string name, string alias, Func<T, Task, bool> filterPredicate)
+		public TaskFilterFlag(string name, string alias, Func<T, Task, bool> filterPredicate)
 			: base(name, alias)
 		{
 			if (filterPredicate == null)

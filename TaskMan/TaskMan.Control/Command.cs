@@ -24,14 +24,14 @@ namespace TaskMan.Control
 		/// </summary>
 		public IEnumerable<Flag> SupportedFlags { get; private set; }
 
-		public Command(string name, string regexPattern, params Flag[] supportedFlags)
+		public Command(string name, string regexPattern, IEnumerable<Flag> supportedFlags)
 			: this(
 				name, 
 				new Regex(regexPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase), 
 				supportedFlags)
 		{ }
 
-		public Command(string name, Regex regularExpression, params Flag[] supportedFlags)
+		public Command(string name, Regex regularExpression, IEnumerable<Flag> supportedFlags)
 		{
 			this.Name = name;
 			this.RegularExpression = regularExpression;

@@ -91,10 +91,10 @@
     <Compile Include="EnumerableExtensions.cs" />
     <Compile Include="TaskMan.Control\Flag.cs" />
     <Compile Include="TaskMan.Control\Command.cs" />
-    <Compile Include="TaskMan.Control\FilterFlag.cs" />
     <Compile Include="TaskMan.Control\ITaskFilter.cs" />
     <Compile Include="TaskMan.Objects\Task.cs" />
     <Compile Include="TaskMan.Objects\Priority.cs" />
+    <Compile Include="TaskMan.Control\TaskFilterFlag.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">

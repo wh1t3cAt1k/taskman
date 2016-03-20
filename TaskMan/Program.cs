@@ -54,36 +54,42 @@ namespace TaskMan
 		Flag<bool> _displayHelpFlag = new Flag<bool>(nameof(_displayHelpFlag), "?|help");
 		Flag<bool> _displayLicenseFlag = new Flag<bool>(nameof(_displayLicenseFlag), "license");
 		Flag<bool> _displayVersionFlag = new Flag<bool>(nameof(_displayVersionFlag), "version");
+		Flag<bool> _interactiveFlag = new Flag<bool>(nameof(_interactiveFlag), "i|interactive");
 
 		Flag<string> _descriptionFlag = new Flag<string>(nameof(_descriptionFlag), "d|desc|description");
 
-		Flag<string> _priorityFlag = new FilterFlag<string>(
+		Flag<string> _priorityFlag = new TaskFilterFlag<string>(
 			nameof(_priorityFlag), 
-			"p|priority",
-			filterPredicate: (flagValue, Task) => { throw new NotImplementedException(); });
-		
-		Flag<bool> _onlyPendingFilterFlag = new FilterFlag<bool>(
+			"p=|priority=",
+			filterPredicate: (flagValue, task) => { throw new NotImplementedException(); });
+
+		Flag<string> _identityFilterFlag = new TaskFilterFlag<string>(
+            nameof(_identityFilterFlag),
+            "I=|id",
+			filterPredicate: (flagValue, task) => { throw new NotImplementedException(); });
+
+		Flag<bool> _onlyPendingFilterFlag = new TaskFilterFlag<bool>(
 			nameof(_onlyPendingFilterFlag), 
 			"P|pending|unfinished",
 			filterPredicate: (_, task) => task.IsFinished == false);
 		
-		Flag<bool> _onlyFinishedFilterFlag = new FilterFlag<bool>(
+		Flag<bool> _onlyFinishedFilterFlag = new TaskFilterFlag<bool>(
 			nameof(_onlyFinishedFilterFlag), 
 			"F|finished|completed",
 			filterPredicate: (_, task) => task.IsFinished == true);
 		
-		Flag<string> _descriptionRegexFilterFlag = new FilterFlag<string>(
+		Flag<string> _descriptionRegexFilterFlag = new TaskFilterFlag<string>(
 			nameof(_descriptionRegexFilterFlag), 
-			"r|like|matching",
+			"r=|like=",
 			filterPredicate: (pattern, task) => Regex.IsMatch(task.Description, pattern));
 
 		IEnumerable<Command> _commands;
 
-		Command _addTask = new Command(nameof(_addTask), TaskAddRegex);
-		Command _deleteTasks = new Command(nameof(_deleteTasks), TaskDeleteRegex);
-		Command _completeTasks = new Command(nameof(_completeTasks), TaskCompleteRegex);
-		Command _displayTasks = new Command(nameof(_displayTasks), TaskDisplayRegex);
-		Command _updateTasks = new Command(nameof(_updateTasks), TaskUpdateRegex);
+		Command _addTask;
+		Command _deleteTasks; 
+		Command _completeTasks;
+		Command _displayTasks;
+		Command _updateTasks;
 
 		private OptionSet _optionSet;
 
@@ -105,6 +111,31 @@ namespace TaskMan
 				.Cast<Flag>();
 				
 			_flags.ForEach(flag => flag.AddToOptionSet(this._optionSet));
+
+			_addTask = new Command(
+				nameof(_addTask), 
+				TaskAddRegex, 
+				supportedFlags: new [] { _descriptionFlag, _priorityFlag });
+			
+			_deleteTasks = new Command(
+				nameof(_deleteTasks), 
+				TaskDeleteRegex,
+				supportedFlags: _flags.OfType<ITaskFilter>().Cast<Flag>());
+
+			_completeTasks = new Command(
+				nameof(_completeTasks), 
+				TaskCompleteRegex,
+				supportedFlags: _flags.OfType<ITaskFilter>().Cast<Flag>());
+			
+			_displayTasks = new Command(
+				nameof(_displayTasks), 
+				TaskDisplayRegex,
+				supportedFlags: _flags.OfType<ITaskFilter>().Cast<Flag>());
+			
+			_updateTasks = new Command(
+				nameof(_updateTasks), 
+				TaskUpdateRegex,
+				supportedFlags: _flags.OfType<ITaskFilter>().Cast<Flag>());
 
 			_commands = typeof(TaskMan)
 				.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
