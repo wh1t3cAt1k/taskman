@@ -229,21 +229,21 @@ namespace TaskMan
 			// Handle version, license and general help flags
 			// that work without an explicit command name.
 			// -
-			if (commandName == null && _displayHelpFlag)
+			if (commandName == null && _displayHelpFlag.IsSet)
 			{
 				this.CurrentOperation = "display help text";
 				DisplayHelpText();
 
 				return;
 			}
-			else if (commandName == null && _displayLicenseFlag)
+			else if (commandName == null && _displayLicenseFlag.IsSet)
 			{
 				this.CurrentOperation = "display license text";
 				DisplayLicenseText();
 
 				return;
 			}
-			else if (commandName == null && _displayVersionFlag)
+			else if (commandName == null && _displayVersionFlag.IsSet)
 			{
 				this.CurrentOperation = "display the taskman version";
 
@@ -267,7 +267,10 @@ namespace TaskMan
 
 			if (commandName == null)
 			{
-				arguments = new LinkedList<string>(new [] { "show" }); 
+				// TaskMan operates as "show" by default.
+				// -
+				commandName = "show";
+				arguments = new LinkedList<string>(new [] { commandName }); 
 			}
 
 			IEnumerable<Command> matchingCommands = _commands.Matching(commandName);

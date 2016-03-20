@@ -119,7 +119,16 @@ namespace TaskMan.Control
 			}
 			else
 			{
-				optionSet.Add(this.Alias, (T value) => this.Set(value));
+				optionSet.Add(this.Alias, value => {
+					if (value is T) 
+					{
+						this.Set((T)(object)value);
+					}
+					else
+					{
+						throw new NotSupportedException();
+					}
+				});
 			}
 		}
 	}
