@@ -51,8 +51,19 @@ namespace TaskMan
 
 		IEnumerable<Flag> _flags;
 
+		/// <summary>
+		/// Displays the help text for the program or for the requested command.
+		/// </summary>
 		Flag<bool> _displayHelpFlag = new Flag<bool>(nameof(_displayHelpFlag), "?|help");
+
+		/// <summary>
+		/// Displays the TaskMan license text.
+		/// </summary>
 		Flag<bool> _displayLicenseFlag = new Flag<bool>(nameof(_displayLicenseFlag), "license");
+
+		/// <summary>
+		/// Displays the current TaskMan version.
+		/// </summary>
 		Flag<bool> _displayVersionFlag = new Flag<bool>(nameof(_displayVersionFlag), "version");
 
 		/// <summary>
@@ -74,7 +85,8 @@ namespace TaskMan
 		Flag<string> _priorityFlag = new TaskFilterFlag<string>(
 			nameof(_priorityFlag), 
 			"p=|priority=",
-			filterPredicate: (flagValue, task) => { throw new NotImplementedException(); });
+			filterPredicate: (flagValue, task) => 
+				task.PriorityLevel == TaskMan.ParsePriority(flagValue));
 
 		/// <summary>
 		/// Filters tasks by their ID or ID range.
@@ -265,6 +277,24 @@ namespace TaskMan
 			binaryFormatter.Serialize(outputFileStream, tasks);
 
 			outputFileStream.Close();
+		}
+
+		/// <summary>
+		/// Tries to parse a string value into a <see cref="Priority"/> value.
+		/// If unsuccessful, throws an exception.
+		/// </summary>
+		static Priority ParsePriority(string priorityString)
+		{
+			Priority priority;
+
+			if (!Enum.TryParse(priorityString, out priority))
+			{
+				throw new Exception(string.Format(
+					Messages.UnknownPriorityLevel,
+					priorityString));
+			}
+
+			return priority;
 		}
 
 		public void Run(IEnumerable<string> commandLineArguments)
