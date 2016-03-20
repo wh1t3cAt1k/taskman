@@ -26,7 +26,7 @@ namespace TaskMan
 		/// </summary>
 		public bool IsSet { get; protected set; }
 
-		public Flag(string name, string alias)
+		protected Flag(string name, string alias)
 		{
 			this.Name = name;
 			this.Alias = alias;
