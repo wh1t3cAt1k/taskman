@@ -54,32 +54,57 @@ namespace TaskMan
 		Flag<bool> _displayHelpFlag = new Flag<bool>(nameof(_displayHelpFlag), "?|help");
 		Flag<bool> _displayLicenseFlag = new Flag<bool>(nameof(_displayLicenseFlag), "license");
 		Flag<bool> _displayVersionFlag = new Flag<bool>(nameof(_displayVersionFlag), "version");
+
+		/// <summary>
+		/// Displays a confirmation prompt before performing the requested
+		/// operation, along with a list of tasks upon which the operation
+		/// is going to be performed. 
+		/// </summary>
 		Flag<bool> _interactiveFlag = new Flag<bool>(nameof(_interactiveFlag), "i|interactive");
 
+		/// <summary>
+		/// Specifies the new task's description.
+		/// </summary>
 		Flag<string> _descriptionFlag = new Flag<string>(nameof(_descriptionFlag), "d|desc|description");
 
+		/// <summary>
+		/// When used as an add flag, specifies the new task's priority.
+		/// When used as a filter flag, filters tasks by their priority.
+		/// </summary>
 		Flag<string> _priorityFlag = new TaskFilterFlag<string>(
 			nameof(_priorityFlag), 
 			"p=|priority=",
 			filterPredicate: (flagValue, task) => { throw new NotImplementedException(); });
 
+		/// <summary>
+		/// Filters tasks by their ID or ID range.
+		/// </summary>
 		Flag<string> _identityFilterFlag = new TaskFilterFlag<string>(
             nameof(_identityFilterFlag),
             "I=|id",
 			filterPredicate: (flagValue, task) => { throw new NotImplementedException(); });
 
-		Flag<bool> _onlyPendingFilterFlag = new TaskFilterFlag<bool>(
-			nameof(_onlyPendingFilterFlag), 
+		/// <summary>
+		/// Filters tasks, keeps only pending tasks.
+		/// </summary>
+		Flag<bool> _pendingFilterFlag = new TaskFilterFlag<bool>(
+			nameof(_pendingFilterFlag), 
 			"P|pending|unfinished",
 			filterPredicate: (_, task) => task.IsFinished == false);
-		
-		Flag<bool> _onlyFinishedFilterFlag = new TaskFilterFlag<bool>(
-			nameof(_onlyFinishedFilterFlag), 
+
+		/// <summary>
+		/// Filters tasks, keeps only finished tasks.
+		/// </summary>
+		Flag<bool> _finishedFilterFlag = new TaskFilterFlag<bool>(
+			nameof(_finishedFilterFlag), 
 			"F|finished|completed",
 			filterPredicate: (_, task) => task.IsFinished == true);
-		
-		Flag<string> _descriptionRegexFilterFlag = new TaskFilterFlag<string>(
-			nameof(_descriptionRegexFilterFlag), 
+
+		/// <summary>
+		/// Filters tasks by regex on description.
+		/// </summary>
+		Flag<string> _descriptionFilterFlag = new TaskFilterFlag<string>(
+			nameof(_descriptionFilterFlag), 
 			"r=|like=",
 			filterPredicate: (pattern, task) => Regex.IsMatch(task.Description, pattern));
 
