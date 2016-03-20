@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Collections.Generic;
 
+using TaskMan.Objects;
+
 namespace TaskMan.Control
 {
 	public interface ITaskFilter

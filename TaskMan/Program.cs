@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using Mono.Options;
 
 using TaskMan.Control;
+using TaskMan.Objects;
 
 namespace TaskMan
 {

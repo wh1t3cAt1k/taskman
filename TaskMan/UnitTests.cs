@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 
 using NUnit.Framework;
+
+using TaskMan.Objects;
 
 namespace TaskMan
 {

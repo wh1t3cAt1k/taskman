@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using TaskMan.Objects;
+
 namespace TaskMan.Control
 {
 	/// <summary>
