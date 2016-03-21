@@ -93,7 +93,7 @@ namespace TaskMan
 		/// </summary>
 		Flag<string> _identityFilterFlag = new TaskFilterFlag<string>(
             nameof(_identityFilterFlag),
-            "I=|id",
+            "I=|id=",
 			filterPredicate: (flagValue, task) => { throw new NotImplementedException(); });
 
 		/// <summary>
@@ -152,26 +152,31 @@ namespace TaskMan
 			_addTask = new Command(
 				nameof(_addTask), 
 				TaskAddRegex, 
+				isReadUpdateDelete: false,
 				supportedFlags: new [] { _descriptionFlag, _priorityFlag });
 			
 			_deleteTasks = new Command(
 				nameof(_deleteTasks), 
 				TaskDeleteRegex,
+				isReadUpdateDelete: true,
 				supportedFlags: _flags.OfType<ITaskFilter>().Cast<Flag>());
 
 			_completeTasks = new Command(
 				nameof(_completeTasks), 
 				TaskCompleteRegex,
+				isReadUpdateDelete: true,
 				supportedFlags: _flags.OfType<ITaskFilter>().Cast<Flag>());
 			
 			_displayTasks = new Command(
 				nameof(_displayTasks), 
 				TaskDisplayRegex,
+				isReadUpdateDelete: true,
 				supportedFlags: _flags.OfType<ITaskFilter>().Cast<Flag>());
 			
 			_updateTasks = new Command(
 				nameof(_updateTasks), 
 				TaskUpdateRegex,
+				isReadUpdateDelete: true,
 				supportedFlags: _flags.OfType<ITaskFilter>().Cast<Flag>());
 
 			_commands = typeof(TaskMan)
@@ -203,15 +208,15 @@ namespace TaskMan
 		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", StandardRegexOptions);
 		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
 		static readonly Regex SingleIdRegex = new Regex(@"^([0-9]+)$", StandardRegexOptions);
-		static readonly Regex TaskAddRegex = new Regex(@"(^add$)|(^new$)|(^create$)", StandardRegexOptions);
-		static readonly Regex TaskCompleteRegex = new Regex(@"(^complete$)|(^finish$)|(^accomplish$)", StandardRegexOptions);
-		static readonly Regex TaskDeleteRegex = new Regex(@"(^delete$)|(^remove$)", StandardRegexOptions);
-		static readonly Regex TaskDisplayRegex = new Regex(@"^(show|display|view)(p|f|all)?$", StandardRegexOptions);
+		static readonly Regex TaskAddRegex = new Regex(@"^(add|new|create)$", StandardRegexOptions);
+		static readonly Regex TaskCompleteRegex = new Regex(@"^(complete|finish|accomplish)$", StandardRegexOptions);
+		static readonly Regex TaskDeleteRegex = new Regex(@"^(delete|remove)$", StandardRegexOptions);
+		static readonly Regex TaskDisplayRegex = new Regex(@"^(show|display|view)$", StandardRegexOptions);
 		static readonly Regex TaskPriorityRegex = new Regex(@"^\[([0-9]+)\]$", StandardRegexOptions);
-		static readonly Regex TaskSetDescriptionRegex = new Regex(@"^description$", StandardRegexOptions);
-		static readonly Regex TaskSetFinishedRegex = new Regex(@"(^finished$)|(^completed$)|(^accomplished$)", StandardRegexOptions);
-		static readonly Regex TaskSetPriorityRegex = new Regex(@"(^priority$)|(^importance$)", StandardRegexOptions);
-		static readonly Regex TaskUpdateRegex = new Regex(@"(^update$)|(^modify$)", StandardRegexOptions);
+		static readonly Regex TaskSetDescriptionRegex = new Regex(@"^(description)$", StandardRegexOptions);
+		static readonly Regex TaskSetFinishedRegex = new Regex(@"^(finished|completed|accomplished)$", StandardRegexOptions);
+		static readonly Regex TaskSetPriorityRegex = new Regex(@"^(priority|importance)$", StandardRegexOptions);
+		static readonly Regex TaskUpdateRegex = new Regex(@"^(update|modify)$", StandardRegexOptions);
 
 		/// <summary>
 		/// Sets the function that would be called to read the task list.
@@ -312,8 +317,8 @@ namespace TaskMan
 
 			string commandName = arguments.First?.Value;
 
-			// Handle version, license and general help flags
-			// that work without an explicit command name.
+			// Handle global flags that work without 
+			// an explicit command name.
 			// -
 			if (commandName == null && _displayHelpFlag.IsSet)
 			{
@@ -383,14 +388,50 @@ namespace TaskMan
 				throw new Exception(string.Format(
 					Messages.EntityDoesNotMakeSenseWithEntity,
 					unsupportedFlags.First().Alias,
-					command.Name));
+					commandName));
 			}
 
 			arguments.RemoveFirst();
 
 			this.CurrentOperation = "read tasks from the task file";
+
 			List<Task> taskList = _readTasks();
 
+			IEnumerable<Task> filteredTasks = taskList;
+
+			if (command.IsReadUpdateDelete)
+			{
+				this.CurrentOperation = "filter the task list";
+
+				if (!filteredTasks.Any())
+				{
+					_output.WriteLine(Messages.TaskListIsEmpty);
+					return;
+				}
+
+				IEnumerable<ITaskFilter> filterFlags = command
+					.SupportedFlags
+					.Where(flag => flag.IsSet)
+					.OfType<ITaskFilter>();
+			
+				if (filterFlags.Any())
+				{
+					filteredTasks = command
+					.SupportedFlags
+					.Where(flag => flag.IsSet && flag is ITaskFilter)
+					.Cast<ITaskFilter>()
+					.Aggregate(
+						taskList as IEnumerable<Task>, 
+						(sequence, filter) => filter.Filter(sequence));
+
+					if (!filteredTasks.Any())
+					{
+						_output.WriteLine(Messages.NoTasksMatchingGivenConditions);
+						return;
+					}
+				}
+			}
+				
 			if (command == _addTask)
 			{
 				this.CurrentOperation = "add a new task";

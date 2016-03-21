@@ -19,6 +19,7 @@ namespace TaskMan
 		public const string MoreThanOneCommandMatchesInput = "More than one command matches the given input. Please be more specific.";
 		public const string NewTaskList = "New task list: ";
 		public const string NoDescriptionSpecified = "A task description is missing.";
+		public const string NoTasksMatchingProvidedCondition = "There are no tasks matching the given conditions."; 
 		public const string NoTaskWithSpecifiedId = "There is no task with the specified ID: {0}.";
 		public const string NoTaskIdProvided = "You should specify a task ID to {0}.";
 		public const string NoTasksInSpecifiedIdRangeWithCondition = "There are no tasks with ID in the specified range that match the display condition: {0}.";
