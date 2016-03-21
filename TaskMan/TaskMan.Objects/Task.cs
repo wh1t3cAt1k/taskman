@@ -67,27 +67,6 @@ namespace TaskMan.Objects
 				(IsFinished ? "--| fin." : "cur."));
 		}
 
-		/// <summary>
-		/// Return a boolean value signifying whether the task matches
-		/// the given display condition.
-		/// </summary>
-		/// <returns><c>true</c>, if the current task matches the given display condition, <c>false</c> otherwise.</returns>
-		/// <param name="displayCondition">The task display condition.</param>
-		public bool MatchesDisplayCondition(TaskDisplayCondition displayCondition)
-		{
-			switch (displayCondition)
-			{
-				case TaskDisplayCondition.All:
-					return true;
-				case TaskDisplayCondition.Current:
-					return !this.IsFinished;
-				case TaskDisplayCondition.Finished:
-					return this.IsFinished;
-				default:
-					throw new InvalidOperationException(Messages.UnknownDisplayCondition);
-			}
-		}
-
 		public static readonly ConsoleColor NormalTaskColor = Console.ForegroundColor;
 		public static readonly ConsoleColor FinishedTaskColor = ConsoleColor.Gray;
 		public static readonly ConsoleColor ImportantTaskColor = ConsoleColor.Cyan;
