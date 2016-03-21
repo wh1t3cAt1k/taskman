@@ -656,7 +656,7 @@ namespace TaskMan
 				ParsePriority(_priorityFlag.Value) : 
 				Priority.Normal;
 
-			Task newTask = new Task(taskList.Count, description);
+			Task newTask = new Task(taskList.Count, description, taskPriority);
 			taskList.Add(newTask);
 
 			return newTask;
