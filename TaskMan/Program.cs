@@ -118,7 +118,10 @@ namespace TaskMan
 		Flag<string> _descriptionFilterFlag = new TaskFilterFlag<string>(
 			nameof(_descriptionFilterFlag), 
 			"r=|like=",
-			filterPredicate: (pattern, task) => Regex.IsMatch(task.Description, pattern));
+			filterPredicate: (pattern, task) => Regex.IsMatch(
+				task.Description, 
+				pattern, 
+				RegexOptions.IgnoreCase));
 
 		IEnumerable<Command> _commands;
 
@@ -300,7 +303,8 @@ namespace TaskMan
 		{
 			Priority priority;
 
-			if (!Enum.TryParse(priorityString, out priority))
+			if (!Enum.TryParse(priorityString, out priority) ||
+				!Enum.GetValues(typeof(Priority)).Cast<Priority>().Contains(priority))
 			{
 				throw new Exception(string.Format(
 					Messages.UnknownPriorityLevel,
