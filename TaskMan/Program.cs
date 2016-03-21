@@ -674,32 +674,5 @@ namespace TaskMan
 
 			return newTask;
 		}
-
-		/// <summary>
-		/// Encapsulates the task deletion logic in one method.
-		/// </summary>
-		/// <param name="cliArguments">Command line arguments.</param>
-		/// <param name="taskList">Task list.</param>
-		/// <returns>The <see cref="Task"/> object that has been deleted.</returns>
-		public Task DeleteTask(LinkedList<string> cliArguments, List<Task> taskList)
-		{
-			if (!cliArguments.Any())
-			{
-				throw new Exception(string.Format(Messages.NoTaskIdProvided, this.CurrentOperation));
-			}
-
-			int idToDelete;
-			ExtractTaskIdNumber(cliArguments.First(), out idToDelete);
-
-			Task taskToDelete = taskList.TaskWithId(idToDelete);
-
-			taskList.RemoveAll(task => (task.ID == idToDelete));
-
-			taskList
-				.Where(task => task.ID > idToDelete)
-				.ForEach(task => (task.ID -= 1));
-
-			return taskToDelete;
-		}
 	}
 }
