@@ -127,6 +127,7 @@ namespace TaskMan
 		Command _completeTasks;
 		Command _displayTasks;
 		Command _updateTasks;
+		Command _clearTasks;
 
 		private OptionSet _optionSet;
 
@@ -177,7 +178,13 @@ namespace TaskMan
 				nameof(_updateTasks), 
 				TaskUpdateRegex,
 				isReadUpdateDelete: true,
-				supportedFlags: _flags.OfType<ITaskFilter>().Cast<Flag>());
+				supportedFlags: new Flag[] { });
+
+			_clearTasks = new Command(
+				nameof(_clearTasks),
+				TaskClearRegex,
+				isReadUpdateDelete: false,
+				supportedFlags: new Flag[] { });
 
 			_commands = typeof(TaskMan)
 				.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
@@ -211,6 +218,7 @@ namespace TaskMan
 		static readonly Regex TaskAddRegex = new Regex(@"^(add|new|create)$", StandardRegexOptions);
 		static readonly Regex TaskCompleteRegex = new Regex(@"^(complete|finish|accomplish)$", StandardRegexOptions);
 		static readonly Regex TaskDeleteRegex = new Regex(@"^(delete|remove)$", StandardRegexOptions);
+		static readonly Regex TaskClearRegex = new Regex(@"^(clear)$", StandardRegexOptions);
 		static readonly Regex TaskDisplayRegex = new Regex(@"^(show|display|view)$", StandardRegexOptions);
 		static readonly Regex TaskPriorityRegex = new Regex(@"^\[([0-9]+)\]$", StandardRegexOptions);
 		static readonly Regex TaskSetDescriptionRegex = new Regex(@"^(description)$", StandardRegexOptions);
@@ -338,10 +346,10 @@ namespace TaskMan
 			{
 				this.CurrentOperation = "display the taskman version";
 
-				Assembly entryAssembly = Assembly.GetExecutingAssembly();
-				AssemblyName assemblyName = entryAssembly.GetName();
+				Assembly executingAssembly = Assembly.GetExecutingAssembly();
+				AssemblyName assemblyName = executingAssembly.GetName();
 
-				string productName = entryAssembly
+				string productName = executingAssembly
 					.GetAssemblyAttributeValue<AssemblyProductAttribute, string>(attribute => attribute.Product);
 
 				_output.WriteLine(
@@ -417,12 +425,12 @@ namespace TaskMan
 				if (filterFlags.Any())
 				{
 					filteredTasks = command
-					.SupportedFlags
-					.Where(flag => flag.IsSet && flag is ITaskFilter)
-					.Cast<ITaskFilter>()
-					.Aggregate(
-						taskList as IEnumerable<Task>, 
-						(sequence, filter) => filter.Filter(sequence));
+						.SupportedFlags
+						.Where(flag => flag.IsSet && flag is ITaskFilter)
+						.Cast<ITaskFilter>()
+						.Aggregate(
+							taskList as IEnumerable<Task>, 
+							(sequence, filter) => filter.Filter(sequence));
 
 					if (!filteredTasks.Any())
 					{
@@ -449,27 +457,13 @@ namespace TaskMan
 			{
 				this.CurrentOperation = "display tasks";
 
-				Match regexMatch = TaskDisplayRegex.Match(commandName);
-				string displayEnding = regexMatch.Groups[2].ToString();
-
-				if (displayEnding == "" || displayEnding == "all")
-				{
-					DisplayTasks(arguments, taskList, TaskDisplayCondition.All);
-				}
-				else if (displayEnding == "p")
-				{
-					DisplayTasks(arguments, taskList, TaskDisplayCondition.Current);
-				}
-				else if (displayEnding == "f")
-				{
-					DisplayTasks(arguments, taskList, TaskDisplayCondition.Finished);
-				}
+				filteredTasks.ForEach(task => task.Display());
 			}
 			else if (command == _deleteTasks)
 			{
 				this.CurrentOperation = "delete tasks";
 
-				Task deletedTask = DeleteTask(arguments, taskList);
+				taskList = taskList.Except(filteredTasks).ToList();
 
 				if (taskList.Any())
 				{
@@ -480,17 +474,26 @@ namespace TaskMan
 					File.Delete(TASKS_FULL_NAME);
 				}
 
-				_output.WriteLine(
-					Messages.TaskWithIdWasDeleted, 
-					deletedTask.ID, 
-					deletedTask.Description);
+				if (filteredTasks.IsSingleton())
+				{
+					_output.WriteLine(
+						Messages.TaskWasDeleted, 
+						filteredTasks.Single().ID, 
+						filteredTasks.Single().Description);
+				}
+				else
+				{
+					_output.WriteLine(
+						Messages.TasksWereDeleted,
+						filteredTasks.Count());
+				}
 			}
 			else if (command == _updateTasks)
 			{
 				this.CurrentOperation = "set task parameters";
 				SetTaskParameters(arguments, taskList);
 			}
-			else if (commandName.Equals("clear"))
+			else if (command == _clearTasks)
 			{
 				this.CurrentOperation = "clear the task list";
 
@@ -509,23 +512,25 @@ namespace TaskMan
 			}
 			else if (command == _completeTasks)
 			{
-				this.CurrentOperation = "finish a task";
+				this.CurrentOperation = "finish tasks";
 
-				int idToFinish;
-
-				if (!arguments.Any())
-				{ 
-					return;
-				}
-
-				ExtractTaskIdNumber(arguments.First(), out idToFinish);
-
-				Task taskToFinish = taskList.TaskWithId(idToFinish);
-				taskToFinish.IsFinished = true;
+				filteredTasks.ForEach(task => task.IsFinished = true);
 
 				_saveTasks(taskList);
 
-				_output.WriteLine(Messages.TaskWasFinished, taskToFinish.ID, taskToFinish.Description);
+				if (filteredTasks.IsSingleton())
+				{
+					_output.WriteLine(
+						Messages.TaskWasFinished, 
+						filteredTasks.Single().ID, 
+						filteredTasks.Single().Description);
+				}
+				else
+				{
+					_output.WriteLine(
+						Messages.TasksWereFinished,
+						filteredTasks.Count());
+				}
 			}
 		}
 
