@@ -94,7 +94,21 @@ namespace TaskMan
 		Flag<string> _identityFilterFlag = new TaskFilterFlag<string>(
             nameof(_identityFilterFlag),
             "I=|id=",
-			filterPredicate: (flagValue, task) => { throw new NotImplementedException(); });
+			filterPredicate: (flagValue, task) => 
+			{
+				Tuple<int, int?> idRange = ParseId(flagValue);
+
+				if (idRange.Item2.HasValue)
+				{
+					return 
+						task.ID >= idRange.Item1 &&
+						task.ID <= idRange.Item2;
+				}
+				else
+				{
+					return task.ID == idRange.Item1;
+				}
+			});
 
 		/// <summary>
 		/// Filters tasks, keeps only pending tasks.
@@ -216,8 +230,8 @@ namespace TaskMan
 		static readonly RegexOptions StandardRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
 
 		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", StandardRegexOptions);
-		// static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
-		// static readonly Regex SingleIdRegex = new Regex(@"^([0-9]+)$", StandardRegexOptions);
+		static readonly Regex SingleIdRegex = new Regex(@"^([0-9]+)$", StandardRegexOptions);
+		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
 		static readonly Regex TaskAddRegex = new Regex(@"^(add|new|create)$", StandardRegexOptions);
 		static readonly Regex TaskCompleteRegex = new Regex(@"^(complete|finish|accomplish)$", StandardRegexOptions);
 		static readonly Regex TaskDeleteRegex = new Regex(@"^(delete|remove)$", StandardRegexOptions);
@@ -311,6 +325,46 @@ namespace TaskMan
 			}
 
 			return priority;
+		}
+
+		/// <summary>
+		/// Tries to parse a string value into a task ID or ID range.
+		/// If unsuccessful, throws an exception.
+		/// </summary>
+		/// <returns>
+		/// If <paramref name="idString"/> denotes a task ID range,
+		/// returns a tuple with the ID boundaries.
+		/// Otherwise, if <paramref name="idString"/> denotes a single task ID,
+		/// returns a tuple with a <c>null</c> second object.
+		/// </returns>
+		static Tuple<int, int?> ParseId(string idString)
+		{
+			Match singleIdMatch = SingleIdRegex.Match(idString);
+			Match idRangeMatch = IdRangeRegex.Match(idString);
+
+			if (singleIdMatch.Success)
+			{
+				return Tuple.Create<int, int?>(
+					int.Parse(singleIdMatch.Groups[1].Value), null);
+			}
+			else if (idRangeMatch.Success)
+			{
+				int lowerBoundary = int.Parse(idRangeMatch.Groups[1].Value);
+				int upperBoundary = int.Parse(idRangeMatch.Groups[2].Value);
+
+				if (lowerBoundary > upperBoundary)
+				{
+					throw new Exception(Messages.InvalidTaskIdRange);
+				}
+
+				return Tuple.Create<int, int?>(lowerBoundary, upperBoundary);
+			}
+			else
+			{
+				throw new Exception(string.Format(
+					Messages.UnknownIdOrIdRange,
+					idString));
+			}
 		}
 
 		public void Run(IEnumerable<string> commandLineArguments)
@@ -547,7 +601,9 @@ namespace TaskMan
 		{
 			if (!int.TryParse(taskIdString, out taskId))
 			{
-				throw new Exception(Messages.InvalidTaskId);
+				throw new Exception(string.Format(
+					Messages.UnknownIdOrIdRange,
+					taskId));
 			}
 		}
 
