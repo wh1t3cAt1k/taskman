@@ -27,7 +27,7 @@ namespace TaskMan.Objects
 		public Task(
 			int id = 0,
 			string description = "",
-			Priority priority = Priority.Average)
+			Priority priority = Priority.Normal)
 		{
 			this.ID = id;
 			this.Description = description;
@@ -40,7 +40,7 @@ namespace TaskMan.Objects
 
 			switch (this.PriorityLevel)
 			{
-				case Priority.Average:
+				case Priority.Normal:
 					prioritySymbol = ' ';
 					break;
 				case Priority.Important:

@@ -2,7 +2,7 @@
 {
 	public enum Priority
 	{
-		Average = 1,
+		Normal = 1,
 		Important = 2,
 		Critical = 3
 	}

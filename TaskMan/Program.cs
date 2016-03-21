@@ -216,14 +216,13 @@ namespace TaskMan
 		static readonly RegexOptions StandardRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
 
 		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", StandardRegexOptions);
-		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
-		static readonly Regex SingleIdRegex = new Regex(@"^([0-9]+)$", StandardRegexOptions);
+		// static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
+		// static readonly Regex SingleIdRegex = new Regex(@"^([0-9]+)$", StandardRegexOptions);
 		static readonly Regex TaskAddRegex = new Regex(@"^(add|new|create)$", StandardRegexOptions);
 		static readonly Regex TaskCompleteRegex = new Regex(@"^(complete|finish|accomplish)$", StandardRegexOptions);
 		static readonly Regex TaskDeleteRegex = new Regex(@"^(delete|remove)$", StandardRegexOptions);
 		static readonly Regex TaskClearRegex = new Regex(@"^(clear)$", StandardRegexOptions);
 		static readonly Regex TaskDisplayRegex = new Regex(@"^(show|display|view)$", StandardRegexOptions);
-		static readonly Regex TaskPriorityRegex = new Regex(@"^\[([0-9]+)\]$", StandardRegexOptions);
 		static readonly Regex TaskSetDescriptionRegex = new Regex(@"^(description)$", StandardRegexOptions);
 		static readonly Regex TaskSetFinishedRegex = new Regex(@"^(finished|completed|accomplished)$", StandardRegexOptions);
 		static readonly Regex TaskSetPriorityRegex = new Regex(@"^(priority|importance)$", StandardRegexOptions);
@@ -644,36 +643,20 @@ namespace TaskMan
 		/// <param name="cliArguments">Command line arguments.</param>
 		/// <param name="taskList">Task list.</param>
 		/// <returns>The <see cref="Task"/> object that was added into the <paramref name="taskList"/></returns>
-		static Task AddTask(LinkedList<string> cliArguments, List<Task> taskList)
+		Task AddTask(LinkedList<string> cliArguments, List<Task> taskList)
 		{
 			if (!cliArguments.Any())
 			{
 				throw new Exception(Messages.NoDescriptionSpecified);
 			}
 
-			string description = string.Join(
-				" ", 
-				cliArguments
-				.Where(argument => !TaskPriorityRegex.IsMatch(argument)));
+			string description = string.Join(" ", cliArguments);
 
-			int priorityLevel = 1;
-			string priorityArgument = cliArguments.FirstOrDefault(TaskPriorityRegex.IsMatch);
+			Priority taskPriority = _priorityFlag.IsSet ? 
+				ParsePriority(_priorityFlag.Value) : 
+				Priority.Normal;
 
-			if (priorityArgument != null)
-			{
-				string priorityValueString = TaskPriorityRegex.Match(priorityArgument).Groups[1].ToString();
-
-				if (!int.TryParse(priorityValueString, out priorityLevel) ||
-					priorityLevel < 1 || 
-					priorityLevel > 3)
-				{
-					throw new Exception(string.Format(
-						Messages.UnknownPriorityLevel, 
-						priorityArgument)); 
-				}
-			}
-
-			Task newTask = new Task(taskList.Count, description, (Priority)priorityLevel);
+			Task newTask = new Task(taskList.Count, description);
 			taskList.Add(newTask);
 
 			return newTask;
