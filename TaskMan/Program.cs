@@ -562,6 +562,7 @@ namespace TaskMan
 			else if (command == _updateTasks)
 			{
 				this.CurrentOperation = "set task parameters";
+
 				SetTaskParameters(arguments, taskList);
 			}
 			else if (command == _clearTasks)
@@ -628,12 +629,6 @@ namespace TaskMan
 		/// <param name="taskList">Task list.</param>
 		void SetTaskParameters(LinkedList<string> cliArguments, List<Task> taskList)
 		{
-			if (!cliArguments.Any())
-			{
-				DisplayHelpText();
-				return;
-			}
-
 			if (cliArguments.Count < 3)
 			{ 
 				throw new TaskManException(Messages.InsufficientSetParameters);
@@ -681,25 +676,6 @@ namespace TaskMan
 					oldDescription,
 					nameof(Task.Description).DecapitaliseFirstLetter(),
 					taskToUpdate.Description);
-			}
-			else if (TaskSetFinishedRegex.IsMatch(whatToChange))
-			{
-				bool finishedFlag;
-
-				if(!bool.TryParse(cliArguments.First().ToLower(), out finishedFlag))
-				{
-					throw new TaskManException(Messages.UnknownBoolValue);
-				}
-
-				taskToUpdate.IsFinished = finishedFlag;
-
-				_saveTasks(taskList);
-				_output.WriteLine(
-					Messages.TaskWithIdChangedParameter,
-					taskToUpdate.ID,
-					taskToUpdate.Description,
-					"finished state",
-					taskToUpdate.IsFinished);
 			}
 			else
 			{
