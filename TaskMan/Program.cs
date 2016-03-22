@@ -190,12 +190,17 @@ namespace TaskMan
 				nameof(_displayTasks), 
 				TaskDisplayRegex,
 				isReadUpdateDelete: true,
-				supportedFlags: _flags.Where(flag => flag is ITaskFilter));
+				supportedFlags: _flags
+					.Where(flag => flag is ITaskFilter)
+					.Concat(new [] { _includeAllFlag }));
 			
 			_updateTasks = new Command(
 				nameof(_updateTasks), 
 				TaskUpdateRegex,
-				isReadUpdateDelete: true);
+				isReadUpdateDelete: true,
+				supportedFlags: _flags
+					.Where(flag => flag is ITaskFilter)
+					.Concat(new [] { _includeAllFlag }));
 
 			_commands = typeof(TaskMan)
 				.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
