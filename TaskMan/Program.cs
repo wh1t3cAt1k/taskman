@@ -496,6 +496,8 @@ namespace TaskMan
 					}
 				}
 			}
+
+
 				
 			if (command == _addTask)
 			{

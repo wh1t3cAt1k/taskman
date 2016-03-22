@@ -34,12 +34,23 @@ namespace TaskMan.Control
 		/// </summary>
 		public IEnumerable<Flag> SupportedFlags { get; private set; }
 
-		public Command(string name, Regex regularExpression, bool isReadUpdateDelete, IEnumerable<Flag> supportedFlags)
+		/// <summary>
+		/// Gets the set of flags required by this command.
+		/// </summary>
+		public IEnumerable<Flag> RequiredFlags { get; private set; }
+
+		public Command(
+			string name, 
+			Regex regularExpression, 
+			bool isReadUpdateDelete, 
+			IEnumerable<Flag> supportedFlags = null,
+			IEnumerable<Flag> requiredFlags = null)
 		{
 			this.Name = name;
 			this.RegularExpression = regularExpression;
-			this.SupportedFlags = supportedFlags;
 			this.IsReadUpdateDelete = isReadUpdateDelete;
+			this.SupportedFlags = supportedFlags ?? new Flag[] { };
+			this.RequiredFlags = requiredFlags ?? new Flag[] { };
 		}
 	}
 
