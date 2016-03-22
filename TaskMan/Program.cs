@@ -146,6 +146,9 @@ namespace TaskMan
 		Command _updateTasks;
 		Command _clearTasks;
 
+		/// <summary>
+		/// Mono OptionSet object for command line flag parsing.
+		/// </summary>
 		private OptionSet _optionSet;
 
 		TextWriter _output = Console.Out;
@@ -195,7 +198,7 @@ namespace TaskMan
 				nameof(_updateTasks), 
 				TaskUpdateRegex,
 				isReadUpdateDelete: true,
-				supportedFlags: new Flag[] { });
+				requiredFlags: _identityFilterFlag);
 
 			_clearTasks = new Command(
 				nameof(_clearTasks),
@@ -419,8 +422,6 @@ namespace TaskMan
 				return;
 			}
 
-			this.CurrentOperation = "recognize the command";
-
 			if (commandName == null)
 			{
 				// TaskMan operates as "show" by default.
@@ -428,6 +429,8 @@ namespace TaskMan
 				commandName = "show";
 				arguments = new LinkedList<string>(new [] { commandName }); 
 			}
+
+			this.CurrentOperation = "recognize the command";
 
 			IEnumerable<Command> matchingCommands = _commands.Matching(commandName);
 
@@ -448,12 +451,23 @@ namespace TaskMan
 				flag => flag.IsSet && 
 				!command.SupportedFlags.Contains(flag));
 
+			IEnumerable<Flag> unsetRequiredFlags = _flags.Where(
+				flag => !flag.IsSet &&
+				command.RequiredFlags.Contains(flag));
+
 			if (unsupportedFlags.Any())
 			{
 				throw new Exception(string.Format(
 					Messages.EntityDoesNotMakeSenseWithEntity,
 					unsupportedFlags.First().Alias,
 					commandName));
+			}
+
+			if (unsetRequiredFlags.Any())
+			{
+				throw new Exception(string.Format(
+					Messages.RequiredFlagNotSet,
+					unsetRequiredFlags.First().Alias));
 			}
 
 			arguments.RemoveFirst();
@@ -496,8 +510,6 @@ namespace TaskMan
 					}
 				}
 			}
-
-
 				
 			if (command == _addTask)
 			{

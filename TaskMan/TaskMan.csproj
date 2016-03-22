@@ -95,6 +95,7 @@
     <Compile Include="TaskMan.Objects\Task.cs" />
     <Compile Include="TaskMan.Objects\Priority.cs" />
     <Compile Include="TaskMan.Control\TaskFilterFlag.cs" />
+    <Compile Include="TaskMan.Objects\TaskManException.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
