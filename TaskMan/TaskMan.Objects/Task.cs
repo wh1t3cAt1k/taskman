@@ -156,6 +156,10 @@ namespace TaskMan.Objects
 			{
 				return firstTask.PriorityLevel - secondTask.PriorityLevel;
 			}
+			else if (firstTask.ID != secondTask.ID)
+			{
+				return checked(firstTask.ID - secondTask.ID);
+			}
 			else
 			{
 				return firstTask.Description.CompareTo(secondTask.Description);
