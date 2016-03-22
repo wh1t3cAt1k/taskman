@@ -322,9 +322,9 @@ namespace TaskMan
 			if (!Enum.TryParse(priorityString, out priority) ||
 				!Enum.GetValues(typeof(Priority)).Cast<Priority>().Contains(priority))
 			{
-				throw new Exception(string.Format(
+				throw new TaskManException(
 					Messages.UnknownPriorityLevel,
-					priorityString));
+					priorityString);
 			}
 
 			return priority;
@@ -357,16 +357,16 @@ namespace TaskMan
 
 				if (lowerBoundary > upperBoundary)
 				{
-					throw new Exception(Messages.InvalidTaskIdRange);
+					throw new TaskManException(Messages.InvalidTaskIdRange);
 				}
 
 				return Tuple.Create<int, int?>(lowerBoundary, upperBoundary);
 			}
 			else
 			{
-				throw new Exception(string.Format(
+				throw new TaskManException(
 					Messages.UnknownIdOrIdRange,
-					idString));
+					idString);
 			}
 		}
 
@@ -436,11 +436,11 @@ namespace TaskMan
 
 			if (!matchingCommands.Any())
 			{
-				throw new Exception(Messages.UnknownCommand);
+				throw new TaskManException(Messages.UnknownCommand);
 			}
 			else if (!matchingCommands.IsSingleton())
 			{
-				throw new Exception(Messages.MoreThanOneCommandMatchesInput);
+				throw new TaskManException(Messages.MoreThanOneCommandMatchesInput);
 			}
 
 			Command command = matchingCommands.Single();
@@ -457,17 +457,17 @@ namespace TaskMan
 
 			if (unsupportedFlags.Any())
 			{
-				throw new Exception(string.Format(
+				throw new TaskManException(
 					Messages.EntityDoesNotMakeSenseWithEntity,
 					unsupportedFlags.First().Alias,
-					commandName));
+					commandName);
 			}
 
 			if (unsetRequiredFlags.Any())
 			{
-				throw new Exception(string.Format(
+				throw new TaskManException(
 					Messages.RequiredFlagNotSet,
-					unsetRequiredFlags.First().Alias));
+					unsetRequiredFlags.First().Alias);
 			}
 
 			arguments.RemoveFirst();
@@ -615,9 +615,9 @@ namespace TaskMan
 		{
 			if (!int.TryParse(taskIdString, out taskId))
 			{
-				throw new Exception(string.Format(
+				throw new TaskManException(
 					Messages.UnknownIdOrIdRange,
-					taskId));
+					taskId);
 			}
 		}
 
@@ -636,7 +636,7 @@ namespace TaskMan
 
 			if (cliArguments.Count < 3)
 			{ 
-				throw new Exception(Messages.InsufficientSetParameters);
+				throw new TaskManException(Messages.InsufficientSetParameters);
 			}
 
 			int taskId;
@@ -654,7 +654,7 @@ namespace TaskMan
 					priorityLevel < 1 || 
 					priorityLevel > 3)
 				{
-					throw new Exception(string.Format(Messages.UnknownPriorityLevel, cliArguments.First()));
+					throw new TaskManException(Messages.UnknownPriorityLevel, cliArguments.First());
 				}
 
 				taskToUpdate.PriorityLevel = (Priority)priorityLevel;
@@ -688,7 +688,7 @@ namespace TaskMan
 
 				if(!bool.TryParse(cliArguments.First().ToLower(), out finishedFlag))
 				{
-					throw new Exception(Messages.UnknownBoolValue);
+					throw new TaskManException(Messages.UnknownBoolValue);
 				}
 
 				taskToUpdate.IsFinished = finishedFlag;
@@ -703,7 +703,7 @@ namespace TaskMan
 			}
 			else
 			{
-				throw new Exception(Messages.InvalidSetParameters);
+				throw new TaskManException(Messages.InvalidSetParameters);
 			}
 		}
 
@@ -717,7 +717,7 @@ namespace TaskMan
 		{
 			if (!cliArguments.Any())
 			{
-				throw new Exception(Messages.NoDescriptionSpecified);
+				throw new TaskManException(Messages.NoDescriptionSpecified);
 			}
 
 			string description = string.Join(" ", cliArguments);
