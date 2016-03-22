@@ -250,22 +250,6 @@ namespace TaskMan
 		Action<List<Task>> _saveTasks = TaskMan.SaveTasksIntoFile;
 
 		/// <summary>
-		/// Outputs the application help into the standard output stream. 
-		/// </summary>
-		void DisplayHelpText()
-		{
-			_output.WriteLine(Assembly.GetExecutingAssembly().GetResourceText("TaskMan.HELP.txt"));
-		}
-
-		/// <summary>
-		/// Outputs the application license into the standard output stream.
-		/// </summary>
-		void DisplayLicenseText()
-		{
-			_output.WriteLine(Assembly.GetExecutingAssembly().GetResourceText("TaskMan.LICENSE.txt"));
-		}
-
-		/// <summary>
 		/// Retrieves the task list from the tasks binary file.
 		/// </summary>
 		/// <returns>The tasks list read from the file.</returns>
@@ -379,49 +363,19 @@ namespace TaskMan
 
 			string commandName = arguments.First?.Value;
 
-			// Handle global flags that work without 
-			// an explicit command name.
-			// -
-			if (commandName == null && _displayHelpFlag.IsSet)
-			{
-				this.CurrentOperation = "display help text";
-				DisplayHelpText();
-
-				return;
-			}
-			else if (commandName == null && _displayLicenseFlag.IsSet)
-			{
-				this.CurrentOperation = "display license text";
-				DisplayLicenseText();
-
-				return;
-			}
-			else if (commandName == null && _displayVersionFlag.IsSet)
-			{
-				this.CurrentOperation = "display the taskman version";
-
-				Assembly executingAssembly = Assembly.GetExecutingAssembly();
-				AssemblyName assemblyName = executingAssembly.GetName();
-
-				string productName = executingAssembly
-					.GetAssemblyAttributeValue<AssemblyProductAttribute, string>(attribute => attribute.Product);
-
-				_output.WriteLine(
-					"{0} version {1}.{2}.{3}",
-					productName,
-					assemblyName.Version.Major,
-					assemblyName.Version.Minor,
-					assemblyName.Version.Build);
-
-				return;
-			}
-
 			if (commandName == null)
 			{
-				// TaskMan operates as "show" by default.
-				// -
-				commandName = "show";
-				arguments = new LinkedList<string>(new [] { commandName }); 
+				if (this.HandleGlobalFlags())
+				{
+					return;
+				}
+				else
+				{
+					// TaskMan operates as "show" by default.
+					// -
+					commandName = "show";
+					arguments = new LinkedList<string>(new [] { commandName }); 
+				}
 			}
 
 			this.CurrentOperation = "recognize the command";
@@ -595,6 +549,53 @@ namespace TaskMan
 						filteredTasks.Count());
 				}
 			}
+		}
+
+		/// <summary>
+		/// Handle global flags that work without an explicit
+		/// command name.
+		/// </summary>
+		/// <returns>
+		/// <c>true</c>, if any of the global flags have been handled,
+		/// otherwise, <c>false</c>.
+		/// </returns>
+		bool HandleGlobalFlags()
+		{
+			if (_displayHelpFlag.IsSet)
+			{
+				this.CurrentOperation = "display help text";
+				_output.WriteLine(Assembly.GetExecutingAssembly().GetResourceText("TaskMan.HELP.txt"));
+
+				return true;
+			}
+			else if (_displayLicenseFlag.IsSet)
+			{
+				this.CurrentOperation = "display license text";
+				_output.WriteLine(Assembly.GetExecutingAssembly().GetResourceText("TaskMan.LICENSE.txt"));
+
+				return true;
+			}
+			else if (_displayVersionFlag.IsSet)
+			{
+				this.CurrentOperation = "display the taskman version";
+
+				Assembly executingAssembly = Assembly.GetExecutingAssembly();
+				AssemblyName assemblyName = executingAssembly.GetName();
+
+				string productName = executingAssembly
+					.GetAssemblyAttributeValue<AssemblyProductAttribute, string>(attribute => attribute.Product);
+
+				_output.WriteLine(
+					"{0} version {1}.{2}.{3}",
+					productName,
+					assemblyName.Version.Major,
+					assemblyName.Version.Minor,
+					assemblyName.Version.Build);
+
+				return true;
+			}
+
+			return false;
 		}
 
 		/// <summary>
