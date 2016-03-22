@@ -395,27 +395,40 @@ namespace TaskMan
 
 			this.CurrentOperation = "ensure flag consistency";
 
-			IEnumerable<Flag> unsupportedFlags = _flags.Where(
+			IEnumerable<Flag> unsupportedFlagsSpecified = _flags.Where(
 				flag => flag.IsSet && 
 				!command.SupportedFlags.Contains(flag));
 
-			IEnumerable<Flag> unsetRequiredFlags = _flags.Where(
+			IEnumerable<Flag> requiredFlagsUnspecified = _flags.Where(
 				flag => !flag.IsSet &&
 				command.RequiredFlags.Contains(flag));
 
-			if (unsupportedFlags.Any())
+			IEnumerable<Flag> filterFlagsSpecified = _flags.Where(
+				flag => flag.IsSet && 
+				flag is ITaskFilter);
+
+			if (unsupportedFlagsSpecified.Any())
 			{
 				throw new TaskManException(
 					Messages.EntityDoesNotMakeSenseWithEntity,
-					unsupportedFlags.First().Alias,
+					unsupportedFlagsSpecified.First().Alias,
 					commandName);
 			}
 
-			if (unsetRequiredFlags.Any())
+			if (requiredFlagsUnspecified.Any())
 			{
 				throw new TaskManException(
 					Messages.RequiredFlagNotSet,
-					unsetRequiredFlags.First().Alias);
+					requiredFlagsUnspecified.First().Alias);
+			}
+
+			if (filterFlagsSpecified.Any() &&
+			    _includeAllFlag.IsSet)
+			{
+				throw new TaskManException(
+					Messages.EntityDoesNotMakeSenseWithEntity,
+					filterFlagsSpecified.First().Alias,
+					_includeAllFlag.Alias);
 			}
 
 			arguments.RemoveFirst();
@@ -424,28 +437,21 @@ namespace TaskMan
 
 			List<Task> taskList = _readTasks();
 
+			this.CurrentOperation = "filter the task list";
+
 			IEnumerable<Task> filteredTasks = taskList;
 
 			if (command.IsReadUpdateDelete)
 			{
-				this.CurrentOperation = "filter the task list";
-
-				if (!filteredTasks.Any())
+				if (!taskList.Any())
 				{
 					_output.WriteLine(Messages.TaskListIsEmpty);
 					return;
 				}
-
-				IEnumerable<ITaskFilter> filterFlags = command
-					.SupportedFlags
-					.Where(flag => flag.IsSet)
-					.OfType<ITaskFilter>();
 			
-				if (filterFlags.Any())
+				if (filterFlagsSpecified.Any())
 				{
-					filteredTasks = command
-						.SupportedFlags
-						.Where(flag => flag.IsSet && flag is ITaskFilter)
+					filteredTasks = filterFlagsSpecified
 						.Cast<ITaskFilter>()
 						.Aggregate(
 							taskList as IEnumerable<Task>, 
@@ -458,7 +464,7 @@ namespace TaskMan
 					}
 				}
 			}
-				
+
 			if (command == _addTask)
 			{
 				this.CurrentOperation = "add a new task";
@@ -583,7 +589,8 @@ namespace TaskMan
 				AssemblyName assemblyName = executingAssembly.GetName();
 
 				string productName = executingAssembly
-					.GetAssemblyAttributeValue<AssemblyProductAttribute, string>(attribute => attribute.Product);
+					.GetAssemblyAttributeValue<AssemblyProductAttribute, string>(
+						attribute => attribute.Product);
 
 				_output.WriteLine(
 					"{0} version {1}.{2}.{3}",
