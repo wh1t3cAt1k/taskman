@@ -96,18 +96,8 @@ namespace TaskMan
             "I=|id=",
 			filterPredicate: (flagValue, task) => 
 			{
-				Tuple<int, int?> idRange = ParseId(flagValue);
-
-				if (idRange.Item2.HasValue)
-				{
-					return 
-						task.ID >= idRange.Item1 &&
-						task.ID <= idRange.Item2;
-				}
-				else
-				{
-					return task.ID == idRange.Item1;
-				}
+				IEnumerable<int> allowedIds = ParseId(flagValue);
+				return allowedIds.Contains(task.ID);
 			});
 
 		/// <summary>
@@ -197,8 +187,7 @@ namespace TaskMan
 			_updateTasks = new Command(
 				nameof(_updateTasks), 
 				TaskUpdateRegex,
-				isReadUpdateDelete: true,
-				requiredFlags: _identityFilterFlag);
+				isReadUpdateDelete: true);
 
 			_clearTasks = new Command(
 				nameof(_clearTasks),
@@ -233,7 +222,7 @@ namespace TaskMan
 		static readonly RegexOptions StandardRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
 
 		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", StandardRegexOptions);
-		static readonly Regex SingleIdRegex = new Regex(@"^([0-9]+)$", StandardRegexOptions);
+		static readonly Regex IdSequenceRegex = new Regex(@"^(:?([0-9]+)\s*?,\s*?)*([0-9]+)$", StandardRegexOptions);
 		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
 		static readonly Regex TaskAddRegex = new Regex(@"^(add|new|create)$", StandardRegexOptions);
 		static readonly Regex TaskCompleteRegex = new Regex(@"^(complete|finish|accomplish)$", StandardRegexOptions);
@@ -331,24 +320,26 @@ namespace TaskMan
 		}
 
 		/// <summary>
-		/// Tries to parse a string value into a task ID or ID range.
-		/// If unsuccessful, throws an exception.
+		/// Tries to parse a string value into a sequence of task IDs.
+		/// Supports: 
+		/// 1. Single IDs like '5'
+		/// 2. ID ranges like '5-36'
+		/// 3. ID lists like '5,6,7'
 		/// </summary>
 		/// <returns>
-		/// If <paramref name="idString"/> denotes a task ID range,
-		/// returns a tuple with the ID boundaries.
+		/// If <paramref name="idString"/> denotes a task ID range like 5-36,
+		/// 
 		/// Otherwise, if <paramref name="idString"/> denotes a single task ID,
 		/// returns a tuple with a <c>null</c> second object.
 		/// </returns>
-		static Tuple<int, int?> ParseId(string idString)
+		static IEnumerable<int> ParseId(string idString)
 		{
-			Match singleIdMatch = SingleIdRegex.Match(idString);
+			Match idSequenceMatch = IdSequenceRegex.Match(idString);
 			Match idRangeMatch = IdRangeRegex.Match(idString);
 
-			if (singleIdMatch.Success)
+			if (idSequenceMatch.Success)
 			{
-				return Tuple.Create<int, int?>(
-					int.Parse(singleIdMatch.Groups[1].Value), null);
+				return idString.Split(',').Select(int.Parse);
 			}
 			else if (idRangeMatch.Success)
 			{
@@ -360,7 +351,9 @@ namespace TaskMan
 					throw new TaskManException(Messages.InvalidTaskIdRange);
 				}
 
-				return Tuple.Create<int, int?>(lowerBoundary, upperBoundary);
+				return Enumerable.Range(
+					lowerBoundary, 
+					checked(upperBoundary - lowerBoundary + 1));
 			}
 			else
 			{

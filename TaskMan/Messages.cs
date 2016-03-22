@@ -24,6 +24,7 @@
 		public const string TaskWasDeleted = "Task with ID {0} [{1}] was successfully deleted.";
 		public const string TasksWereDeleted = "{0} tasks were successfully deleted.";
 		public const string TypeHelpForCommandSyntax = "Type 'taskman --help' to view command syntax.";
+		public const string RequiredFlagNotSet = "Required flag {0} was not specified";
 		public const string UnknownBoolValue = "Unknown bool value. Should be true or false.";
 		public const string UnknownCommand = "Unknown command format. " + Messages.TypeHelpForCommandSyntax;
 		public const string UnknownPriorityLevel = "Unknown priority level '{0}'.";

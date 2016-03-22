@@ -186,7 +186,7 @@ namespace TaskMan.Objects
 		{
 			if (!tasks.Any())
 			{
-				throw new Exception(Messages.TaskListIsEmpty);
+				throw new TaskManException(Messages.TaskListIsEmpty);
 			}
 
 			try
@@ -195,7 +195,7 @@ namespace TaskMan.Objects
 			}
 			catch
 			{
-				throw new Exception(string.Format(Messages.NoTaskWithSpecifiedId, id));
+				throw new TaskManException(Messages.NoTaskWithSpecifiedId, id);
 			}
 		}
 	}
