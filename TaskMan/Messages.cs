@@ -6,7 +6,7 @@
 		public const string CouldNotReadTaskList = "An error occurred while trying to read task list: {0}";
 		public const string ErrorPerformingOperation = "Cannot {0}: {1}";
 		public const string FlagNotSet = "The {0} flag value has not been set.";
-		public const string EntityDoesNotMakeSenseWithEntity = "{0} does not make sense with {1}.";
+		public const string EntityDoesNotMakeSenseWithEntity = "'{0}' does not make sense with '{1}'.";
 		public const string InsufficientSetParameters = "Insufficient parameters in 'set' command. " + Messages.TypeHelpForCommandSyntax;
 		public const string InvalidTaskIdRange = "Invalid task ID range: the starting ID should not exceed the ending ID.";
 		public const string InvalidSetParameters = "Invalid 'set' command syntax. " + Messages.TypeHelpForCommandSyntax;
@@ -29,5 +29,7 @@
 		public const string UnknownCommand = "Unknown command format. " + Messages.TypeHelpForCommandSyntax;
 		public const string UnknownPriorityLevel = "Unknown priority level '{0}'.";
 		public const string UnknownIdOrIdRange = "Unknown ID or ID range '{0}'.";
+		public const string NoFilterConditionsUseAllIfIntended = "No task filter conditions specified. Use the --all flag if you intended to {0} all tasks.";
+
 	}
 }

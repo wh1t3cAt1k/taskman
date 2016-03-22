@@ -71,7 +71,12 @@ namespace TaskMan
 		/// operation, along with a list of tasks upon which the operation
 		/// is going to be performed. 
 		/// </summary>
-		Flag<bool> _interactiveFlag = new Flag<bool>(nameof(_interactiveFlag), "i|interactive");
+		Flag<bool> _interactiveFlag = new Flag<bool>(nameof(_interactiveFlag), "I|interactive");
+
+		/// <summary>
+		/// Specifies that the operation should be performed upon all tasks.
+		/// </summary>
+		Flag<bool> _includeAllFlag = new Flag<bool>(nameof(_includeAllFlag), "A|all");
 
 		/// <summary>
 		/// Specifies the new task's description.
@@ -93,7 +98,7 @@ namespace TaskMan
 		/// </summary>
 		Flag<string> _identityFilterFlag = new TaskFilterFlag<string>(
             nameof(_identityFilterFlag),
-            "I=|id=",
+            "i=|id=",
 			filterPredicate: (flagValue, task) => 
 			{
 				IEnumerable<int> allowedIds = ParseId(flagValue);
@@ -134,7 +139,6 @@ namespace TaskMan
 		Command _completeTasks;
 		Command _displayTasks;
 		Command _updateTasks;
-		Command _clearTasks;
 
 		/// <summary>
 		/// Mono OptionSet object for command line flag parsing.
@@ -170,30 +174,28 @@ namespace TaskMan
 				nameof(_deleteTasks), 
 				TaskDeleteRegex,
 				isReadUpdateDelete: true,
-				supportedFlags: _flags.OfType<ITaskFilter>().Cast<Flag>());
+				supportedFlags: _flags
+					.Where(flag => flag is ITaskFilter)
+					.Concat(new [] { _includeAllFlag }));
 
 			_completeTasks = new Command(
 				nameof(_completeTasks), 
 				TaskCompleteRegex,
 				isReadUpdateDelete: true,
-				supportedFlags: _flags.OfType<ITaskFilter>().Cast<Flag>());
+				supportedFlags: _flags
+					.Where(flag => flag is ITaskFilter)
+					.Concat(new [] { _includeAllFlag }));
 			
 			_displayTasks = new Command(
 				nameof(_displayTasks), 
 				TaskDisplayRegex,
 				isReadUpdateDelete: true,
-				supportedFlags: _flags.OfType<ITaskFilter>().Cast<Flag>());
+				supportedFlags: _flags.Where(flag => flag is ITaskFilter));
 			
 			_updateTasks = new Command(
 				nameof(_updateTasks), 
 				TaskUpdateRegex,
 				isReadUpdateDelete: true);
-
-			_clearTasks = new Command(
-				nameof(_clearTasks),
-				TaskClearRegex,
-				isReadUpdateDelete: false,
-				supportedFlags: new Flag[] { });
 
 			_commands = typeof(TaskMan)
 				.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
@@ -227,7 +229,6 @@ namespace TaskMan
 		static readonly Regex TaskAddRegex = new Regex(@"^(add|new|create)$", StandardRegexOptions);
 		static readonly Regex TaskCompleteRegex = new Regex(@"^(complete|finish|accomplish)$", StandardRegexOptions);
 		static readonly Regex TaskDeleteRegex = new Regex(@"^(delete|remove)$", StandardRegexOptions);
-		static readonly Regex TaskClearRegex = new Regex(@"^(clear)$", StandardRegexOptions);
 		static readonly Regex TaskDisplayRegex = new Regex(@"^(show|display|view)$", StandardRegexOptions);
 		static readonly Regex TaskSetDescriptionRegex = new Regex(@"^(description)$", StandardRegexOptions);
 		static readonly Regex TaskSetFinishedRegex = new Regex(@"^(finished|completed|accomplished)$", StandardRegexOptions);
@@ -527,6 +528,13 @@ namespace TaskMan
 			{
 				this.CurrentOperation = "delete tasks";
 
+				if (!_includeAllFlag.IsSet && filteredTasks == taskList)
+				{
+					throw new TaskManException(
+						Messages.NoFilterConditionsUseAllIfIntended,
+						"delete");
+				}
+
 				taskList = taskList.Except(filteredTasks).ToList();
 
 				if (taskList.Any())
@@ -558,26 +566,16 @@ namespace TaskMan
 
 				SetTaskParameters(arguments, taskList);
 			}
-			else if (command == _clearTasks)
-			{
-				this.CurrentOperation = "clear the task list";
-
-				_output.Write(Messages.ClearConfirmationMessage);
-
-				if (ConfirmActionRegex.IsMatch(Console.ReadLine()))
-				{
-					taskList.Clear();
-					File.Delete(TASKS_FULL_NAME);
-					_output.WriteLine(Messages.TaskListCleared);
-				}
-				else
-				{
-					_output.WriteLine(Messages.TaskListClearCancelled);
-				}
-			}
 			else if (command == _completeTasks)
 			{
 				this.CurrentOperation = "finish tasks";
+
+				if (!_includeAllFlag.IsSet && filteredTasks == taskList)
+				{
+					throw new TaskManException(
+						Messages.NoFilterConditionsUseAllIfIntended,
+						"finish");
+				}
 
 				filteredTasks.ForEach(task => task.IsFinished = true);
 
