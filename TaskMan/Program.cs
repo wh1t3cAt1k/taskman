@@ -132,6 +132,14 @@ namespace TaskMan
 				pattern, 
 				RegexOptions.IgnoreCase));
 
+		/// <summary>
+		/// Limits the number of tasks displayed.
+		/// </summary>
+		Flag<int> _numberLimitFlag = new TaskFilterFlag<int>(
+			nameof(_numberLimitFlag),
+			"n=|limit=",
+			filterPredicate: (flagValue, task, taskIndex) => taskIndex <= flagValue);
+
 		IEnumerable<Command> _commands;
 
 		Command _addTask;
@@ -176,6 +184,7 @@ namespace TaskMan
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
+					.Except(new [] { _numberLimitFlag })
 					.Concat(new [] { _includeAllFlag }));
 
 			_completeTasks = new Command(
@@ -184,6 +193,7 @@ namespace TaskMan
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
+					.Except(new [] { _numberLimitFlag })
 					.Concat(new [] { _includeAllFlag }));
 			
 			_displayTasks = new Command(
@@ -200,6 +210,7 @@ namespace TaskMan
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
+					.Except(new [] { _numberLimitFlag })
 					.Concat(new [] { _includeAllFlag }));
 
 			_commands = typeof(TaskMan)
