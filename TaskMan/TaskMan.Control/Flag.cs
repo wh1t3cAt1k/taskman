@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Mono.Options;
 
@@ -43,6 +44,26 @@ namespace TaskMan.Control
 		/// property returns <c>false</c>.
 		/// </summary>
 		public abstract void Reset();
+
+		/// <summary>
+		/// Gets the actual name of a command line flag
+		/// provided by the user in the command line arguments.
+		/// </summary>
+		public string GetProvidedName(IEnumerable<string> commandLineArguments)
+		{
+			IEnumerable<string> flagNames = this.Alias
+				.Split('|')
+				.Select(value => value.Replace("=", string.Empty))
+				.SelectMany(flagName => 
+					new string[] 
+					{ 
+						$"-{flagName}",
+						$"--{flagName}",
+						$"/{flagName}"
+					});
+
+			return commandLineArguments.First(argument => flagNames.Contains(argument));
+		}
 	}
 
 	/// <summary>
