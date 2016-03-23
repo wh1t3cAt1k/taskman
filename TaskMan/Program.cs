@@ -138,7 +138,7 @@ namespace TaskMan
 		Flag<int> _numberLimitFlag = new TaskFilterFlag<int>(
 			nameof(_numberLimitFlag),
 			"n=|limit=",
-			filterPredicate: (flagValue, task, taskIndex) => taskIndex <= flagValue);
+			filterPredicate: (flagValue, task, taskIndex) => taskIndex < flagValue);
 
 		IEnumerable<Command> _commands;
 

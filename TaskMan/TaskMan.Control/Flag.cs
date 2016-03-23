@@ -53,10 +53,10 @@ namespace TaskMan.Control
 		{
 			IEnumerable<string> flagNames = this.Alias
 				.Split('|')
-				.Select(value => value.Replace("=", string.Empty))
+				.Select(value => value.Replace("=", string.Empty).Replace(":", string.Empty))
 				.SelectMany(flagName => 
 					new string[] 
-					{ 
+					{
 						$"-{flagName}",
 						$"--{flagName}",
 						$"/{flagName}"
