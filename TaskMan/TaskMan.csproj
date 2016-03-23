@@ -49,7 +49,7 @@
     <WarningLevel>4</WarningLevel>
     <LangVersion>6</LangVersion>
     <PlatformTarget>x86</PlatformTarget>
-    <Commandlineparameters>new Remember the milk</Commandlineparameters>
+    <Commandlineparameters>show --limit 10</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Optimize>true</Optimize>
@@ -78,6 +78,9 @@
     <Reference Include="Moq">
       <HintPath>..\packages\Moq.4.2.1510.2205\lib\net40\Moq.dll</HintPath>
     </Reference>
+    <Reference Include="Mono.Options">
+      <HintPath>..\packages\Mono.Options.4.2.2.1\lib\net4-client\Mono.Options.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -87,7 +90,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="AssemblyExtensions.cs" />
     <Compile Include="UnitTests.cs" />
-    <Compile Include="External\Mono.Options-PCL.cs" />
     <Compile Include="EnumerableExtensions.cs" />
     <Compile Include="TaskMan.Control\Flag.cs" />
     <Compile Include="TaskMan.Control\Command.cs" />

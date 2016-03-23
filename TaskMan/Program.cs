@@ -321,6 +321,26 @@ namespace TaskMan
 		}
 
 		/// <summary>
+		/// Gets the actual name of a command line flag
+		/// provided by the user.
+		/// </summary>
+		static string GetActualOptionName(IEnumerable<string> commandLineArguments, Flag flag)
+		{
+			IEnumerable<string> flagNames = flag.Alias
+				.Split('|')
+				.Select(value => value.Replace("=", string.Empty))
+				.SelectMany(flagName => 
+					new string[] 
+					{ 
+						$"-{flagName}",
+						$"--{flagName}",
+						$"/{flagName}"
+					});
+
+			return commandLineArguments.First(argument => flagNames.Contains(argument));
+		}
+
+		/// <summary>
 		/// Tries to parse a string value into a sequence of task IDs.
 		/// Supports: 
 		/// 1. Single IDs like '5'
