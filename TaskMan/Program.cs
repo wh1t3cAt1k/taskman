@@ -640,6 +640,7 @@ namespace TaskMan
 			{
 				_output.WriteLine(
 					Messages.TaskWasUpdated,
+					tasksToUpdate.Single().ID,
 					oldTaskDescription,
 					parameterToChange,
 					parameterStringValue);

@@ -21,7 +21,7 @@
 		public const string TaskListClearCancelled = "Task list clearing has been cancelled.";
 		public const string TaskListCleared = "Task list has been cleared.";
 		public const string TaskWasUpdated = "Task {0} [{1}] has changed its '{2}' value to '{3}'";
-		public const string TasksWereUpdated = "Updated {0} task(s) with new '{2}' value of '{3}'.";
+		public const string TasksWereUpdated = "Updated {0} task(s) with new '{1}' value of '{2}'.";
 		public const string TaskWasDeleted = "Task with ID {0} [{1}] was successfully deleted.";
 		public const string TasksWereDeleted = "{0} tasks were successfully deleted.";
 		public const string TypeHelpForCommandSyntax = "Type 'taskman --help' to view command syntax.";
