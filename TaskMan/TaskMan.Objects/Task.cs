@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace TaskMan.Objects
 {
@@ -186,6 +187,7 @@ namespace TaskMan.Objects
 		/// </returns>
 		/// <param name="tasks">The task list.</param>
 		/// <param name="id">The ID of the task to be returned.</param>
+		[Obsolete("", false)]
 		public static Task TaskWithId(this List<Task> tasks, int id)
 		{
 			if (!tasks.Any())

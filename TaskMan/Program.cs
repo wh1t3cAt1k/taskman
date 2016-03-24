@@ -43,11 +43,34 @@ namespace TaskMan
 	/// </summary>
 	public class TaskMan
 	{
+		#region Constants
+
 		/// <summary>
-		/// Gets or sets the current operation performed by the program.
+		/// The folder where the task list and app configuration files will be stored,
+		/// e.g. '~/.config/TaskMan' or 'c:\users\current_user\AppData\Roaming'
 		/// </summary>
-		/// <value>The current operation.</value>
-		public string CurrentOperation { get; private set; }
+		static readonly string APP_DATA_PATH = Path.Combine(
+			Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+			Assembly.GetExecutingAssembly().GetName().Name);
+
+		static readonly string TASKS_FILE = "taskman_tasks.tmf";
+		static readonly string TASKS_FULL_NAME = Path.Combine(APP_DATA_PATH, TASKS_FILE);
+
+		static readonly RegexOptions StandardRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
+
+		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", StandardRegexOptions);
+		static readonly Regex TaskAddRegex = new Regex(@"^(add|new|create)$", StandardRegexOptions);
+		static readonly Regex TaskCompleteRegex = new Regex(@"^(complete|finish|accomplish)$", StandardRegexOptions);
+		static readonly Regex TaskDeleteRegex = new Regex(@"^(delete|remove)$", StandardRegexOptions);
+		static readonly Regex TaskDisplayRegex = new Regex(@"^(show|display|view)$", StandardRegexOptions);
+		static readonly Regex TaskSetDescriptionRegex = new Regex(@"^(description)$", StandardRegexOptions);
+		static readonly Regex TaskSetFinishedRegex = new Regex(@"^(finished|completed|accomplished)$", StandardRegexOptions);
+		static readonly Regex TaskSetPriorityRegex = new Regex(@"^(priority|importance)$", StandardRegexOptions);
+		static readonly Regex TaskUpdateRegex = new Regex(@"^(update|modify)$", StandardRegexOptions);
+
+		#endregion
+
+		#region Command Line Flags
 
 		IEnumerable<Flag> _flags;
 
@@ -92,7 +115,7 @@ namespace TaskMan
 			"p=|priority=",
 			filterPriority: 1,
 			filterPredicate: (flagValue, task) => 
-				task.PriorityLevel == TaskMan.ParsePriority(flagValue));
+				task.PriorityLevel == TaskHelper.ParsePriority(flagValue));
 
 		/// <summary>
 		/// Filters tasks by their ID or ID range.
@@ -103,7 +126,7 @@ namespace TaskMan
 			filterPriority: 1,
 			filterPredicate: (flagValue, task) => 
 			{
-				IEnumerable<int> allowedIds = ParseId(flagValue);
+				IEnumerable<int> allowedIds = TaskHelper.ParseId(flagValue);
 				return allowedIds.Contains(task.ID);
 			});
 
@@ -146,6 +169,10 @@ namespace TaskMan
 			filterPriority: 2,
 			filterPredicate: (flagValue, task, taskIndex) => taskIndex < flagValue);
 
+		#endregion
+
+		#region Command Verbs
+
 		IEnumerable<Command> _commands;
 
 		Command _addTask;
@@ -153,6 +180,14 @@ namespace TaskMan
 		Command _completeTasks;
 		Command _displayTasks;
 		Command _updateTasks;
+
+		#endregion
+
+		/// <summary>
+		/// Gets or sets the current operation performed by the program.
+		/// </summary>
+		/// <value>The current operation.</value>
+		public string CurrentOperation { get; private set; }
 
 		/// <summary>
 		/// Mono OptionSet object for command line flag parsing.
@@ -233,31 +268,6 @@ namespace TaskMan
 		}
 
 		/// <summary>
-		/// The folder where the task list and app configuration files will be stored,
-		/// e.g. '~/.config/TaskMan' or 'c:\users\current_user\AppData\Roaming'
-		/// </summary>
-		static readonly string APP_DATA_PATH = Path.Combine(
-			Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-			Assembly.GetExecutingAssembly().GetName().Name);
-
-		static readonly string TASKS_FILE = "taskman_tasks.tmf";
-		static readonly string TASKS_FULL_NAME = Path.Combine(APP_DATA_PATH, TASKS_FILE);
-
-		static readonly RegexOptions StandardRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
-
-		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", StandardRegexOptions);
-		static readonly Regex IdSequenceRegex = new Regex(@"^(:?([0-9]+)\s*?,\s*?)*([0-9]+)$", StandardRegexOptions);
-		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
-		static readonly Regex TaskAddRegex = new Regex(@"^(add|new|create)$", StandardRegexOptions);
-		static readonly Regex TaskCompleteRegex = new Regex(@"^(complete|finish|accomplish)$", StandardRegexOptions);
-		static readonly Regex TaskDeleteRegex = new Regex(@"^(delete|remove)$", StandardRegexOptions);
-		static readonly Regex TaskDisplayRegex = new Regex(@"^(show|display|view)$", StandardRegexOptions);
-		static readonly Regex TaskSetDescriptionRegex = new Regex(@"^(description)$", StandardRegexOptions);
-		static readonly Regex TaskSetFinishedRegex = new Regex(@"^(finished|completed|accomplished)$", StandardRegexOptions);
-		static readonly Regex TaskSetPriorityRegex = new Regex(@"^(priority|importance)$", StandardRegexOptions);
-		static readonly Regex TaskUpdateRegex = new Regex(@"^(update|modify)$", StandardRegexOptions);
-
-		/// <summary>
 		/// Sets the function that would be called to read the task list.
 		/// Can be used to override the default function that reads the tasks from file, 
 		/// e.g. for the purpose of unit testing.
@@ -305,69 +315,6 @@ namespace TaskMan
 			binaryFormatter.Serialize(outputFileStream, tasks);
 
 			outputFileStream.Close();
-		}
-
-		/// <summary>
-		/// Tries to parse a string value into a <see cref="Priority"/> value.
-		/// If unsuccessful, throws an exception.
-		/// </summary>
-		static Priority ParsePriority(string priorityString)
-		{
-			Priority priority;
-
-			if (!Enum.TryParse(priorityString, out priority) ||
-				!Enum.GetValues(typeof(Priority)).Cast<Priority>().Contains(priority))
-			{
-				throw new TaskManException(
-					Messages.UnknownPriorityLevel,
-					priorityString);
-			}
-
-			return priority;
-		}
-
-		/// <summary>
-		/// Tries to parse a string value into a sequence of task IDs.
-		/// Supports: 
-		/// 1. Single IDs like '5'
-		/// 2. ID ranges like '5-36'
-		/// 3. ID lists like '5,6,7'
-		/// </summary>
-		/// <returns>
-		/// If <paramref name="idString"/> denotes a task ID range like 5-36,
-		/// 
-		/// Otherwise, if <paramref name="idString"/> denotes a single task ID,
-		/// returns a tuple with a <c>null</c> second object.
-		/// </returns>
-		static IEnumerable<int> ParseId(string idString)
-		{
-			Match idSequenceMatch = IdSequenceRegex.Match(idString);
-			Match idRangeMatch = IdRangeRegex.Match(idString);
-
-			if (idSequenceMatch.Success)
-			{
-				return idString.Split(',').Select(int.Parse);
-			}
-			else if (idRangeMatch.Success)
-			{
-				int lowerBoundary = int.Parse(idRangeMatch.Groups[1].Value);
-				int upperBoundary = int.Parse(idRangeMatch.Groups[2].Value);
-
-				if (lowerBoundary > upperBoundary)
-				{
-					throw new TaskManException(Messages.InvalidTaskIdRange);
-				}
-
-				return Enumerable.Range(
-					lowerBoundary, 
-					checked(upperBoundary - lowerBoundary + 1));
-			}
-			else
-			{
-				throw new TaskManException(
-					Messages.UnknownIdOrIdRange,
-					idString);
-			}
 		}
 
 		public void Run(IEnumerable<string> commandLineArguments)
@@ -721,7 +668,7 @@ namespace TaskMan
 			string description = string.Join(" ", cliArguments);
 
 			Priority taskPriority = _priorityFlag.IsSet ? 
-				ParsePriority(_priorityFlag.Value) : 
+				TaskHelper.ParsePriority(_priorityFlag.Value) : 
 				Priority.Normal;
 
 			Task newTask = new Task(taskList.Count, description, taskPriority);

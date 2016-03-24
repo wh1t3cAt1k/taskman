@@ -1,4 +1,7 @@
-﻿namespace TaskMan.Objects
+﻿using System;
+using System.Linq;
+
+namespace TaskMan.Objects
 {
 	public enum Priority
 	{
