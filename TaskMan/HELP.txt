@@ -1,53 +1,53 @@
----| TaskMan v. 0.1 by wH1t3cAt1k |--
+---| TaskMan v. 0.2 by Pavel Kabir |--
 
---> Syntax: taskman [operation] [args]
+--> Syntax: taskman [operation] [flags] [args]
 --> Operations:
 
---> to show this information: 
+--> to show this help text: 
 
 	taskman (/?|--help|help)
 
 --> to add a new task:
 
-	taskman (add|new) description [priority]
-    
-	> [priority] optional, must be 1..3 and enclosed in []
-	> ID will be set to the task automatically.
+	taskman (add|new) [flags] description
 
---> to change properties of a task:
+	> use flags to specify a task's priority.
+
+	> ID will be assigned to a task automatically.
+    
+--> to update task parameters:
 	
-	taskman set ID parameter args
-	
+	taskman (update|change|modify|set) [flags] parameter args
+
+	> use flags to filter the tasks to be updated.
+
 	> if 'parameter' is 'description',
-	then 'args' should be the new description.	
+	then 'args' will be concatenated into the new description.
+		
 	> if 'parameter' is 'importance' or 'priority'
-	then 'args' should be a number from 1 to 3.
+	then 'args' should be a number from 1 to 3, or the
+	priority's text value (e.g. 'Normal').
+
 	> if 'parameter' is 'finished'/'completed'/'accomplished'
-	then 'args' should be 'true' or 'false'
-	> currently, you can only change properties of one task at a time.
+	then 'args' should be '0', 'false', '1', or 'true'.
 
 --> to show tasks:
 
-	> pending: 	taskman showp parameters
-	> finished:	taskman showf parameters
-	> all:		taskman (show|showall) parameters
+	taskman (show|display) [flags]
 
-	parameters syntax:
-	(no parameters) - shows all
-	ID		- shows the task with specified ID
-	n-m		- shows all tasks in n-m ID range
+	> use flags to filter the tasks to be displayed.
 
---> to mark a task 'finished':
+--> to complete tasks:
 
-	taskman (finish|complete|accomplish) ID
+	taskman (finish|complete|accomplish) [flags]
+
+	> use flags to filter the tasks to be marked as finished.
 
 --> to remove a task:
 
-	taskman delete ID
-	> currently, you can only delete one task at a time.
+	taskman (delete|remove) [flags]
+	 
+	> use flags to filter the tasks to be deleted.
 
---> to clear the task list:
+--> available command line options:
 
-	taskman clear
-	> confirmation message will be displayed before clearing;
-	> be careful, you cannot undo this action.

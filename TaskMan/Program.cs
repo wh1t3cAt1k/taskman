@@ -66,7 +66,7 @@ namespace TaskMan
 		static readonly Regex TaskSetDescriptionRegex = new Regex(@"^(description)$", StandardRegexOptions);
 		static readonly Regex TaskSetFinishedRegex = new Regex(@"^(finished|completed|accomplished)$", StandardRegexOptions);
 		static readonly Regex TaskSetPriorityRegex = new Regex(@"^(priority|importance)$", StandardRegexOptions);
-		static readonly Regex TaskUpdateRegex = new Regex(@"^(update|modify)$", StandardRegexOptions);
+		static readonly Regex TaskUpdateRegex = new Regex(@"^(update|change|modify|set)$", StandardRegexOptions);
 
 		#endregion
 
@@ -74,54 +74,39 @@ namespace TaskMan
 
 		IEnumerable<Flag> _flags;
 
-		/// <summary>
-		/// Displays the help text for the program or for the requested command.
-		/// </summary>
-		Flag<bool> _displayHelpFlag = new Flag<bool>(nameof(_displayHelpFlag), "?|help");
+		Flag<bool> _displayHelpFlag = new Flag<bool>(
+			"displays TaskMan's help text", 
+			"?|help");
 
-		/// <summary>
-		/// Displays the TaskMan license text.
-		/// </summary>
-		Flag<bool> _displayLicenseFlag = new Flag<bool>(nameof(_displayLicenseFlag), "license");
+		Flag<bool> _displayLicenseFlag = new Flag<bool>(
+			"displays TaskMan's licensing terms", 
+			"license");
 
-		/// <summary>
-		/// Displays the current TaskMan version.
-		/// </summary>
-		Flag<bool> _displayVersionFlag = new Flag<bool>(nameof(_displayVersionFlag), "version");
+		Flag<bool> _displayVersionFlag = new Flag<bool>(
+			"displays TaskMan's version", 
+			"version");
 
-		/// <summary>
-		/// Displays a confirmation prompt before performing the requested
-		/// operation, along with a list of tasks upon which the operation
-		/// is going to be performed. 
-		/// </summary>
-		Flag<bool> _interactiveFlag = new Flag<bool>(nameof(_interactiveFlag), "I|interactive");
+		Flag<bool> _interactiveFlag = new Flag<bool>(
+			"displays a confirmation prompt before executing an operation (not functional yet)", 
+			"I|interactive");
 
-		/// <summary>
-		/// Specifies that the operation should be performed upon all tasks.
-		/// </summary>
-		Flag<bool> _includeAllFlag = new Flag<bool>(nameof(_includeAllFlag), "A|all");
+		Flag<bool> _includeAllFlag = new Flag<bool>(
+			"forces an operation to be executed upon all tasks", 
+			"A|all");
 
-		/// <summary>
-		/// Specifies the new task's description.
-		/// </summary>
-		Flag<string> _descriptionFlag = new Flag<string>(nameof(_descriptionFlag), "d|desc|description");
+		Flag<string> _descriptionFlag = new Flag<string>(
+			"specifies the description for a task (not functional yet)",
+			"d|description");
 
-		/// <summary>
-		/// When used as an add flag, specifies the new task's priority.
-		/// When used as a filter flag, filters tasks by their priority.
-		/// </summary>
 		Flag<string> _priorityFlag = new TaskFilterFlag<string>(
-			nameof(_priorityFlag), 
+			"filters tasks by priority or specifies a task's priority", 
 			"p=|priority=",
 			filterPriority: 1,
 			filterPredicate: (flagValue, task) => 
 				task.Priority == TaskHelper.ParsePriority(flagValue));
 
-		/// <summary>
-		/// Filters tasks by their ID or ID range.
-		/// </summary>
 		Flag<string> _identityFilterFlag = new TaskFilterFlag<string>(
-            nameof(_identityFilterFlag),
+            "filters tasks by their ID or ID range",
             "i=|id=",
 			filterPriority: 1,
 			filterPredicate: (flagValue, task) => 
@@ -130,29 +115,20 @@ namespace TaskMan
 				return allowedIds.Contains(task.ID);
 			});
 
-		/// <summary>
-		/// Filters tasks, keeps only pending tasks.
-		/// </summary>
 		Flag<bool> _pendingFilterFlag = new TaskFilterFlag<bool>(
-			nameof(_pendingFilterFlag), 
+			"filters out any finished tasks", 
 			"P|pending|unfinished",
 			filterPriority: 1,
 			filterPredicate: (_, task) => task.IsFinished == false);
 
-		/// <summary>
-		/// Filters tasks, keeps only finished tasks.
-		/// </summary>
 		Flag<bool> _finishedFilterFlag = new TaskFilterFlag<bool>(
-			nameof(_finishedFilterFlag), 
+			"filters out any unfinished tasks", 
 			"F|finished|completed",
 			filterPriority: 1,
 			filterPredicate: (_, task) => task.IsFinished == true);
 
-		/// <summary>
-		/// Filters tasks by regex on description.
-		/// </summary>
 		Flag<string> _descriptionFilterFlag = new TaskFilterFlag<string>(
-			nameof(_descriptionFilterFlag), 
+			"filters tasks by their description matching a regex", 
 			"r=|like=",
 			filterPriority: 1,
 			filterPredicate: (pattern, task) => Regex.IsMatch(
@@ -160,21 +136,14 @@ namespace TaskMan
 				pattern, 
 				RegexOptions.IgnoreCase));
 
-		/// <summary>
-		/// Skips the given number of tasks when displaying the
-		/// result.
-		/// </summary>
 		Flag<int> _numberSkipFlag = new TaskFilterFlag<int>(
-            nameof(_numberSkipFlag),
+            "skips a given number of tasks when displaying the result",
             "s=|skip=",
             filterPriority: 2,
             filterPredicate: (flagValue, task, taskIndex) => taskIndex + 1 > flagValue);
 
-		/// <summary>
-		/// Limits the number of tasks displayed.
-		/// </summary>
 		Flag<int> _numberLimitFlag = new TaskFilterFlag<int>(
-			nameof(_numberLimitFlag),
+			"limits the total number of tasks displayed",
 			"n=|limit=",
 			filterPriority: 3,
 			filterPredicate: (flagValue, task, taskIndex) => taskIndex < flagValue);
@@ -398,7 +367,7 @@ namespace TaskMan
 			{
 				throw new TaskManException(
 					Messages.RequiredFlagNotSet,
-					requiredFlagsUnspecified.First().Alias);
+					requiredFlagsUnspecified.First().Prototype);
 			}
 
 			if (filterFlagsSpecified.Any() &&

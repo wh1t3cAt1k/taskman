@@ -13,24 +13,25 @@ namespace TaskMan.Control
 	public abstract class Flag
 	{
 		/// <summary>
-		/// Gets the name of the flag.
+		/// Gets the description of the flag.
 		/// </summary>
-		public string Name { get; private set; }
+		public string Description { get; private set; }
 
 		/// <summary>
-		/// Gets the alias in the format of <see cref="Mono.Options.Option"/> prototype.
+		/// Gets the flag prototype in the format of 
+		/// <see cref="Mono.Options.Option"/> prototype.
 		/// </summary>
-		public string Alias { get; private set; }
+		public string Prototype { get; private set; }
 
 		/// <summary>
 		/// Gets the value indicating whether the flag has been explicitly set.
 		/// </summary>
 		public bool IsSet { get; protected set; }
 
-		protected Flag(string name, string alias)
+		protected Flag(string description, string alias)
 		{
-			this.Name = name;
-			this.Alias = alias;
+			this.Description = description;
+			this.Prototype = alias;
 			this.IsSet = false;
 		}
 
@@ -51,7 +52,7 @@ namespace TaskMan.Control
 		/// </summary>
 		public string GetProvidedName(IEnumerable<string> commandLineArguments)
 		{
-			IEnumerable<string> flagNames = this.Alias
+			IEnumerable<string> flagNames = this.Prototype
 				.Split('|')
 				.Select(value => value.Replace("=", string.Empty).Replace(":", string.Empty))
 				.SelectMany(flagName => 
@@ -91,7 +92,7 @@ namespace TaskMan.Control
 				{
 					throw new InvalidOperationException(string.Format(
 						Messages.FlagNotSet,
-						this.Name));
+						this.Prototype));
 				}
 			}
 			private set 
@@ -100,8 +101,8 @@ namespace TaskMan.Control
 			}
 		}
 
-		public Flag(string name, string alias)
-			: base(name, alias)
+		public Flag(string description, string prototype)
+			: base(description, prototype)
 		{ }
 
 		public static implicit operator T(Flag<T> flag)
@@ -122,10 +123,10 @@ namespace TaskMan.Control
 		}
 
 		/// <summary>
-		/// Register this instance within a <see cref="Mono.Options.OptionSet"/> using
-		/// the current flag's alias for the option set prototyp. The action is a simple lambda 
-		/// expression: any <typeparamref> value obtained during the parsing is set
-		/// as the value for the current flag instance.
+		/// Register this instance within a <see cref="Mono.Options.OptionSet"/>. 
+		/// The action passed into the option is a simple lambda expression: 
+		/// any <typeparamref> value obtained during the flag parsing is set as 
+		/// the value for the current flag instance.
 		/// </summary>
 		public override void AddToOptionSet(OptionSet optionSet)
 		{
@@ -135,7 +136,7 @@ namespace TaskMan.Control
 				// Mono.Options parser doesn't actually convert
 				// boolean flags to type bool.
 				// -
-				optionSet.Add(this.Alias, value =>
+				optionSet.Add(this.Prototype, this.Description, value =>
 					this.Set(
 						(T)(object)(value != null)));
 			}
@@ -145,19 +146,24 @@ namespace TaskMan.Control
 				// we want to parse both integer and string
 				// representations of enum values.
 				// -
-				optionSet.Add(this.Alias, value => 
+				optionSet.Add(this.Prototype, this.Description, value => 
 					this.Set(
 						(T)Enum.Parse(typeof(T), value)));
 			}
 			else
 			{
-				optionSet.Add(this.Alias, (T value) => this.Set(value));
+				optionSet.Add(this.Prototype, this.Description, (T value) => 
+					this.Set(value));
 			}
 		}
 	}
 
 	public static class FlagCollectionExtensions
 	{
+		/// <summary>
+		/// Given a flag collection, adds each of the flag to an option set
+		/// and return the resulting option set.
+		/// </summary>
 		public static OptionSet GetOptionSet(this IEnumerable<Flag> flagCollection)
 		{
 			OptionSet resultOptionSet = new OptionSet();
