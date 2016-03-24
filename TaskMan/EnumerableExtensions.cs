@@ -55,6 +55,15 @@ namespace TaskMan
 			IEnumerator<T> enumerator = sequence.GetEnumerator();
 			return enumerator.MoveNext() && !enumerator.MoveNext();
 		}
+
+		/// <summary>
+		/// Determines if the specified sequence has at least two elements.
+		/// </summary>
+		public static bool HasAtLeastTwoElements<T>(this IEnumerable<T> sequence)
+		{
+			IEnumerator<T> enumerator = sequence.GetEnumerator();
+			return enumerator.MoveNext() && enumerator.MoveNext();
+		}
 	}
 }
 

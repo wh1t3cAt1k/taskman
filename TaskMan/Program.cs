@@ -115,7 +115,7 @@ namespace TaskMan
 			"p=|priority=",
 			filterPriority: 1,
 			filterPredicate: (flagValue, task) => 
-				task.PriorityLevel == TaskHelper.ParsePriority(flagValue));
+				task.Priority == TaskHelper.ParsePriority(flagValue));
 
 		/// <summary>
 		/// Filters tasks by their ID or ID range.
@@ -161,12 +161,22 @@ namespace TaskMan
 				RegexOptions.IgnoreCase));
 
 		/// <summary>
+		/// Skips the given number of tasks when displaying the
+		/// result.
+		/// </summary>
+		Flag<int> _numberSkipFlag = new TaskFilterFlag<int>(
+            nameof(_numberSkipFlag),
+            "s=|skip=",
+            filterPriority: 2,
+            filterPredicate: (flagValue, task, taskIndex) => taskIndex + 1 > flagValue);
+
+		/// <summary>
 		/// Limits the number of tasks displayed.
 		/// </summary>
 		Flag<int> _numberLimitFlag = new TaskFilterFlag<int>(
 			nameof(_numberLimitFlag),
 			"n=|limit=",
-			filterPriority: 2,
+			filterPriority: 3,
 			filterPredicate: (flagValue, task, taskIndex) => taskIndex < flagValue);
 
 		#endregion
@@ -225,7 +235,7 @@ namespace TaskMan
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
-					.Except(new [] { _numberLimitFlag })
+					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
 					.Concat(new [] { _includeAllFlag }));
 
 			_completeTasks = new Command(
@@ -234,7 +244,7 @@ namespace TaskMan
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
-					.Except(new [] { _numberLimitFlag })
+					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
 					.Concat(new [] { _includeAllFlag }));
 			
 			_displayTasks = new Command(
@@ -251,7 +261,7 @@ namespace TaskMan
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
-					.Except(new [] { _numberLimitFlag })
+					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
 					.Concat(new [] { _includeAllFlag }));
 
 			_commands = typeof(TaskMan)
@@ -446,7 +456,7 @@ namespace TaskMan
 					Messages.TaskWasAdded,
 					addedTask.Description,
 					addedTask.ID,
-					addedTask.PriorityLevel);
+					addedTask.Priority);
 			}
 			else if (command == _displayTasks)
 			{
@@ -492,9 +502,16 @@ namespace TaskMan
 			}
 			else if (command == _updateTasks)
 			{
-				this.CurrentOperation = "set task parameters";
+				this.CurrentOperation = "update task parameters";
 
-				SetTaskParameters(arguments, taskList);
+				if (!_includeAllFlag.IsSet && filteredTasks == taskList)
+				{
+					throw new TaskManException(
+						Messages.NoFilterConditionsUseAllIfIntended,
+						"delete");
+				}
+
+				UpdateTasks(arguments, taskList, filteredTasks);
 			}
 			else if (command == _completeTasks)
 			{
@@ -594,11 +611,16 @@ namespace TaskMan
 		/// <summary>
 		/// Encapsulates the task modification logic in one method.
 		/// </summary>
-		/// <param name="cliArguments">Command line arguments.</param>
-		/// <param name="taskList">Task list.</param>
-		void SetTaskParameters(LinkedList<string> cliArguments, List<Task> taskList)
+		/// <param name="cliArguments">
+		/// The command line arguments. The first argument should contain the name
+		/// of the parameter to update, the second argument should contain the value
+		/// for that parameter. All other values will be ignored.
+		/// </param>
+		/// <param name="taskList">All tasks.</param>
+		/// <param name="tasksToUpdate">The set of tasks that should be updated.</param>
+		void UpdateTasks(LinkedList<string> cliArguments, List<Task> taskList, IEnumerable<Task> tasksToUpdate)
 		{
-			if (cliArguments.Count < 3)
+			if (!cliArguments.HasAtLeastTwoElements())
 			{ 
 				throw new TaskManException(Messages.InsufficientSetParameters);
 			}
@@ -606,50 +628,63 @@ namespace TaskMan
 			int taskId;
 			ExtractTaskIdNumber(cliArguments.PopFirst(), out taskId);
 
-			string whatToChange = cliArguments.PopFirst().ToLower();
+			string parameterToChange = cliArguments.PopFirst().ToLower();
+			string parameterStringValue;
 
-			Task taskToUpdate = taskList.TaskWithId(taskId);
+			// Preserve old task description for better human-readable
+			// message in case we're updating a single task's description.
+			// -
+			string oldTaskDescription = null;
 
-			if (TaskSetPriorityRegex.IsMatch(whatToChange))
+			if (tasksToUpdate.IsSingleton())
 			{
-				int priorityLevel;
-
-				if (!int.TryParse(cliArguments.First(), out priorityLevel) || 
-					priorityLevel < 1 || 
-					priorityLevel > 3)
-				{
-					throw new TaskManException(Messages.UnknownPriorityLevel, cliArguments.First());
-				}
-
-				taskToUpdate.PriorityLevel = (Priority)priorityLevel;
-				this._saveTasks(taskList);
-
-				_output.WriteLine(
-					Messages.TaskWithIdChangedParameter, 
-					taskToUpdate.ID,
-					taskToUpdate.Description,
-					nameof(Priority).DecapitaliseFirstLetter(),
-					taskToUpdate.PriorityLevel);
-				
-				return;
+				oldTaskDescription = tasksToUpdate.Single().Description;
 			}
-			else if (TaskSetDescriptionRegex.IsMatch(whatToChange))
-			{
-				string oldDescription = taskToUpdate.Description;
-				taskToUpdate.Description = string.Join(" ", cliArguments);
 
-				this._saveTasks(taskList);
-				_output.WriteLine(
-					Messages.TaskWithIdChangedParameter,
-					taskToUpdate.ID,
-					oldDescription,
-					nameof(Task.Description).DecapitaliseFirstLetter(),
-					taskToUpdate.Description);
+			if (TaskSetPriorityRegex.IsMatch(parameterToChange))
+			{
+				Priority priority = TaskHelper.ParsePriority(cliArguments.PopFirst());
+				parameterStringValue = priority.ToString();
+
+				tasksToUpdate.ForEach(task => task.Priority = priority);
+			}
+			else if (TaskSetDescriptionRegex.IsMatch(parameterToChange))
+			{
+				parameterStringValue = string.Join(" ", cliArguments);
+
+				tasksToUpdate.ForEach(task => task.Description = parameterStringValue);
+			}
+			else if (TaskSetFinishedRegex.IsMatch(parameterToChange))
+			{
+				bool isFinished = TaskHelper.ParseFinished(cliArguments.PopFirst());
+				parameterStringValue = isFinished.ToString();
+
+				tasksToUpdate.ForEach(task => task.IsFinished = isFinished);
 			}
 			else
 			{
 				throw new TaskManException(Messages.InvalidSetParameters);
 			}
+
+			this._saveTasks(taskList);
+
+			if (tasksToUpdate.IsSingleton())
+			{
+				_output.WriteLine(
+					Messages.TaskWasUpdated,
+					oldTaskDescription,
+					parameterToChange,
+					parameterStringValue);
+			}
+			else
+			{
+				_output.WriteLine(
+					Messages.TasksWereUpdated, 
+					tasksToUpdate.Count(),
+					parameterToChange,
+					parameterStringValue);
+			}
+
 		}
 
 		/// <summary>

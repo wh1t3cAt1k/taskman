@@ -20,12 +20,13 @@
 		public const string TaskListIsEmpty = "The task list is empty.";
 		public const string TaskListClearCancelled = "Task list clearing has been cancelled.";
 		public const string TaskListCleared = "Task list has been cleared.";
-		public const string TaskWithIdChangedParameter = "Task with ID {0} [{1}] has changed its {2} to '{3}'.";
+		public const string TaskWasUpdated = "Task {0} [{1}] has changed its '{2}' value to '{3}'";
+		public const string TasksWereUpdated = "Updated {0} task(s) with new '{2}' value of '{3}'.";
 		public const string TaskWasDeleted = "Task with ID {0} [{1}] was successfully deleted.";
 		public const string TasksWereDeleted = "{0} tasks were successfully deleted.";
 		public const string TypeHelpForCommandSyntax = "Type 'taskman --help' to view command syntax.";
 		public const string RequiredFlagNotSet = "Required flag {0} was not specified";
-		public const string UnknownBoolValue = "Unknown bool value. Should be true or false.";
+		public const string UnknownFinishedFlag = "Unknown boolean completion flag '{0}'.";
 		public const string UnknownCommand = "Unknown command format. " + Messages.TypeHelpForCommandSyntax;
 		public const string UnknownPriorityLevel = "Unknown priority level '{0}'.";
 		public const string UnknownIdOrIdRange = "Unknown ID or ID range '{0}'.";

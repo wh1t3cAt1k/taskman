@@ -13,7 +13,33 @@ namespace TaskMan.Objects
 		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
 
 		/// <summary>
-		/// Tries to parse a string value into a <see cref="Priority"/> value.
+		/// Tries to parse a string value into a <see cref="Task.Finished"/>
+		/// value. 0 and "false" are parsed into <c>false</c>, 1 and "true" 
+		/// are parsed into <c>true</c>, case-insensitively.
+		/// </summary>
+		public static bool ParseFinished(string value)
+		{
+			int integerResult;
+			bool booleanResult;
+
+			if (bool.TryParse(value, out booleanResult))
+			{
+				return booleanResult;
+			}
+			else if (
+				int.TryParse(value, out integerResult) &&
+				integerResult == 0 || integerResult == 1)
+			{
+				return integerResult == 1;
+			}
+			else
+			{
+				throw new TaskManException(Messages.UnknownFinishedFlag, value);
+			}
+		}
+
+		/// <summary>
+		/// Tries to parse a string value into a <see cref="Task.Priority"/> value.
 		/// If unsuccessful, throws an exception.
 		/// </summary>
 		public static Priority ParsePriority(string priorityString)
@@ -32,18 +58,12 @@ namespace TaskMan.Objects
 		}
 
 		/// <summary>
-		/// Tries to parse a string value into a sequence of task IDs.
+		/// Tries to parse a string value into a sequence of <see cref="Task"/> IDs.
 		/// Supports: 
 		/// 1. Single IDs like '5'
 		/// 2. ID ranges like '5-36'
 		/// 3. ID lists like '5,6,7'
 		/// </summary>
-		/// <returns>
-		/// If <paramref name="idString"/> denotes a task ID range like 5-36,
-		/// 
-		/// Otherwise, if <paramref name="idString"/> denotes a single task ID,
-		/// returns a tuple with a <c>null</c> second object.
-		/// </returns>
 		public static IEnumerable<int> ParseId(string idString)
 		{
 			Match idSequenceMatch = IdSequenceRegex.Match(idString);

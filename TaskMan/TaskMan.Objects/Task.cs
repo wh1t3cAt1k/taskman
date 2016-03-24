@@ -22,7 +22,7 @@ namespace TaskMan.Objects
 	{
 		public int ID { get; set; }
 		public bool IsFinished { get; set; }
-		public Priority PriorityLevel { get; set; }
+		public Priority Priority { get; set; }
 		public string Description { get; set; }
 
 		public Task(
@@ -32,14 +32,14 @@ namespace TaskMan.Objects
 		{
 			this.ID = id;
 			this.Description = description;
-			this.PriorityLevel = priority;
+			this.Priority = priority;
 		}
 
 		public override string ToString()
 		{
 			char prioritySymbol;
 
-			switch (this.PriorityLevel)
+			switch (this.Priority)
 			{
 				case Priority.Normal:
 					prioritySymbol = ' ';
@@ -86,11 +86,11 @@ namespace TaskMan.Objects
 				{
 					return Task.FinishedTaskColor;
 				}
-				else if (this.PriorityLevel == Priority.Important)
+				else if (this.Priority == Priority.Important)
 				{
 					return Task.ImportantTaskColor;
 				}
-				else if (this.PriorityLevel == Priority.Critical)
+				else if (this.Priority == Priority.Critical)
 				{
 					return Task.CriticalTaskColor;
 				}
@@ -153,9 +153,9 @@ namespace TaskMan.Objects
 			{
 				return (firstTask.IsFinished ? 1 : -1);
 			}
-			else if (firstTask.PriorityLevel != secondTask.PriorityLevel)
+			else if (firstTask.Priority != secondTask.Priority)
 			{
-				return firstTask.PriorityLevel - secondTask.PriorityLevel;
+				return firstTask.Priority - secondTask.Priority;
 			}
 			else if (firstTask.ID != secondTask.ID)
 			{
