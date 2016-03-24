@@ -595,10 +595,7 @@ namespace TaskMan
 			{ 
 				throw new TaskManException(Messages.InsufficientSetParameters);
 			}
-
-			int taskId;
-			ExtractTaskIdNumber(cliArguments.PopFirst(), out taskId);
-
+				
 			string parameterToChange = cliArguments.PopFirst().ToLower();
 			string parameterStringValue;
 
