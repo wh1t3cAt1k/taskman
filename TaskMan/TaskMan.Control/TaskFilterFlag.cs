@@ -24,7 +24,7 @@ namespace TaskMan.Control
 		/// argument), must return a boolean value indicating whether 
 		/// the task object must be included into the filtered sequence.
 		/// </param>
-		public TaskFilterFlag(string name, string alias, Func<T, Task, int, bool> filterPredicate)
+		public TaskFilterFlag(string name, string alias, int filterPriority, Func<T, Task, int, bool> filterPredicate)
 			: base(name, alias)
 		{
 			if (filterPredicate == null)
@@ -33,10 +33,11 @@ namespace TaskMan.Control
 			}
 
 			_filterPredicate = filterPredicate;
+			this.FilterPriority = filterPriority;
 		}
 
-		public TaskFilterFlag(string name, string alias, Func<T, Task, bool> filterPredicate)
-			: this(name, alias, (flagValue, task, taskIndex) => filterPredicate(flagValue, task))
+		public TaskFilterFlag(string name, string alias, int filterPriority, Func<T, Task, bool> filterPredicate)
+			: this(name, alias, filterPriority, (flagValue, task, taskIndex) => filterPredicate(flagValue, task))
 		{ }
 
 		public IEnumerable<Task> Filter(IEnumerable<Task> taskSequence)
@@ -44,6 +45,8 @@ namespace TaskMan.Control
 			return taskSequence.Where(
 				(task, taskIndex) => _filterPredicate(this.Value, task, taskIndex));
 		}
+
+		public int FilterPriority { get; private set; }
 	}
 }
 

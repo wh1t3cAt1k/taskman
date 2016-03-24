@@ -90,6 +90,7 @@ namespace TaskMan
 		Flag<string> _priorityFlag = new TaskFilterFlag<string>(
 			nameof(_priorityFlag), 
 			"p=|priority=",
+			filterPriority: 1,
 			filterPredicate: (flagValue, task) => 
 				task.PriorityLevel == TaskMan.ParsePriority(flagValue));
 
@@ -99,6 +100,7 @@ namespace TaskMan
 		Flag<string> _identityFilterFlag = new TaskFilterFlag<string>(
             nameof(_identityFilterFlag),
             "i=|id=",
+			filterPriority: 1,
 			filterPredicate: (flagValue, task) => 
 			{
 				IEnumerable<int> allowedIds = ParseId(flagValue);
@@ -111,6 +113,7 @@ namespace TaskMan
 		Flag<bool> _pendingFilterFlag = new TaskFilterFlag<bool>(
 			nameof(_pendingFilterFlag), 
 			"P|pending|unfinished",
+			filterPriority: 1,
 			filterPredicate: (_, task) => task.IsFinished == false);
 
 		/// <summary>
@@ -119,6 +122,7 @@ namespace TaskMan
 		Flag<bool> _finishedFilterFlag = new TaskFilterFlag<bool>(
 			nameof(_finishedFilterFlag), 
 			"F|finished|completed",
+			filterPriority: 1,
 			filterPredicate: (_, task) => task.IsFinished == true);
 
 		/// <summary>
@@ -127,6 +131,7 @@ namespace TaskMan
 		Flag<string> _descriptionFilterFlag = new TaskFilterFlag<string>(
 			nameof(_descriptionFilterFlag), 
 			"r=|like=",
+			filterPriority: 1,
 			filterPredicate: (pattern, task) => Regex.IsMatch(
 				task.Description, 
 				pattern, 
@@ -138,6 +143,7 @@ namespace TaskMan
 		Flag<int> _numberLimitFlag = new TaskFilterFlag<int>(
 			nameof(_numberLimitFlag),
 			"n=|limit=",
+			filterPriority: 2,
 			filterPredicate: (flagValue, task, taskIndex) => taskIndex < flagValue);
 
 		IEnumerable<Command> _commands;
@@ -469,9 +475,10 @@ namespace TaskMan
 				{
 					filteredTasks = filterFlagsSpecified
 						.Cast<ITaskFilter>()
+						.OrderBy(taskFilter => taskFilter.FilterPriority)
 						.Aggregate(
-							taskList as IEnumerable<Task>, 
-							(sequence, filter) => filter.Filter(sequence));
+							seed: taskList as IEnumerable<Task>, 
+							func: (taskSequence, filter) => filter.Filter(taskSequence));
 
 					if (!filteredTasks.Any())
 					{
