@@ -173,36 +173,5 @@ namespace TaskMan.Objects
 		{
 			return Task.CompareTasks(this, otherTask);
 		}
-	}
-
-	public static class TaskCollectionExtensions
-	{
-		/// <summary>
-		/// Returns a task with the specified id, if it is present
-		/// in the task list, throws an exception otherwise.
-		/// </summary>
-		/// <returns>
-		/// Task with the specified ID, if it is present 
-		/// in <paramref name="tasks"/> list.
-		/// </returns>
-		/// <param name="tasks">The task list.</param>
-		/// <param name="id">The ID of the task to be returned.</param>
-		[Obsolete("", false)]
-		public static Task TaskWithId(this List<Task> tasks, int id)
-		{
-			if (!tasks.Any())
-			{
-				throw new TaskManException(Messages.TaskListIsEmpty);
-			}
-
-			try
-			{
-				return tasks.Single(task => (task.ID == id));
-			}
-			catch
-			{
-				throw new TaskManException(Messages.NoTaskWithSpecifiedId, id);
-			}
-		}
-	}
+	}		
 }

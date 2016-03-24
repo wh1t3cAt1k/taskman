@@ -526,7 +526,9 @@ namespace TaskMan
 			if (_displayHelpFlag.IsSet)
 			{
 				this.CurrentOperation = "display help text";
+
 				_output.WriteLine(Assembly.GetExecutingAssembly().GetResourceText("TaskMan.HELP.txt"));
+				_optionSet.WriteOptionDescriptions(_output);
 
 				return true;
 			}

@@ -50,4 +50,3 @@
 	> use flags to filter the tasks to be deleted.
 
 --> available command line options:
-
