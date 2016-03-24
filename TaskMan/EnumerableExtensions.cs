@@ -15,12 +15,18 @@ namespace TaskMan
 		/// <param name="sequence">A sequence of <typeparamref>T/<typeparamref> elements.</param>
 		/// <param name="action">An action to be performed upon each element of the sequence.</param>
 		/// <typeparam name="T">The type of elements in the sequence.</typeparam>
-		public static void ForEach<T>(this IEnumerable<T> sequence, Action<T> action)
+		/// <returns>Returns the number of times the action has been performed.</returns>
+		public static int ForEach<T>(this IEnumerable<T> sequence, Action<T> action)
 		{
+			int executionTimes = 0;
+
 			foreach (T item in sequence)
 			{
 				action(item);
+				++executionTimes;
 			}
+
+			return executionTimes;
 		}
 
 		/// <summary>

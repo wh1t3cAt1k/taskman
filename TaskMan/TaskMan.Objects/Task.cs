@@ -37,40 +37,37 @@ namespace TaskMan.Objects
 
 		public override string ToString()
 		{
-			char prioritySymbol;
+			string prioritySymbol;
 
 			switch (this.Priority)
 			{
-				case Priority.Normal:
-					prioritySymbol = ' ';
-					break;
 				case Priority.Important:
-					prioritySymbol = '!';
+					prioritySymbol = "!";
 					break;
 				case Priority.Critical:
-					prioritySymbol = '#';
+					prioritySymbol = "!!";
 					break;
 				default:
-					prioritySymbol = ' ';
+					prioritySymbol = string.Empty;
 					break;
 			}
 
 			if (this.IsFinished)
 			{
-				prioritySymbol = 'x';
+				prioritySymbol = "x";
 			}
 
 			return String.Format(
-				"{0} {3} id. {1}\t {2}", 
-				prioritySymbol, 
+				"{0}{1,-2} id. {2,-6}{3}", 
+				(this.IsFinished ? "--| " : string.Empty),
+				prioritySymbol,
 				ID, 
-				Description, 
-				(IsFinished ? "--| fin." : "cur."));
+				Description);
 		}
 
 		public static readonly ConsoleColor NormalTaskColor = Console.ForegroundColor;
 		public static readonly ConsoleColor FinishedTaskColor = ConsoleColor.Gray;
-		public static readonly ConsoleColor ImportantTaskColor = ConsoleColor.Cyan;
+		public static readonly ConsoleColor ImportantTaskColor = ConsoleColor.Green;
 		public static readonly ConsoleColor CriticalTaskColor = ConsoleColor.Yellow;
 
 		/// <summary>

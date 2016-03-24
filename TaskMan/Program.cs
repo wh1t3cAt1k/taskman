@@ -609,25 +609,27 @@ namespace TaskMan
 				oldTaskDescription = tasksToUpdate.Single().Description;
 			}
 
+			int totalTasksUpdated;
+
 			if (TaskSetPriorityRegex.IsMatch(parameterToChange))
 			{
 				Priority priority = TaskHelper.ParsePriority(cliArguments.PopFirst());
 				parameterStringValue = priority.ToString();
 
-				tasksToUpdate.ForEach(task => task.Priority = priority);
+				totalTasksUpdated = tasksToUpdate.ForEach(task => task.Priority = priority);
 			}
 			else if (TaskSetDescriptionRegex.IsMatch(parameterToChange))
 			{
 				parameterStringValue = string.Join(" ", cliArguments);
 
-				tasksToUpdate.ForEach(task => task.Description = parameterStringValue);
+				totalTasksUpdated = tasksToUpdate.ForEach(task => task.Description = parameterStringValue);
 			}
 			else if (TaskSetFinishedRegex.IsMatch(parameterToChange))
 			{
 				bool isFinished = TaskHelper.ParseFinished(cliArguments.PopFirst());
 				parameterStringValue = isFinished.ToString();
 
-				tasksToUpdate.ForEach(task => task.IsFinished = isFinished);
+				totalTasksUpdated = tasksToUpdate.ForEach(task => task.IsFinished = isFinished);
 			}
 			else
 			{
@@ -636,7 +638,7 @@ namespace TaskMan
 
 			this._saveTasks(taskList);
 
-			if (tasksToUpdate.IsSingleton())
+			if (totalTasksUpdated == 1)
 			{
 				_output.WriteLine(
 					Messages.TaskWasUpdated,
@@ -649,7 +651,7 @@ namespace TaskMan
 			{
 				_output.WriteLine(
 					Messages.TasksWereUpdated, 
-					tasksToUpdate.Count(),
+					totalTasksUpdated,
 					parameterToChange,
 					parameterStringValue);
 			}
