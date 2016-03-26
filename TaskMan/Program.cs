@@ -506,11 +506,9 @@ namespace TaskMan
 
 				taskList = taskList.Except(filteredTasks).ToList();
 
-				if (taskList.Any())
-				{
-					_saveTasks(taskList);
-				}
-				else
+				_saveTasks(taskList);
+
+				if (!taskList.Any())
 				{
 					File.Delete(TASKS_FULL_NAME);
 				}

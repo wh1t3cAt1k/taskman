@@ -38,9 +38,6 @@ namespace TaskMan
 						new [] { ' ' },
 						StringSplitOptions.RemoveEmptyEntries));
 
-					outputRedirect.Flush();
-					errorRedirect.Flush();
-
 					_output.AppendLine(outputRedirect.ToString());
 					_errors.AppendLine(errorRedirect.ToString());
 				}
@@ -57,16 +54,12 @@ namespace TaskMan
 	public class UnitTests
 	{
 		[Test]
-		public void Test_AddWorks()
+		public void Test_Add_AddsTask()
 		{
 			TaskManTester tester = new TaskManTester();
 
-			// Action
-			// -
 			tester.RunWithCommand("add Remember the milk");
 
-			// Assert
-			// -
 			Assert.IsNotEmpty(tester.SavedTasks);
 			Assert.That(
 				tester.SavedTasks.First().Description, 
@@ -74,18 +67,14 @@ namespace TaskMan
 		}
 
 		[Test]
-		public void Test_NewIsTheSameAsAdd()
+		public void Test_New_IsTheSameAsAdd()
 		{
 			TaskManTester tester = new TaskManTester();
 
-			// Action
-			// -
 			tester.RunWithCommands(
 				"add Remember the milk",
 				"new Remember the milk");
 
-			// Assert
-			// -
 			Assert.That(tester.SavedTasks.Count(), Is.EqualTo(2));
 			Assert.That(
 				tester.SavedTasks.First().Description,
@@ -93,22 +82,124 @@ namespace TaskMan
 		}
 
 		[Test]
-		public void Test_CreateIsTheSameAsAdd()
+		public void Test_Create_IsTheSameAsAdd()
 		{
 			TaskManTester tester = new TaskManTester();
 
-			// Action
-			// -
 			tester.RunWithCommands(
 				"add Remember the milk",
 				"create Remember the milk");
 
-			// Assert
-			// -
 			Assert.That(tester.SavedTasks.Count, Is.EqualTo(2));
 			Assert.That(
 				tester.SavedTasks.First().Description, 
 				Is.EqualTo(tester.SavedTasks.Last().Description));
+		}
+
+		[Test]
+		public void Test_Complete_CompletesTasks()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.RunWithCommands(
+				"add first",
+				"add second",
+				"add third",
+				"complete --all");
+			
+			Assert.That(
+				tester.SavedTasks,
+				Is.All.Matches<Task>(task => task.IsFinished));
+		}
+
+		[Test]
+		public void Test_Delete_DeletesTasks()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.RunWithCommands(
+				"add first",
+				"add second",
+				"add third",
+				"delete --all");
+
+			Assert.IsEmpty(tester.SavedTasks);
+		}
+
+		[Test]
+		public void Test_Update_UpdatesDescription()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.RunWithCommands(
+				"add first",
+				"add second",
+				"add third",
+				"update --all description NEW");
+
+			Assert.That(
+				tester.SavedTasks,
+				Is.All.Matches<Task>(task => task.Description == "NEW"));
+		}
+
+		[Test]
+		public void Test_Update_UpdatesFinished()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.RunWithCommands(
+				"add first",
+				"add second",
+				"add third",
+				"update --all finished true");
+
+			Assert.That(
+				tester.SavedTasks,
+				Is.All.Matches<Task>(task => task.IsFinished));
+		}
+
+		[Test]
+		public void Test_Update_UpdatesPriority()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.RunWithCommands(
+				"add first",
+				"add second",
+				"add third",
+				"update --all priority Important");
+
+			Assert.That(
+				tester.SavedTasks,
+				Is.All.Matches<Task>(task => task.Priority == Priority.Important));
+		}
+
+		[Test]
+		public void Test_PriorityFlag_SetsPriority_When_AddingNewTask()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.RunWithCommand("add -p Critical first");
+
+			Assert.That(
+				tester.SavedTasks.Single().Priority,
+				Is.EqualTo(Priority.Critical));
+		}
+
+		[Test]
+		public void Test_PriorityFlag_FiltersByPriority()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.RunWithCommands(
+				"add first",
+				"add second -p Important",
+				"add third",
+				"delete -p Normal");
+
+			Assert.That(
+				tester.SavedTasks.Single().Priority, 
+				Does.Not.EqualTo(Priority.Normal));
 		}
 
 		[Test]
@@ -137,6 +228,16 @@ namespace TaskMan
 			Assert.That(
 				tester.Output,
 				Contains.Substring(expectedSubstring));
+		}
+
+		[Test]
+		public void Test_SilentFlag_MakesTaskAddingSilent()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.RunWithCommand("add --silent Remember the milk");
+
+			Assert.That(() => string.IsNullOrWhiteSpace(tester.Output));
 		}
 
 		[Test]
