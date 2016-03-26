@@ -109,10 +109,7 @@ namespace TaskMan.Objects
 			ConsoleColor? backgroundColor = null,
 			ConsoleColor? foregroundColor = null)
 		{
-			if (outputStream == null)
-			{
-				outputStream = Console.Out;
-			}
+			outputStream = outputStream ?? Console.Out;
 
 			if (!backgroundColor.HasValue)
 			{

@@ -25,10 +25,16 @@ namespace TaskMan
 			}
 			catch (Exception exception)
 			{
-				Console.Error.WriteLine(
+				program.ErrorStream.WriteLine(
 					Messages.ErrorPerformingOperation,
 					program.CurrentOperation,
 					exception.Message.DecapitaliseFirstLetter());
+
+				if (program.IsVerbose)
+				{
+					program.ErrorStream.WriteLine(Messages.ExceptionStackTrace);
+					program.ErrorStream.Write(exception.StackTrace);
+				}
 
 				return -1;
 			}
@@ -89,6 +95,14 @@ namespace TaskMan
 		Flag<bool> _interactiveFlag = new Flag<bool>(
 			"displays a confirmation prompt before executing an operation (not functional yet)", 
 			"I|interactive");
+
+		Flag<bool> _verboseFlag = new Flag<bool>(
+			"increase error message verbosity",
+			"v|verbose");
+
+		Flag<bool> _silentFlag = new Flag<bool>(
+			"do not display any messages except errors",
+			"S|silent");
 
 		Flag<bool> _includeAllFlag = new Flag<bool>(
 			"forces an operation to be executed upon all tasks", 
@@ -165,8 +179,32 @@ namespace TaskMan
 		/// <summary>
 		/// Gets or sets the current operation performed by the program.
 		/// </summary>
-		/// <value>The current operation.</value>
+		/// <value>The current operation performed by TaskMan.</value>
 		public string CurrentOperation { get; private set; }
+
+		/// <summary>
+		/// Gets a value indicating whether this instance is verbose.
+		/// </summary>
+		public bool IsVerbose 
+		{ 
+			get 
+			{
+				return 
+					this._verboseFlag.IsSet &&
+					this._verboseFlag.Value;
+			}
+		}
+
+		/// <summary>
+		/// Gets the error stream used by this instance.
+		/// </summary>
+		public TextWriter ErrorStream
+		{
+			get
+			{
+				return _error;
+			}
+		}
 
 		/// <summary>
 		/// Mono OptionSet object for command line flag parsing.
@@ -196,7 +234,8 @@ namespace TaskMan
 				nameof(_addTask), 
 				TaskAddRegex, 
 				isReadUpdateDelete: false,
-				supportedFlags: new [] { _descriptionFlag, _priorityFlag });
+				supportedFlags: 
+					new Flag[] { _descriptionFlag, _priorityFlag, _silentFlag, _verboseFlag });
 			
 			_deleteTasks = new Command(
 				nameof(_deleteTasks), 
@@ -205,7 +244,7 @@ namespace TaskMan
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
-					.Concat(new [] { _includeAllFlag }));
+					.Concat(new [] { _includeAllFlag, _silentFlag, _verboseFlag }));
 
 			_completeTasks = new Command(
 				nameof(_completeTasks), 
@@ -214,7 +253,7 @@ namespace TaskMan
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
-					.Concat(new [] { _includeAllFlag }));
+					.Concat(new [] { _includeAllFlag, _silentFlag, _verboseFlag }));
 			
 			_displayTasks = new Command(
 				nameof(_displayTasks), 
@@ -222,7 +261,7 @@ namespace TaskMan
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
-					.Concat(new [] { _includeAllFlag }));
+					.Concat(new [] { _includeAllFlag, _verboseFlag }));
 			
 			_updateTasks = new Command(
 				nameof(_updateTasks), 
@@ -231,7 +270,7 @@ namespace TaskMan
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
-					.Concat(new [] { _includeAllFlag }));
+					.Concat(new [] { _includeAllFlag, _silentFlag, _verboseFlag }));
 
 			_commands = typeof(TaskMan)
 				.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
@@ -296,6 +335,27 @@ namespace TaskMan
 			outputFileStream.Close();
 		}
 
+		/// <summary>
+		/// Writes the specified string to the output 
+		/// unless the silent flag is set.
+		/// </summary>
+		void WriteLine(string text)
+		{
+			if (!_silentFlag.IsSet || !_silentFlag.Value)
+			{
+				_output.WriteLine(text);
+			}
+		}
+
+		/// <summary>
+		/// Writes the specified string to the output 
+		/// unless the silent flag is set.
+		/// </summary>
+		void WriteLine(string text, params object[] args)
+		{
+			WriteLine(string.Format(text, args));
+		}
+
 		public void Run(IEnumerable<string> commandLineArguments)
 		{
 			if (!Directory.Exists(TaskMan.APP_DATA_PATH))
@@ -332,7 +392,7 @@ namespace TaskMan
 
 			if (!matchingCommands.Any())
 			{
-				throw new TaskManException(Messages.UnknownCommand);
+				throw new TaskManException(Messages.UnknownCommand, commandName);
 			}
 			else if (!matchingCommands.IsSingleton())
 			{
@@ -393,7 +453,7 @@ namespace TaskMan
 			{
 				if (!taskList.Any())
 				{
-					_output.WriteLine(Messages.TaskListIsEmpty);
+					WriteLine(Messages.TaskListIsEmpty);
 					return;
 				}
 			
@@ -408,7 +468,7 @@ namespace TaskMan
 
 					if (!filteredTasks.Any())
 					{
-						_output.WriteLine(Messages.NoTasksMatchingGivenConditions);
+						WriteLine(Messages.NoTasksMatchingGivenConditions);
 						return;
 					}
 				}
@@ -421,7 +481,7 @@ namespace TaskMan
 				Task addedTask = AddTask(arguments, taskList);
 				_saveTasks(taskList);
 
-				_output.WriteLine(
+				WriteLine(
 					Messages.TaskWasAdded,
 					addedTask.Description,
 					addedTask.ID,
@@ -431,7 +491,7 @@ namespace TaskMan
 			{
 				this.CurrentOperation = "display tasks";
 
-				filteredTasks.ForEach(task => task.Display());
+				filteredTasks.ForEach(task => task.Display(_output));
 			}
 			else if (command == _deleteTasks)
 			{
@@ -457,14 +517,14 @@ namespace TaskMan
 
 				if (filteredTasks.IsSingleton())
 				{
-					_output.WriteLine(
+					WriteLine(
 						Messages.TaskWasDeleted, 
 						filteredTasks.Single().ID, 
 						filteredTasks.Single().Description);
 				}
 				else
 				{
-					_output.WriteLine(
+					WriteLine(
 						Messages.TasksWereDeleted,
 						filteredTasks.Count());
 				}
@@ -499,14 +559,14 @@ namespace TaskMan
 
 				if (filteredTasks.IsSingleton())
 				{
-					_output.WriteLine(
+					WriteLine(
 						Messages.TaskWasFinished, 
 						filteredTasks.Single().ID, 
 						filteredTasks.Single().Description);
 				}
 				else
 				{
-					_output.WriteLine(
+					WriteLine(
 						Messages.TasksWereFinished,
 						filteredTasks.Count());
 				}
@@ -640,7 +700,7 @@ namespace TaskMan
 
 			if (totalTasksUpdated == 1)
 			{
-				_output.WriteLine(
+				WriteLine(
 					Messages.TaskWasUpdated,
 					tasksToUpdate.Single().ID,
 					oldTaskDescription,
@@ -649,7 +709,7 @@ namespace TaskMan
 			}
 			else
 			{
-				_output.WriteLine(
+				WriteLine(
 					Messages.TasksWereUpdated, 
 					totalTasksUpdated,
 					parameterToChange,

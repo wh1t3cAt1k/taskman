@@ -6,22 +6,21 @@ using System.Linq;
 using NUnit.Framework;
 
 using TaskMan.Objects;
+using System.Text;
 
 namespace TaskMan
 {
-	[TestFixture]
-	public class UnitTests
+	public class TaskManTester
 	{
-		List<Task> _savedTasks;
+		List<Task> _savedTasks = new List<Task>();
+		
+		public IEnumerable<Task> SavedTasks { get { return _savedTasks; } }
 
-		string _output;
-		string _errors;
+		StringBuilder _output = new StringBuilder();
+		StringBuilder _errors = new StringBuilder();
 
-		[SetUp]
-		public void Setup()
-		{
-			_savedTasks = new List<Task>();
-		}
+		public string Output { get { return _output.ToString(); } }
+		public string Errors { get { return _errors.ToString(); } }
 
 		public void RunWithCommand(string command)
 		{
@@ -39,133 +38,123 @@ namespace TaskMan
 						new [] { ' ' },
 						StringSplitOptions.RemoveEmptyEntries));
 
-					_output = outputRedirect.ToString();
-					_errors = errorRedirect.ToString();
+					outputRedirect.Flush();
+					errorRedirect.Flush();
+
+					_output.AppendLine(outputRedirect.ToString());
+					_errors.AppendLine(errorRedirect.ToString());
 				}
 			}
 		}
 
 		public void RunWithCommands(params string[] commands)
 		{
-			foreach (string command in commands)
-			{
-				RunWithCommand(command);
-			}
+			commands.ForEach(RunWithCommand);
 		}
+	}
 
+	[TestFixture]
+	public class UnitTests
+	{
 		[Test]
 		public void Test_AddWorks()
 		{
+			TaskManTester tester = new TaskManTester();
+
 			// Action
 			// -
-			RunWithCommand("add Remember the milk");
+			tester.RunWithCommand("add Remember the milk");
 
 			// Assert
 			// -
-			Assert.IsNotEmpty(_savedTasks);
+			Assert.IsNotEmpty(tester.SavedTasks);
 			Assert.That(
-				_savedTasks.First().Description, 
+				tester.SavedTasks.First().Description, 
 				Is.EqualTo("Remember the milk"));
 		}
 
 		[Test]
 		public void Test_NewIsTheSameAsAdd()
 		{
+			TaskManTester tester = new TaskManTester();
+
 			// Action
 			// -
-			RunWithCommands(
+			tester.RunWithCommands(
 				"add Remember the milk",
 				"new Remember the milk");
 
 			// Assert
 			// -
-			Assert.That(_savedTasks.Count, Is.EqualTo(2));
+			Assert.That(tester.SavedTasks.Count(), Is.EqualTo(2));
 			Assert.That(
-				_savedTasks.First().Description,
-				Is.EqualTo(_savedTasks.Last().Description));
+				tester.SavedTasks.First().Description,
+				Is.EqualTo(tester.SavedTasks.Last().Description));
 		}
 
 		[Test]
 		public void Test_CreateIsTheSameAsAdd()
 		{
+			TaskManTester tester = new TaskManTester();
+
 			// Action
 			// -
-			RunWithCommands(
+			tester.RunWithCommands(
 				"add Remember the milk",
 				"create Remember the milk");
 
 			// Assert
 			// -
-			Assert.That(_savedTasks.Count, Is.EqualTo(2));
+			Assert.That(tester.SavedTasks.Count, Is.EqualTo(2));
 			Assert.That(
-				_savedTasks.First().Description, 
-				Is.EqualTo(_savedTasks.Last().Description));
+				tester.SavedTasks.First().Description, 
+				Is.EqualTo(tester.SavedTasks.Last().Description));
 		}
 
 		[Test]
 		public void Test_LicenseFlag_OutputsLicense()
 		{
+			TaskManTester tester = new TaskManTester();
+
 			const string expectedSubstring = "GNU GENERAL PUBLIC LICENSE";
 
-			RunWithCommand("--license");
-
-			string firstOutput = _output;
-
-			RunWithCommand("/license");
-
-			string secondOutput = _output;
-
-			RunWithCommand("-license");
-
-			string thirdOutput = _output;
+			tester.RunWithCommand("--license");
 
 			Assert.That(
-				firstOutput,
+				tester.Output,
 				Contains.Substring(expectedSubstring));
-
-			Assert.That(
-				secondOutput,
-				Contains.Substring(expectedSubstring));
-
-			Assert.That(
-				thirdOutput,
-				Contains.Substring(expectedSubstring));
-
-			Assert.AreEqual(firstOutput, secondOutput);
-			Assert.AreEqual(firstOutput, thirdOutput);
 		}
 
 		[Test]
 		public void Test_VersionFlag_OutputsVersion()
 		{
+			TaskManTester tester = new TaskManTester();
+
 			const string expectedSubstring = "version";
 
-			RunWithCommand("--version");
-
-			string firstOutput = _output;
-
-			RunWithCommand("/version");
-
-			string secondOutput = _output;
-
-			RunWithCommand("-version");
-
-			string thirdOutput = _output;
+			tester.RunWithCommand("--version");
 
 			Assert.That(
-				firstOutput,
+				tester.Output,
 				Contains.Substring(expectedSubstring));
+		}
+
+		[Test]
+		public void Test_LimitFlag_HasLowerPriorityThanSkipFlag()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.RunWithCommands(
+				"add first --silent",
+				"add second --silent",
+				"add third --silent",
+				"show --limit 1 --skip 2");
 
 			Assert.That(
-				secondOutput,
-				Contains.Substring(expectedSubstring));
-
-			Assert.That(
-				thirdOutput,
-				Contains.Substring(expectedSubstring));
-
-			Assert.AreEqual(firstOutput, secondOutput);
-			Assert.AreEqual(firstOutput, thirdOutput);
+				tester.Output,
+				Does.Not.Contain("first")
+				.And.Not.Contain("second")
+				.And.Contains("third"));
 		}
 	}
 }

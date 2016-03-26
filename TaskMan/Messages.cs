@@ -5,6 +5,7 @@
 		public const string ClearConfirmationMessage = "All tasks will be deleted. Confirm (y[es]/n[o]): ";
 		public const string CouldNotReadTaskList = "An error occurred while trying to read task list: {0}";
 		public const string ErrorPerformingOperation = "Cannot {0}: {1}";
+		public const string ExceptionStackTrace = "Exception stack trace: ";
 		public const string FlagNotSet = "The {0} flag value has not been set.";
 		public const string EntityDoesNotMakeSenseWithEntity = "'{0}' does not make sense with '{1}'.";
 		public const string InsufficientSetParameters = "Insufficient parameters in 'set' command. " + Messages.TypeHelpForCommandSyntax;
@@ -27,7 +28,7 @@
 		public const string TypeHelpForCommandSyntax = "Type 'taskman --help' to view command syntax.";
 		public const string RequiredFlagNotSet = "Required flag {0} was not specified";
 		public const string UnknownFinishedFlag = "Unknown boolean completion flag '{0}'.";
-		public const string UnknownCommand = "Unknown command format. " + Messages.TypeHelpForCommandSyntax;
+		public const string UnknownCommand = "Unknown command '{0}'. " + Messages.TypeHelpForCommandSyntax;
 		public const string UnknownPriorityLevel = "Unknown priority level '{0}'.";
 		public const string UnknownIdOrIdRange = "Unknown ID or ID range '{0}'.";
 		public const string NoFilterConditionsUseAllIfIntended = "No task filter conditions specified. Use the --all flag if you intended to {0} all tasks.";
