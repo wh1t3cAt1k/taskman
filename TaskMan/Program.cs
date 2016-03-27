@@ -10,6 +10,7 @@ using Mono.Options;
 
 using TaskMan.Control;
 using TaskMan.Objects;
+using System.Configuration;
 
 namespace TaskMan
 {
@@ -356,7 +357,7 @@ namespace TaskMan
 			WriteLine(string.Format(text, args));
 		}
 
-		public void Run(IEnumerable<string> commandLineArguments)
+		public void Run(IEnumerable<string> originalArguments)
 		{
 			if (!Directory.Exists(TaskMan.APP_DATA_PATH))
 			{
@@ -366,10 +367,10 @@ namespace TaskMan
 
 			this.CurrentOperation = "parse command line arguments";
 
-			LinkedList<string> arguments =
-				new LinkedList<string>(_optionSet.Parse(commandLineArguments));
+			LinkedList<string> commandLineArguments =
+				new LinkedList<string>(_optionSet.Parse(originalArguments));
 
-			string commandName = arguments.First?.Value;
+			string commandName = commandLineArguments.First?.Value;
 
 			if (commandName == null)
 			{
@@ -382,9 +383,11 @@ namespace TaskMan
 					// TaskMan operates as "show" by default.
 					// -
 					commandName = "show";
-					arguments = new LinkedList<string>(new [] { commandName }); 
+					commandLineArguments = new LinkedList<string>(new [] { commandName }); 
 				}
 			}
+
+			commandLineArguments.RemoveFirst();
 
 			this.CurrentOperation = "recognize the command";
 
@@ -399,47 +402,11 @@ namespace TaskMan
 				throw new TaskManException(Messages.MoreThanOneCommandMatchesInput);
 			}
 
-			Command command = matchingCommands.Single();
+			Command executingCommand = matchingCommands.Single();
 
 			this.CurrentOperation = "ensure flag consistency";
 
-			IEnumerable<Flag> unsupportedFlagsSpecified = _flags.Where(
-				flag => flag.IsSet && 
-				!command.SupportedFlags.Contains(flag));
-
-			IEnumerable<Flag> requiredFlagsUnspecified = _flags.Where(
-				flag => !flag.IsSet &&
-				command.RequiredFlags.Contains(flag));
-
-			IEnumerable<Flag> filterFlagsSpecified = _flags.Where(
-				flag => flag.IsSet && 
-				flag is ITaskFilter);
-
-			if (unsupportedFlagsSpecified.Any())
-			{
-				throw new TaskManException(
-					Messages.EntityDoesNotMakeSenseWithEntity,
-					unsupportedFlagsSpecified.First().GetProvidedName(commandLineArguments),
-					commandName);
-			}
-
-			if (requiredFlagsUnspecified.Any())
-			{
-				throw new TaskManException(
-					Messages.RequiredFlagNotSet,
-					requiredFlagsUnspecified.First().Prototype);
-			}
-
-			if (filterFlagsSpecified.Any() &&
-			    _includeAllFlag.IsSet)
-			{
-				throw new TaskManException(
-					Messages.EntityDoesNotMakeSenseWithEntity,
-					filterFlagsSpecified.First().GetProvidedName(commandLineArguments),
-					_includeAllFlag.GetProvidedName(commandLineArguments));
-			}
-
-			arguments.RemoveFirst();
+			EnsureFlagConsistency();
 
 			this.CurrentOperation = "read tasks from the task file";
 
@@ -449,7 +416,7 @@ namespace TaskMan
 
 			IEnumerable<Task> filteredTasks = taskList;
 
-			if (command.IsReadUpdateDelete)
+			if (executingCommand.IsReadUpdateDelete)
 			{
 				if (!taskList.Any())
 				{
@@ -457,10 +424,13 @@ namespace TaskMan
 					return;
 				}
 			
+				IEnumerable<ITaskFilter> filterFlagsSpecified = _flags
+					.Where(flag => flag.IsSet)
+					.OfType<ITaskFilter>();
+
 				if (filterFlagsSpecified.Any())
 				{
 					filteredTasks = filterFlagsSpecified
-						.Cast<ITaskFilter>()
 						.OrderBy(taskFilter => taskFilter.FilterPriority)
 						.Aggregate(
 							seed: taskList as IEnumerable<Task>, 
@@ -474,11 +444,11 @@ namespace TaskMan
 				}
 			}
 
-			if (command == _addTask)
+			if (executingCommand == _addTask)
 			{
 				this.CurrentOperation = "add a new task";
 
-				Task addedTask = AddTask(arguments, taskList);
+				Task addedTask = AddTask(commandLineArguments, taskList);
 				_saveTasks(taskList);
 
 				WriteLine(
@@ -487,22 +457,17 @@ namespace TaskMan
 					addedTask.ID,
 					addedTask.Priority);
 			}
-			else if (command == _displayTasks)
+			else if (executingCommand == _displayTasks)
 			{
 				this.CurrentOperation = "display tasks";
 
 				filteredTasks.ForEach(task => task.Display(_output));
 			}
-			else if (command == _deleteTasks)
+			else if (executingCommand == _deleteTasks)
 			{
 				this.CurrentOperation = "delete tasks";
 
-				if (!_includeAllFlag.IsSet && filteredTasks == taskList)
-				{
-					throw new TaskManException(
-						Messages.NoFilterConditionsUseAllIfIntended,
-						"delete");
-				}
+				RequireExplicitFiltering(commandName, taskList, filteredTasks);
 
 				taskList = taskList.Except(filteredTasks).ToList();
 
@@ -527,29 +492,19 @@ namespace TaskMan
 						filteredTasks.Count());
 				}
 			}
-			else if (command == _updateTasks)
+			else if (executingCommand == _updateTasks)
 			{
 				this.CurrentOperation = "update task parameters";
 
-				if (!_includeAllFlag.IsSet && filteredTasks == taskList)
-				{
-					throw new TaskManException(
-						Messages.NoFilterConditionsUseAllIfIntended,
-						"delete");
-				}
+				RequireExplicitFiltering(commandName, taskList, filteredTasks);
 
-				UpdateTasks(arguments, taskList, filteredTasks);
+				UpdateTasks(commandLineArguments, taskList, filteredTasks);
 			}
-			else if (command == _completeTasks)
+			else if (executingCommand == _completeTasks)
 			{
 				this.CurrentOperation = "finish tasks";
 
-				if (!_includeAllFlag.IsSet && filteredTasks == taskList)
-				{
-					throw new TaskManException(
-						Messages.NoFilterConditionsUseAllIfIntended,
-						"finish");
-				}
+				RequireExplicitFiltering(commandName, taskList, filteredTasks);
 
 				filteredTasks.ForEach(task => task.IsFinished = true);
 
@@ -622,18 +577,70 @@ namespace TaskMan
 		}
 
 		/// <summary>
-		/// Parses the given string into a task ID number, or 
-		/// throws an exception if parse operation is failed.
+		/// Ensures the command line flag consistency.
 		/// </summary>
-		/// <param name="taskIdString">Task identifier string.</param>
-		/// <param name="taskId">Task identifier.</param>
-		static void ExtractTaskIdNumber(string taskIdString, out int taskId)
+		/// <param name="executingCommand">Executing command.</param>
+		/// <param name="commandName">The provided command name.</param>
+		/// <param name="commandLineArguments">All command line arguments.</param>
+		void EnsureFlagConsistency(
+			Command executingCommand, 
+			string commandName, 
+			IEnumerable<string> commandLineArguments)
 		{
-			if (!int.TryParse(taskIdString, out taskId))
+			IEnumerable<Flag> unsupportedFlagsSpecified = _flags.Where(
+				flag => flag.IsSet && 
+				!executingCommand.SupportedFlags.Contains(flag));
+
+			IEnumerable<Flag> requiredFlagsUnspecified = _flags.Where(
+				flag => !flag.IsSet &&
+				executingCommand.RequiredFlags.Contains(flag));
+
+			IEnumerable<Flag> filterFlagsSpecified = _flags.Where(
+				flag => flag.IsSet && 
+				flag is ITaskFilter);
+
+			if (unsupportedFlagsSpecified.Any())
 			{
 				throw new TaskManException(
-					Messages.UnknownIdOrIdRange,
-					taskId);
+					Messages.EntityDoesNotMakeSenseWithEntity,
+					unsupportedFlagsSpecified.First().GetProvidedName(commandLineArguments),
+					commandName);
+			}
+
+			if (requiredFlagsUnspecified.Any())
+			{
+				throw new TaskManException(
+					Messages.RequiredFlagNotSet,
+					requiredFlagsUnspecified.First().Prototype);
+			}
+
+			if (filterFlagsSpecified.Any() &&
+				_includeAllFlag.IsSet)
+			{
+				throw new TaskManException(
+					Messages.EntityDoesNotMakeSenseWithEntity,
+					filterFlagsSpecified.First().GetProvidedName(commandLineArguments),
+					_includeAllFlag.GetProvidedName(commandLineArguments));
+			}
+		}
+
+		/// <summary>
+		/// Either require task filtering or setting of the
+		/// <see cref="TaskMan._includeAllFlag"/>, or throw an error.
+		/// </summary>
+		/// <param name="commandName">The executing command name.</param>
+		/// <param name="allTasks">All tasks.</param>
+		/// <param name="filteredTasks">Filtered tasks.</param>
+		void RequireExplicitFiltering(
+			string commandName, 
+			IEnumerable<Task> allTasks, 
+			IEnumerable<Task> filteredTasks)
+		{
+			if (!_includeAllFlag.IsSet && filteredTasks == allTasks)
+			{
+				throw new TaskManException(
+					Messages.NoFilterConditionsUseAllIfIntended,
+					commandName);
 			}
 		}
 
@@ -653,7 +660,7 @@ namespace TaskMan
 			{ 
 				throw new TaskManException(Messages.InsufficientSetParameters);
 			}
-				
+			
 			string parameterToChange = cliArguments.PopFirst().ToLower();
 			string parameterStringValue;
 
