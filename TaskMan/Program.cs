@@ -406,7 +406,7 @@ namespace TaskMan
 
 			this.CurrentOperation = "ensure flag consistency";
 
-			EnsureFlagConsistency();
+			EnsureFlagConsistency(executingCommand, commandName, commandLineArguments);
 
 			this.CurrentOperation = "read tasks from the task file";
 
