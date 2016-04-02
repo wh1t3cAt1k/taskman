@@ -302,7 +302,7 @@ namespace TaskMan
 
 			_clearTaskListAlias = new Alias(
 				"clear",
-				$"{_deleteTasksCommand.ExampleUsage} {_includeAllFlag.ExampleUsage}");
+				$"{_deleteTasksCommand.ExampleUsage} {_includeAllFlag.ExampleUsage} {_interactiveFlag.ExampleUsage}");
 
 			_aliases = privateFields
 				.Where(fieldInfo => fieldInfo.FieldType == typeof(Alias))
@@ -473,7 +473,7 @@ namespace TaskMan
 
 			this.CurrentOperation = "ensure flag consistency";
 
-			EnsureFlagConsistency(executingCommand, commandName, commandLineArguments);
+			EnsureFlagConsistency(executingCommand, commandName, originalArguments);
 
 			this.CurrentOperation = "read tasks from the task file";
 
@@ -688,8 +688,8 @@ namespace TaskMan
 		/// <param name="commandName">The provided command name.</param>
 		/// <param name="commandLineArguments">All command line arguments.</param>
 		void EnsureFlagConsistency(
-			Command executingCommand, 
-			string commandName, 
+			Command executingCommand,
+			string commandName,
 			IEnumerable<string> commandLineArguments)
 		{
 			IEnumerable<Flag> unsupportedFlagsSpecified = _flags.Where(

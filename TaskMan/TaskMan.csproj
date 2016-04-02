@@ -49,7 +49,7 @@
     <WarningLevel>4</WarningLevel>
     <LangVersion>6</LangVersion>
     <PlatformTarget>x86</PlatformTarget>
-    <Commandlineparameters>switch cool</Commandlineparameters>
+    <Commandlineparameters>clear</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Optimize>true</Optimize>
@@ -65,7 +65,6 @@
         <Command type="Custom" name="DeprecatedUntilBundlePathSolved" command="export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/Library/Frameworks/Mono.framework/Versions/Current/lib/pkgconfig/ AS=&quot;as -arch x86_64&quot; CC=&quot;cc -arch x86_64 -framework CoreFoundation -lobjc -liconv&quot; &amp;&amp; mkbundle --deps TaskMan.exe -o taskman &amp;&amp; cp taskman /usr/local/bin" workingdir="${TargetDir}" externalConsole="True" />
       </CustomCommands>
     </CustomCommands>
-    <Commandlineparameters>--license</Commandlineparameters>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
