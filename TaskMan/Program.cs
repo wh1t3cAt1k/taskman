@@ -601,7 +601,7 @@ namespace TaskMan
 				{
 					OutputWriteLine(
 						Messages.TasksWereDeleted,
-						totalTasksAfter - totalTasksBefore);
+						totalTasksBefore - totalTasksAfter);
 				}
 			}
 			else if (executingCommand == _updateTasksCommand)
