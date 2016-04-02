@@ -26,15 +26,21 @@ namespace TaskMan
 			}
 			catch (Exception exception)
 			{
-				program.ErrorStream.WriteLine(
-					Messages.ErrorPerformingOperation,
-					program.CurrentOperation,
-					exception.Message.DecapitaliseFirstLetter());
-
 				if (program.IsVerbose)
 				{
+					program.ErrorStream.WriteLine(
+						Messages.ErrorPerformingOperation,
+						program.CurrentOperation,
+						exception.Message.DecapitaliseFirstLetter());
+
 					program.ErrorStream.WriteLine(Messages.ExceptionStackTrace);
 					program.ErrorStream.Write(exception.StackTrace);
+				}
+				else
+				{
+					program.ErrorStream.WriteLine(
+						Messages.Error,
+						exception.Message.DecapitaliseFirstLetter());
 				}
 
 				return -1;
@@ -591,7 +597,9 @@ namespace TaskMan
 
 				if (!commandLineArguments.Any())
 				{
-					throw new TaskManException(Messages.NoParameterName);
+					throw new TaskManException(
+						Messages.NoParameterName,
+						commandName);
 				}
 
 				string parameterName = commandLineArguments.PopFirst();
@@ -605,7 +613,10 @@ namespace TaskMan
 				{
 					if (!commandLineArguments.Any())
 					{
-						throw new TaskManException(Messages.NoParameterValue);
+						throw new TaskManException(
+							Messages.NoParameterValue,
+							commandName,
+							parameterName);
 					}
 
 					string parameterValue = commandLineArguments.PopFirst();

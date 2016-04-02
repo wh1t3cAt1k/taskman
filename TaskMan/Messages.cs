@@ -4,11 +4,12 @@
 	{
 		public const string ClearConfirmationMessage = "All tasks will be deleted. Confirm (y[es]/n[o]): ";
 		public const string CouldNotReadTaskList = "An error occurred while trying to read task list: {0}";
+		public const string Error = "Error: {0}";
 		public const string ErrorPerformingOperation = "Cannot {0}: {1}";
 		public const string ExceptionStackTrace = "Exception stack trace: ";
 		public const string FlagNotSet = "The {0} flag value has not been set.";
-		public const string NoParameterName = "No parameter name was provided.";
-		public const string NoParameterValue = "No parameter value was provided.";
+		public const string NoParameterName = "No parameter name provided for '{0}'.";
+		public const string NoParameterValue = "No parameter value provided for '{0} {1}'.";
 		public const string ParameterWasSetToValue = "Parameter '{0}' was set to '{1}'.";
 		public const string EntityDoesNotMakeSenseWithEntity = "'{0}' does not make sense with '{1}'.";
 		public const string InsufficientSetParameters = "Insufficient parameters in 'set' command. " + Messages.TypeHelpForCommandSyntax;
