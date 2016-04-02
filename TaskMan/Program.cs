@@ -52,17 +52,6 @@ namespace TaskMan
 	{
 		#region Constants
 
-		/// <summary>
-		/// The folder where the task list and app configuration files will be stored,
-		/// e.g. '~/.config/TaskMan' or 'c:\users\current_user\AppData\Roaming'
-		/// </summary>
-		static readonly string APP_DATA_PATH = Path.Combine(
-			Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-			Assembly.GetExecutingAssembly().GetName().Name);
-
-		static readonly string TASKS_FILE = "taskman_tasks.tmf";
-		static readonly string TASKS_FULL_NAME = Path.Combine(APP_DATA_PATH, TASKS_FILE);
-
 		static readonly RegexOptions StandardRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
 
 		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", StandardRegexOptions);
@@ -88,9 +77,13 @@ namespace TaskMan
 			"displays TaskMan's version", 
 			"version");
 
-		Flag<bool> _globalFlag= new Flag<bool>(
-			"specifies that a parameter should be configured globally and not just for the current user",
+		Flag<bool> _configurationGlobalFlag = new Flag<bool>(
+			"specifies that the provided configuration parameter should be set globally and not just for the current user",
 			"G|global");
+
+		Flag<bool> _configurationViewFlag = new Flag<bool>(
+			"specifies that the provided configuration parameter should be displayed and not set",
+			"view");
 
 		Flag<bool> _interactiveFlag = new Flag<bool>(
 			"displays a confirmation prompt before executing an operation (not functional yet)", 
@@ -235,7 +228,7 @@ namespace TaskMan
 				nameof(_configure),
 				new Regex(@"^(configure)$", StandardRegexOptions),
 				isReadUpdateDelete: false,
-				supportedFlags: new [] { _globalFlag });
+				supportedFlags: new [] { _configurationGlobalFlag, _configurationViewFlag });
 
 			_addTask = new Command(
 				nameof(_addTask), 
@@ -313,13 +306,13 @@ namespace TaskMan
 		/// the current task list. Does not guarantee that 
 		/// the file exists.
 		/// </summary>
-		private string CurrentTaskListFileName 
+		private string CurrentTaskListFile 
 		{
 			get
 			{
 				return Path.Combine(
-					_configuration.TaskListDirectory,
-					_configuration.GetParameter(_configuration.TaskListName.Name));
+					_configuration.UserConfigurationDirectory,
+					_configuration.GetParameter(_configuration.CurrentTaskList.Name) + ".tmf");
 			}
 		}
 
@@ -329,7 +322,8 @@ namespace TaskMan
 		/// <returns>The tasks list read from the file.</returns>
 		List<Task> ReadTasksFromFile()
 		{
-			using (FileStream inputFileStream = new FileStream(TASKS_FULL_NAME, FileMode.OpenOrCreate, FileAccess.Read))
+			using (FileStream inputFileStream = 
+				new FileStream(this.CurrentTaskListFile, FileMode.OpenOrCreate, FileAccess.Read))
 			{
 				if (inputFileStream.Position < inputFileStream.Length)
 				{
@@ -351,7 +345,8 @@ namespace TaskMan
 		{
 			tasks.Sort();
 
-			FileStream outputFileStream = new FileStream(TASKS_FULL_NAME, FileMode.Create, FileAccess.Write);
+			FileStream outputFileStream = 
+				new FileStream(this.CurrentTaskListFile, FileMode.Create, FileAccess.Write);
 
 			BinaryFormatter binaryFormatter = new BinaryFormatter();
 			binaryFormatter.Serialize(outputFileStream, tasks);
@@ -382,12 +377,6 @@ namespace TaskMan
 
 		public void Run(IEnumerable<string> originalArguments)
 		{
-			if (!Directory.Exists(TaskMan.APP_DATA_PATH))
-			{
-				this.CurrentOperation = "create the app subdirectory in the application data folder";
-				Directory.CreateDirectory(TaskMan.APP_DATA_PATH);
-			}
-
 			this.CurrentOperation = "parse command line arguments";
 
 			LinkedList<string> commandLineArguments =
@@ -498,7 +487,7 @@ namespace TaskMan
 
 				if (!taskList.Any())
 				{
-					File.Delete(TASKS_FULL_NAME);
+					File.Delete(this.CurrentTaskListFile);
 				}
 
 				if (filteredTasks.IsSingleton())

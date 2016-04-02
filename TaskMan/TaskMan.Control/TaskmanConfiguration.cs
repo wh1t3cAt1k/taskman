@@ -69,10 +69,10 @@ namespace TaskMan.Control
 		private Configuration _globalConfiguration;
 
 		/// <summary>
-		/// Gets the directory where all task lists of the current
-		/// user must be located.
+		/// Gets the directory where all configuration files for the
+		/// current user must be located.
 		/// </summary>
-		public string TaskListDirectory
+		public string UserConfigurationDirectory
 		{
 			get
 			{
@@ -80,7 +80,7 @@ namespace TaskMan.Control
 			}
 		}
 
-		public TaskmanParameter TaskListName 
+		public TaskmanParameter CurrentTaskList 
 			=> new TaskmanParameter("list", "[A-Za-z][A-Za-z0-9]*", "default", true);
 
 		private IEnumerable<TaskmanParameter> _supportedParameters;
@@ -90,9 +90,12 @@ namespace TaskMan.Control
 			_globalConfiguration = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 			_userConfiguration = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoaming);
 
-			_supportedParameters = new [] {
-				TaskListName,
-			};
+			_supportedParameters = new [] { CurrentTaskList };
+
+			if (!Directory.Exists(this.UserConfigurationDirectory))
+			{
+				Directory.CreateDirectory(this.UserConfigurationDirectory);
+			}
 		}
 
 		public void SetParameter(string name, string value, bool setGlobally)
