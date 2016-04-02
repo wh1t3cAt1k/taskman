@@ -92,7 +92,7 @@ namespace TaskMan
 			"view");
 
 		Flag<bool> _interactiveFlag = new Flag<bool>(
-			"displays a confirmation prompt before executing an operation (not functional yet)", 
+			"displays a confirmation prompt before executing an operation", 
 			"I|interactive");
 
 		Flag<bool> _verboseFlag = new Flag<bool>(
@@ -396,11 +396,11 @@ namespace TaskMan
 		/// Writes the specified string to the output 
 		/// unless the silent flag is set.
 		/// </summary>
-		void WriteLine(string text)
+		void OutputWrite(string text, params object[] args)
 		{
 			if (!_silentFlag.IsSet || !_silentFlag.Value)
 			{
-				_output.WriteLine(text);
+				_output.Write(string.Format(text, args));
 			}
 		}
 
@@ -408,9 +408,41 @@ namespace TaskMan
 		/// Writes the specified string to the output 
 		/// unless the silent flag is set.
 		/// </summary>
-		void WriteLine(string text, params object[] args)
+		void OutputWriteLine(string text, params object[] args)
 		{
-			WriteLine(string.Format(text, args));
+			OutputWrite(text + "\n", args);
+		}
+
+		/// <summary>
+		/// Confirms with the user that an action will be performed
+		/// upon the specified tasks (e.g. updated, added, etc).
+		/// </summary>
+		bool ConfirmOperation(IEnumerable<Task> relevantTasks, string willBe)
+		{
+			bool confirmationResult = true;
+
+			if (_interactiveFlag.IsSet && _interactiveFlag)
+			{
+				OutputWriteLine("The following tasks will be {0}: ", willBe);
+
+				relevantTasks.Take(3).ForEach(task => task.Display());
+
+				if (relevantTasks.Skip(3).Any())
+				{
+					OutputWriteLine($"(...and {relevantTasks.Skip(3).Count()} more)");
+				}
+
+				OutputWrite("Confirm (y/n): ");
+
+				confirmationResult = ConfirmActionRegex.IsMatch(Console.ReadLine());
+			}
+
+			if (!confirmationResult)
+			{
+				OutputWriteLine("Cancelled.");
+			}
+
+			return confirmationResult;
 		}
 
 		public void Run(IEnumerable<string> originalArguments)
@@ -487,7 +519,7 @@ namespace TaskMan
 			{
 				if (!taskList.Any())
 				{
-					WriteLine(Messages.TaskListIsEmpty);
+					OutputWriteLine(Messages.TaskListIsEmpty);
 					return;
 				}
 			
@@ -505,7 +537,7 @@ namespace TaskMan
 
 					if (!filteredTasks.Any())
 					{
-						WriteLine(Messages.NoTasksMatchingGivenConditions);
+						OutputWriteLine(Messages.NoTasksMatchingGivenConditions);
 						return;
 					}
 				}
@@ -516,9 +548,15 @@ namespace TaskMan
 				this.CurrentOperation = "add a new task";
 
 				Task addedTask = AddTask(commandLineArguments, taskList);
+
+				// Only when the user discarded the task 
+				// creation in an interactive mode.
+				// -
+				if (addedTask == null) return;
+
 				_saveTasks(taskList);
 
-				WriteLine(
+				OutputWriteLine(
 					Messages.TaskWasAdded,
 					addedTask.Description,
 					addedTask.ID,
@@ -536,7 +574,14 @@ namespace TaskMan
 
 				RequireExplicitFiltering(commandName, taskList, filteredTasks);
 
+				if (!ConfirmOperation(filteredTasks, "deleted")) return;
+
+				int totalTasksBefore = taskList.Count;
+
 				taskList = taskList.Except(filteredTasks).ToList();
+				taskList.ForEach((task, index) => task.ID = index);
+
+				int totalTasksAfter = taskList.Count;
 
 				_saveTasks(taskList);
 
@@ -547,16 +592,16 @@ namespace TaskMan
 
 				if (filteredTasks.IsSingleton())
 				{
-					WriteLine(
+					OutputWriteLine(
 						Messages.TaskWasDeleted, 
 						filteredTasks.Single().ID, 
 						filteredTasks.Single().Description);
 				}
 				else
 				{
-					WriteLine(
+					OutputWriteLine(
 						Messages.TasksWereDeleted,
-						filteredTasks.Count());
+						totalTasksAfter - totalTasksBefore);
 				}
 			}
 			else if (executingCommand == _updateTasksCommand)
@@ -564,6 +609,8 @@ namespace TaskMan
 				this.CurrentOperation = "update task parameters";
 
 				RequireExplicitFiltering(commandName, taskList, filteredTasks);
+
+				if (!ConfirmOperation(filteredTasks, "updated")) return;
 
 				UpdateTasks(commandLineArguments, taskList, filteredTasks);
 			}
@@ -573,22 +620,25 @@ namespace TaskMan
 
 				RequireExplicitFiltering(commandName, taskList, filteredTasks);
 
-				filteredTasks.ForEach(task => task.IsFinished = true);
+				if (!ConfirmOperation(filteredTasks, "completed")) return;
+
+				int totalTasksFinished = 
+					filteredTasks.ForEach(task => task.IsFinished = true);
 
 				_saveTasks(taskList);
 
 				if (filteredTasks.IsSingleton())
 				{
-					WriteLine(
+					OutputWriteLine(
 						Messages.TaskWasFinished, 
 						filteredTasks.Single().ID, 
 						filteredTasks.Single().Description);
 				}
 				else
 				{
-					WriteLine(
+					OutputWriteLine(
 						Messages.TasksWereFinished,
-						filteredTasks.Count());
+						totalTasksFinished);
 				}
 			}
 			else if (executingCommand == _configureCommand)
@@ -607,7 +657,7 @@ namespace TaskMan
 				if (_configurationViewFlag.IsSet && 
 					_configurationViewFlag.Value)
 				{
-					WriteLine(_configuration.GetParameter(parameterName));
+					OutputWriteLine(_configuration.GetParameter(parameterName));
 				}
 				else
 				{
@@ -626,7 +676,7 @@ namespace TaskMan
 						parameterValue,
 						_configurationGlobalFlag.IsSet && _configurationGlobalFlag.Value);
 
-					WriteLine(Messages.ParameterWasSetToValue, parameterName, parameterValue);
+					OutputWriteLine(Messages.ParameterWasSetToValue, parameterName, parameterValue);
 				}
 			}
 		}
@@ -810,7 +860,7 @@ namespace TaskMan
 
 			if (totalTasksUpdated == 1)
 			{
-				WriteLine(
+				OutputWriteLine(
 					Messages.TaskWasUpdated,
 					tasksToUpdate.Single().ID,
 					oldTaskDescription,
@@ -819,13 +869,12 @@ namespace TaskMan
 			}
 			else
 			{
-				WriteLine(
+				OutputWriteLine(
 					Messages.TasksWereUpdated, 
 					totalTasksUpdated,
 					parameterToChange,
 					parameterStringValue);
 			}
-
 		}
 
 		/// <summary>
@@ -848,9 +897,16 @@ namespace TaskMan
 				Priority.Normal;
 
 			Task newTask = new Task(taskList.Count, description, taskPriority);
-			taskList.Add(newTask);
 
-			return newTask;
+			if (this.ConfirmOperation(new List<Task> { newTask }, "added"))
+			{
+				taskList.Add(newTask);
+				return newTask;
+			}
+			else
+			{
+				return null;
+			}
 		}
 	}
 }

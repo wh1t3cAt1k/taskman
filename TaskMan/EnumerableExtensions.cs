@@ -12,45 +12,34 @@ namespace TaskMan
 		/// <summary>
 		/// Peforms an action upon each member of a sequence.
 		/// </summary>
-		/// <param name="sequence">A sequence of <typeparamref>T/<typeparamref> elements.</param>
+		/// <param name="sequence">A sequence of <typeparamref>T<typeparamref> elements.</param>
 		/// <param name="action">An action to be performed upon each element of the sequence.</param>
 		/// <typeparam name="T">The type of elements in the sequence.</typeparam>
-		/// <returns>Returns the number of times the action has been performed.</returns>
+		/// <returns>The number of times the action has been performed.</returns>
 		public static int ForEach<T>(this IEnumerable<T> sequence, Action<T> action)
 		{
-			int executionTimes = 0;
-
-			foreach (T item in sequence)
-			{
-				action(item);
-				++executionTimes;
-			}
-
-			return executionTimes;
+			return ForEach(sequence, (T value, int index) => action(value));
 		}
 
 		/// <summary>
-		/// Performs an action upon the first element in a sequence that satisfies a given condition.
+		/// Performs an action upon each memeber of a sequence by incorporating
+		/// each element's zero-based index.
 		/// </summary>
-		/// <param name="sequence">A sequence of <typeparamref>T</typeparamref> elements.</param>
-		/// <param name="predicate">
-		/// A function indicating whether the action should be performed on a given element.
-		/// </param>
-		/// <param name="action">
-		/// An action to be performed upon the first element of the sequence
-		/// that satisfies the <paramref name="predicate"/>.
-		/// </param>
+		/// <param name="sequence">A sequence of <typeparamref>T<typeparamref> elements.</param>
+		/// <param name="action">An action to be performed upon each element of the sequence.</param>
 		/// <typeparam name="T">The type of elements in the sequence.</typeparam>
-		public static void ForFirst<T>(this IEnumerable<T> sequence, Func<T, bool> predicate, Action<T> action)
+		/// <returns>The number of times the action has been performed.</returns>
+		public static int ForEach<T>(this IEnumerable<T> sequence, Action<T, int> action)
 		{
+			int currentIndex = 0;
+
 			foreach (T item in sequence)
 			{
-				if (predicate(item))
-				{
-					action(item);
-					break;
-				}
+				action(item, currentIndex);
+				++currentIndex;
 			}
+
+			return currentIndex;
 		}
 
 		/// <summary>
