@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.IO;
 using System.Text.RegularExpressions;
 
 using TaskMan.Objects;
@@ -67,17 +68,34 @@ namespace TaskMan.Control
 		private Configuration _userConfiguration;
 		private Configuration _globalConfiguration;
 
+		/// <summary>
+		/// Gets the directory where all task lists of the current
+		/// user must be located.
+		/// </summary>
+		public string TaskListDirectory
+		{
+			get
+			{
+				return Path.GetDirectoryName(_userConfiguration.FilePath);
+			}
+		}
+
+		public TaskmanParameter TaskListName 
+			=> new TaskmanParameter("list", "[A-Za-z][A-Za-z0-9]*", "default", true);
+
+		private IEnumerable<TaskmanParameter> _supportedParameters;
+
 		public TaskmanConfiguration()
 		{
 			_globalConfiguration = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 			_userConfiguration = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoaming);
+
+			_supportedParameters = new [] {
+				TaskListName,
+			};
 		}
 
-		private IEnumerable<TaskmanParameter> _supportedParameters = new [] {
-			new TaskmanParameter("list", "[A-Za-z][A-Za-z0-9]*", "default", true),
-		};
-
-		private void SetParameter(string name, string value, bool setGlobally)
+		public void SetParameter(string name, string value, bool setGlobally)
 		{
 			TaskmanParameter matchingParameter = _supportedParameters
 				.SingleOrDefault(parameter => parameter.Name == name);
@@ -101,7 +119,7 @@ namespace TaskMan.Control
 			}
 		}
 
-		private string GetParameter(string name, string value)
+		public string GetParameter(string name)
 		{
 			TaskmanParameter matchingParameter = _supportedParameters
 				.SingleOrDefault(parameter => parameter.Name == name);

@@ -66,14 +66,9 @@ namespace TaskMan
 		static readonly RegexOptions StandardRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
 
 		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", StandardRegexOptions);
-		static readonly Regex TaskAddRegex = new Regex(@"^(add|new|create)$", StandardRegexOptions);
-		static readonly Regex TaskCompleteRegex = new Regex(@"^(complete|finish|accomplish)$", StandardRegexOptions);
-		static readonly Regex TaskDeleteRegex = new Regex(@"^(delete|remove)$", StandardRegexOptions);
-		static readonly Regex TaskDisplayRegex = new Regex(@"^(show|display|view)$", StandardRegexOptions);
 		static readonly Regex TaskSetDescriptionRegex = new Regex(@"^(description)$", StandardRegexOptions);
 		static readonly Regex TaskSetFinishedRegex = new Regex(@"^(finished|completed|accomplished)$", StandardRegexOptions);
 		static readonly Regex TaskSetPriorityRegex = new Regex(@"^(priority|importance)$", StandardRegexOptions);
-		static readonly Regex TaskUpdateRegex = new Regex(@"^(update|change|modify|set)$", StandardRegexOptions);
 
 		#endregion
 
@@ -178,6 +173,7 @@ namespace TaskMan
 		Command _completeTasks;
 		Command _displayTasks;
 		Command _updateTasks;
+		Command _configure;
 
 		#endregion
 
@@ -235,16 +231,22 @@ namespace TaskMan
 				
 			_flags.ForEach(flag => flag.AddToOptionSet(this._optionSet));
 
+			_configure = new Command(
+				nameof(_configure),
+				new Regex(@"^(configure)$", StandardRegexOptions),
+				isReadUpdateDelete: false,
+				supportedFlags: new [] { _globalFlag });
+
 			_addTask = new Command(
 				nameof(_addTask), 
-				TaskAddRegex, 
+				new Regex(@"^(add|new|create)$", StandardRegexOptions), 
 				isReadUpdateDelete: false,
 				supportedFlags: 
 					new Flag[] { _descriptionFlag, _priorityFlag, _silentFlag, _verboseFlag });
-			
+
 			_deleteTasks = new Command(
 				nameof(_deleteTasks), 
-				TaskDeleteRegex,
+				new Regex(@"^(delete|remove)$", StandardRegexOptions),
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
@@ -253,16 +255,16 @@ namespace TaskMan
 
 			_completeTasks = new Command(
 				nameof(_completeTasks), 
-				TaskCompleteRegex,
+				new Regex(@"^(complete|finish|accomplish)$", StandardRegexOptions),
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
 					.Concat(new [] { _includeAllFlag, _silentFlag, _verboseFlag }));
-			
+
 			_displayTasks = new Command(
 				nameof(_displayTasks), 
-				TaskDisplayRegex,
+				new Regex(@"^(show|display|view)$", StandardRegexOptions),
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
@@ -270,7 +272,7 @@ namespace TaskMan
 			
 			_updateTasks = new Command(
 				nameof(_updateTasks), 
-				TaskUpdateRegex,
+				new Regex(@"^(update|change|modify|set)$", StandardRegexOptions),
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
@@ -283,8 +285,8 @@ namespace TaskMan
 				.Select(fieldInfo => fieldInfo.GetValue(this))
 				.Cast<Command>();
 
-			this._readTasks = taskReadFunction ?? this._readTasks;
-			this._saveTasks = taskSaveFunction ?? this._saveTasks;
+			this._readTasks = taskReadFunction ?? this.ReadTasksFromFile;
+			this._saveTasks = taskSaveFunction ?? this.SaveTasksIntoFile;
 
 			this._output = outputStream ?? this._output;
 			this._error = errorStream ?? this._error;
@@ -295,22 +297,37 @@ namespace TaskMan
 		/// Can be used to override the default function that reads the tasks from file, 
 		/// e.g. for the purpose of unit testing.
 		/// </summary>
-		Func<List<Task>> _readTasks = TaskMan.ReadTasksFromFile;
+		Func<List<Task>> _readTasks;
 
 		/// <summary>
 		/// Sets the function that saves the task list.
 		/// Can be used to override the default function that saves the tasks into file,
 		/// e.g. for the purpose of unit testing.
 		/// </summary>
-		Action<List<Task>> _saveTasks = TaskMan.SaveTasksIntoFile;
+		Action<List<Task>> _saveTasks;
 
 		TaskmanConfiguration _configuration = new TaskmanConfiguration();
+
+		/// <summary>
+		/// Gets the full filename of the file that stores
+		/// the current task list. Does not guarantee that 
+		/// the file exists.
+		/// </summary>
+		private string CurrentTaskListFileName 
+		{
+			get
+			{
+				return Path.Combine(
+					_configuration.TaskListDirectory,
+					_configuration.GetParameter(_configuration.TaskListName.Name));
+			}
+		}
 
 		/// <summary>
 		/// Retrieves the task list from the tasks binary file.
 		/// </summary>
 		/// <returns>The tasks list read from the file.</returns>
-		static List<Task> ReadTasksFromFile()
+		List<Task> ReadTasksFromFile()
 		{
 			using (FileStream inputFileStream = new FileStream(TASKS_FULL_NAME, FileMode.OpenOrCreate, FileAccess.Read))
 			{
@@ -330,7 +347,7 @@ namespace TaskMan
 		/// Sorts and saves a given collection of tasks to the tasks binary file.
 		/// </summary>
 		/// <param name="tasks">A collection of tasks.</param>
-		static void SaveTasksIntoFile(List<Task> tasks)
+		void SaveTasksIntoFile(List<Task> tasks)
 		{
 			tasks.Sort();
 
