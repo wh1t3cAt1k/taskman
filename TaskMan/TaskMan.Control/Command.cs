@@ -31,12 +31,12 @@ namespace TaskMan.Control
 
 		/// <summary>
 		/// Gets the command's example usage as the longest component
-		/// in its regular expression.
+		/// in its regular expression prototype.
 		/// </summary>
 		/// <example>
-		/// For example, if the command's regular expression
-		/// is <c>^(create|add|delete)$</c>, this property
-		/// will return <c>create</c>.
+		/// For example, if the command's prototype is 
+		/// <c>^(create|add|delete)$</c>, this property
+		/// must return <c>create</c>.
 		/// </example>
 		public string ExampleUsage 
 		{
@@ -44,7 +44,7 @@ namespace TaskMan.Control
 			{
 				return PrototypeHelper
 					.GetComponents(this.Prototype)
-					.OrderBy(value => value.Length)
+					.OrderByDescending(value => value.Length)
 					.First();
 			}
 		}
