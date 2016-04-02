@@ -300,6 +300,12 @@ namespace TaskMan
 		/// </summary>
 		Action<List<Task>> _saveTasks = TaskMan.SaveTasksIntoFile;
 
+		TaskmanConfiguration _userConfiguration = 
+			new TaskmanConfiguration(ConfigurationUserLevel.PerUserRoaming);
+
+		TaskmanConfiguration _globalConfiguration =
+			new TaskmanConfiguration(ConfigurationUserLevel.None);
+
 		/// <summary>
 		/// Retrieves the task list from the tasks binary file.
 		/// </summary>

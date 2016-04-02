@@ -78,10 +78,10 @@
     <Reference Include="Moq">
       <HintPath>..\packages\Moq.4.2.1510.2205\lib\net40\Moq.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Options">
-      <HintPath>..\packages\Mono.Options.4.2.2.1\lib\net4-client\Mono.Options.dll</HintPath>
-    </Reference>
     <Reference Include="System.Configuration" />
+    <Reference Include="Mono.Options">
+      <HintPath>..\packages\Mono.Options.4.4.0.0\lib\net4-client\Mono.Options.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -100,6 +100,7 @@
     <Compile Include="TaskMan.Control\TaskFilterFlag.cs" />
     <Compile Include="TaskMan.Objects\TaskManException.cs" />
     <Compile Include="TaskMan.Objects\TaskHelper.cs" />
+    <Compile Include="TaskMan.Control\TaskmanConfiguration.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
