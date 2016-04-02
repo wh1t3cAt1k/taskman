@@ -15,18 +15,38 @@ namespace TaskMan.Control
 		/// <summary>
 		/// Gets the description of the flag.
 		/// </summary>
-		public string Description { get; private set; }
+		public string Description { get; }
 
 		/// <summary>
 		/// Gets the flag prototype in the format of 
 		/// <see cref="Mono.Options.Option"/> prototype.
 		/// </summary>
-		public string Prototype { get; private set; }
+		public string Prototype { get; }
 
 		/// <summary>
 		/// Gets the value indicating whether the flag has been explicitly set.
 		/// </summary>
 		public bool IsSet { get; protected set; }
+
+		/// <summary>
+		/// Returns a flag's example usage as the longest
+		/// component in its prototype, preceded by '--'.
+		/// </summary>
+		/// <example>
+		/// For example, if the flag's prototype is
+		/// <c>d=|description=|desc=</c>, then this 
+		/// property will return <c>--description</c>.
+		/// </example>
+		public string ExampleUsage
+		{ 
+			get
+			{
+				return "--" + PrototypeHelper
+					.GetComponents(this.Prototype)
+					.OrderByDescending(value => value.Length)
+					.First();
+			}
+		}
 
 		protected Flag(string description, string alias)
 		{
@@ -52,9 +72,8 @@ namespace TaskMan.Control
 		/// </summary>
 		public string GetProvidedName(IEnumerable<string> commandLineArguments)
 		{
-			IEnumerable<string> flagNames = this.Prototype
-				.Split('|')
-				.Select(value => value.Replace("=", string.Empty).Replace(":", string.Empty))
+			IEnumerable<string> flagNames = PrototypeHelper
+				.GetComponents(this.Prototype)
 				.SelectMany(flagName => 
 					new string[] 
 					{

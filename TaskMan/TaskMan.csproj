@@ -49,7 +49,7 @@
     <WarningLevel>4</WarningLevel>
     <LangVersion>6</LangVersion>
     <PlatformTarget>x86</PlatformTarget>
-    <Commandlineparameters>set --like Hello description WHAT?</Commandlineparameters>
+    <Commandlineparameters>switch cool</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Optimize>true</Optimize>
@@ -101,6 +101,8 @@
     <Compile Include="TaskMan.Objects\TaskManException.cs" />
     <Compile Include="TaskMan.Objects\TaskHelper.cs" />
     <Compile Include="TaskMan.Control\TaskmanConfiguration.cs" />
+    <Compile Include="TaskMan.Control\Alias.cs" />
+    <Compile Include="TaskMan.Control\PrototypeHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">

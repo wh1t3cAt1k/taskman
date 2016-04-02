@@ -170,6 +170,15 @@ namespace TaskMan
 
 		#endregion
 
+		#region Command Aliases
+
+		IEnumerable<Alias> _aliases;
+
+		Alias _switchTaskListAlias;
+		Alias _clearTaskListAlias;
+
+		#endregion
+
 		/// <summary>
 		/// Gets or sets the current operation performed by the program.
 		/// </summary>
@@ -216,30 +225,35 @@ namespace TaskMan
 		{
 			this._optionSet = new OptionSet();
 
-			_flags = typeof(TaskMan)
-				.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+			// Collect non-public instance fields
+			// - 
+			IEnumerable<FieldInfo> privateFields = 
+				typeof(TaskMan).GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+
+			// Collect flags
+			// -
+			_flags = privateFields
 				.Where(fieldInfo => typeof(Flag).IsAssignableFrom(fieldInfo.FieldType))
 				.Select(fieldInfo => fieldInfo.GetValue(this))
 				.Cast<Flag>();
 				
 			_flags.ForEach(flag => flag.AddToOptionSet(this._optionSet));
 
+			// Setup program commands
+			// -
 			_configureCommand = new Command(
-				nameof(_configureCommand),
-				new Regex(@"^(config|configure)$", StandardRegexOptions),
+				@"^(config|configure)$",
 				isReadUpdateDelete: false,
 				supportedFlags: new [] { _configurationGlobalFlag, _configurationViewFlag });
 
 			_addTaskCommand = new Command(
-				nameof(_addTaskCommand), 
-				new Regex(@"^(add|new|create)$", StandardRegexOptions), 
+				@"^(add|new|create)$", 
 				isReadUpdateDelete: false,
 				supportedFlags: 
 					new Flag[] { _descriptionFlag, _priorityFlag, _silentFlag, _verboseFlag });
 
 			_deleteTasksCommand = new Command(
-				nameof(_deleteTasksCommand), 
-				new Regex(@"^(delete|remove)$", StandardRegexOptions),
+				@"^(delete|remove)$",
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
@@ -247,8 +261,7 @@ namespace TaskMan
 					.Concat(new [] { _includeAllFlag, _silentFlag, _verboseFlag }));
 
 			_completeTasksCommand = new Command(
-				nameof(_completeTasksCommand), 
-				new Regex(@"^(complete|finish|accomplish)$", StandardRegexOptions),
+				@"^(complete|finish|accomplish)$",
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
@@ -256,33 +269,47 @@ namespace TaskMan
 					.Concat(new [] { _includeAllFlag, _silentFlag, _verboseFlag }));
 
 			_displayTasksCommand = new Command(
-				nameof(_displayTasksCommand), 
-				new Regex(@"^(show|display|view)$", StandardRegexOptions),
+				@"^(show|display|view)$",
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Concat(new [] { _includeAllFlag, _verboseFlag }));
 			
 			_updateTasksCommand = new Command(
-				nameof(_updateTasksCommand), 
-				new Regex(@"^(update|change|modify|set)$", StandardRegexOptions),
+				@"^(update|change|modify|set)$",
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
 					.Concat(new [] { _includeAllFlag, _silentFlag, _verboseFlag }));
 
-			_commands = typeof(TaskMan)
-				.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+			_commands = privateFields
 				.Where(fieldInfo => fieldInfo.FieldType == typeof(Command))
 				.Select(fieldInfo => fieldInfo.GetValue(this))
 				.Cast<Command>();
 
-			this._readTasks = taskReadFunction ?? this.ReadTasksFromFile;
-			this._saveTasks = taskSaveFunction ?? this.SaveTasksIntoFile;
+			// Setup program aliases
+			// -
+			_switchTaskListAlias = new Alias(
+				"switch",
+				$"{_configureCommand.ExampleUsage} {_configuration.CurrentTaskList.Name}");
 
-			this._output = outputStream ?? this._output;
-			this._error = errorStream ?? this._error;
+			_clearTaskListAlias = new Alias(
+				"clear",
+				$"{_deleteTasksCommand.ExampleUsage} {_includeAllFlag.ExampleUsage}");
+
+			_aliases = privateFields
+				.Where(fieldInfo => fieldInfo.FieldType == typeof(Alias))
+				.Select(fieldInfo => fieldInfo.GetValue(this))
+				.Cast<Alias>();
+
+			// Setup IO
+			// -
+			_readTasks = taskReadFunction ?? this.ReadTasksFromFile;
+			_saveTasks = taskSaveFunction ?? this.SaveTasksIntoFile;
+
+			_output = outputStream ?? this._output;
+			_error = errorStream ?? this._error;
 		}
 
 		/// <summary>
@@ -382,6 +409,23 @@ namespace TaskMan
 
 		public void Run(IEnumerable<string> originalArguments)
 		{
+			if (originalArguments.Any())
+			{
+				this.CurrentOperation = "expand aliases";
+
+				IEnumerable<Alias> matchingAliases = 
+					_aliases.Where(alias => alias.Name == originalArguments.First());
+
+				if (matchingAliases.Any())
+				{
+					// Replace the alias with its expansion.
+					// -
+					originalArguments = Enumerable.Concat(
+						matchingAliases.Single().ExpansionArray,
+						originalArguments.Skip(1));
+				}
+			}
+
 			this.CurrentOperation = "parse command line arguments";
 
 			LinkedList<string> commandLineArguments =
@@ -545,6 +589,11 @@ namespace TaskMan
 			{
 				this.CurrentOperation = "configure program parameters";
 
+				if (!commandLineArguments.Any())
+				{
+					throw new TaskManException(Messages.NoParameterName);
+				}
+
 				string parameterName = commandLineArguments.PopFirst();
 
 				if (_configurationViewFlag.IsSet && 
@@ -554,6 +603,11 @@ namespace TaskMan
 				}
 				else
 				{
+					if (!commandLineArguments.Any())
+					{
+						throw new TaskManException(Messages.NoParameterValue);
+					}
+
 					string parameterValue = commandLineArguments.PopFirst();
 
 					_configuration.SetParameter(
@@ -561,7 +615,7 @@ namespace TaskMan
 						parameterValue,
 						_configurationGlobalFlag.IsSet && _configurationGlobalFlag.Value);
 
-					WriteLine($"parameter {parameterName} was set to {parameterValue}");
+					WriteLine(Messages.ParameterWasSetToValue, parameterName, parameterValue);
 				}
 			}
 		}
