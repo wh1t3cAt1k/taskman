@@ -93,6 +93,10 @@ namespace TaskMan
 			"displays TaskMan's version", 
 			"version");
 
+		Flag<bool> _globalFlag= new Flag<bool>(
+			"specifies that a parameter should be configured globally and not just for the current user",
+			"G|global");
+
 		Flag<bool> _interactiveFlag = new Flag<bool>(
 			"displays a confirmation prompt before executing an operation (not functional yet)", 
 			"I|interactive");

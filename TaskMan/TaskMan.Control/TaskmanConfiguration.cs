@@ -44,7 +44,7 @@ namespace TaskMan.Control
 		{
 			if (name == null) throw new ArgumentNullException(nameof(name));
 			if (validationPattern == null) throw new ArgumentNullException(nameof(validationPattern));
-
+			
 			this.Name = name;
 			this.ValidationRegex = 
 				new Regex(validationPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -66,8 +66,6 @@ namespace TaskMan.Control
 
 		private Configuration _userConfiguration;
 		private Configuration _globalConfiguration;
-
-		private bool _isGlobal;
 
 		public TaskmanConfiguration()
 		{
@@ -103,7 +101,7 @@ namespace TaskMan.Control
 			}
 		}
 
-		private void GetParameter(string name, string value)
+		private string GetParameter(string name, string value)
 		{
 			TaskmanParameter matchingParameter = _supportedParameters
 				.SingleOrDefault(parameter => parameter.Name == name);
@@ -116,7 +114,22 @@ namespace TaskMan.Control
 			string userValue = _userConfiguration.AppSettings.Settings[name].Value;
 			string globalValue = _globalConfiguration.AppSettings.Settings[name].Value;
 
-
+			if (userValue != null)
+			{
+				return userValue;
+			}
+			else if (globalValue != null)
+			{
+				return globalValue;
+			}
+			else if (matchingParameter.DefaultValue != null)
+			{
+				return matchingParameter.DefaultValue;
+			}
+			else
+			{
+				throw new TaskManException($"Parameter {matchingParameter.Name} does not have a defaut value and an explicit value is not found in the configuration files."); 
+			}
 		}
 	}
 }
