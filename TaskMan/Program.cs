@@ -161,12 +161,12 @@ namespace TaskMan
 
 		IEnumerable<Command> _commands;
 
-		Command _addTask;
-		Command _deleteTasks; 
-		Command _completeTasks;
-		Command _displayTasks;
-		Command _updateTasks;
-		Command _configure;
+		Command _addTaskCommand;
+		Command _deleteTasksCommand; 
+		Command _completeTasksCommand;
+		Command _displayTasksCommand;
+		Command _updateTasksCommand;
+		Command _configureCommand;
 
 		#endregion
 
@@ -224,21 +224,21 @@ namespace TaskMan
 				
 			_flags.ForEach(flag => flag.AddToOptionSet(this._optionSet));
 
-			_configure = new Command(
-				nameof(_configure),
-				new Regex(@"^(configure)$", StandardRegexOptions),
+			_configureCommand = new Command(
+				nameof(_configureCommand),
+				new Regex(@"^(config|configure)$", StandardRegexOptions),
 				isReadUpdateDelete: false,
 				supportedFlags: new [] { _configurationGlobalFlag, _configurationViewFlag });
 
-			_addTask = new Command(
-				nameof(_addTask), 
+			_addTaskCommand = new Command(
+				nameof(_addTaskCommand), 
 				new Regex(@"^(add|new|create)$", StandardRegexOptions), 
 				isReadUpdateDelete: false,
 				supportedFlags: 
 					new Flag[] { _descriptionFlag, _priorityFlag, _silentFlag, _verboseFlag });
 
-			_deleteTasks = new Command(
-				nameof(_deleteTasks), 
+			_deleteTasksCommand = new Command(
+				nameof(_deleteTasksCommand), 
 				new Regex(@"^(delete|remove)$", StandardRegexOptions),
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
@@ -246,8 +246,8 @@ namespace TaskMan
 					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
 					.Concat(new [] { _includeAllFlag, _silentFlag, _verboseFlag }));
 
-			_completeTasks = new Command(
-				nameof(_completeTasks), 
+			_completeTasksCommand = new Command(
+				nameof(_completeTasksCommand), 
 				new Regex(@"^(complete|finish|accomplish)$", StandardRegexOptions),
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
@@ -255,16 +255,16 @@ namespace TaskMan
 					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
 					.Concat(new [] { _includeAllFlag, _silentFlag, _verboseFlag }));
 
-			_displayTasks = new Command(
-				nameof(_displayTasks), 
+			_displayTasksCommand = new Command(
+				nameof(_displayTasksCommand), 
 				new Regex(@"^(show|display|view)$", StandardRegexOptions),
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Concat(new [] { _includeAllFlag, _verboseFlag }));
 			
-			_updateTasks = new Command(
-				nameof(_updateTasks), 
+			_updateTasksCommand = new Command(
+				nameof(_updateTasksCommand), 
 				new Regex(@"^(update|change|modify|set)$", StandardRegexOptions),
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
@@ -322,8 +322,13 @@ namespace TaskMan
 		/// <returns>The tasks list read from the file.</returns>
 		List<Task> ReadTasksFromFile()
 		{
+			if (!File.Exists(this.CurrentTaskListFile))
+			{
+				return new List<Task>();
+			}
+
 			using (FileStream inputFileStream = 
-				new FileStream(this.CurrentTaskListFile, FileMode.OpenOrCreate, FileAccess.Read))
+				new FileStream(this.CurrentTaskListFile, FileMode.Open, FileAccess.Read))
 			{
 				if (inputFileStream.Position < inputFileStream.Length)
 				{
@@ -456,7 +461,7 @@ namespace TaskMan
 				}
 			}
 
-			if (executingCommand == _addTask)
+			if (executingCommand == _addTaskCommand)
 			{
 				this.CurrentOperation = "add a new task";
 
@@ -469,13 +474,13 @@ namespace TaskMan
 					addedTask.ID,
 					addedTask.Priority);
 			}
-			else if (executingCommand == _displayTasks)
+			else if (executingCommand == _displayTasksCommand)
 			{
 				this.CurrentOperation = "display tasks";
 
 				filteredTasks.ForEach(task => task.Display(_output));
 			}
-			else if (executingCommand == _deleteTasks)
+			else if (executingCommand == _deleteTasksCommand)
 			{
 				this.CurrentOperation = "delete tasks";
 
@@ -504,7 +509,7 @@ namespace TaskMan
 						filteredTasks.Count());
 				}
 			}
-			else if (executingCommand == _updateTasks)
+			else if (executingCommand == _updateTasksCommand)
 			{
 				this.CurrentOperation = "update task parameters";
 
@@ -512,7 +517,7 @@ namespace TaskMan
 
 				UpdateTasks(commandLineArguments, taskList, filteredTasks);
 			}
-			else if (executingCommand == _completeTasks)
+			else if (executingCommand == _completeTasksCommand)
 			{
 				this.CurrentOperation = "finish tasks";
 
@@ -534,6 +539,29 @@ namespace TaskMan
 					WriteLine(
 						Messages.TasksWereFinished,
 						filteredTasks.Count());
+				}
+			}
+			else if (executingCommand == _configureCommand)
+			{
+				this.CurrentOperation = "configure program parameters";
+
+				string parameterName = commandLineArguments.PopFirst();
+
+				if (_configurationViewFlag.IsSet && 
+					_configurationViewFlag.Value)
+				{
+					WriteLine(_configuration.GetParameter(parameterName));
+				}
+				else
+				{
+					string parameterValue = commandLineArguments.PopFirst();
+
+					_configuration.SetParameter(
+						parameterName,
+						parameterValue,
+						_configurationGlobalFlag.IsSet && _configurationGlobalFlag.Value);
+
+					WriteLine($"parameter {parameterName} was set to {parameterValue}");
 				}
 			}
 		}

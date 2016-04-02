@@ -58,6 +58,8 @@ namespace TaskMan.Control
 				throw new ArgumentException(
 					"The specified default value does not match the given validation expression");
 			}
+
+			this.DefaultValue = defaultValue;
 		}
 	}
 
@@ -112,14 +114,12 @@ namespace TaskMan.Control
 				throw new TaskManException($"Parameter '{name}' can only be set at the user level");
 			}
 
-			if (setGlobally)
-			{
-				_globalConfiguration.AppSettings.Settings.Add(name, value);
-			}
-			else
-			{
-				_userConfiguration.AppSettings.Settings.Add(name, value);
-			}
+			Configuration configuration = setGlobally ?
+				_globalConfiguration :
+				_userConfiguration;
+
+			configuration.AppSettings.Settings.Add(name, value);
+			configuration.Save(ConfigurationSaveMode.Full);
 		}
 
 		public string GetParameter(string name)
@@ -132,8 +132,8 @@ namespace TaskMan.Control
 				throw new TaskManException($"Unknown parameter name '{name}'.");
 			}
 
-			string userValue = _userConfiguration.AppSettings.Settings[name].Value;
-			string globalValue = _globalConfiguration.AppSettings.Settings[name].Value;
+			string userValue = _userConfiguration.AppSettings.Settings[name]?.Value;
+			string globalValue = _globalConfiguration.AppSettings.Settings[name]?.Value;
 
 			if (userValue != null)
 			{
