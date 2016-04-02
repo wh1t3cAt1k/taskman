@@ -256,7 +256,7 @@ namespace TaskMan
 				@"^(add|new|create)$", 
 				isReadUpdateDelete: false,
 				supportedFlags: 
-					new Flag[] { _descriptionFlag, _priorityFlag, _silentFlag, _verboseFlag });
+					new Flag[] { _interactiveFlag, _descriptionFlag, _priorityFlag, _silentFlag, _verboseFlag });
 
 			_deleteTasksCommand = new Command(
 				@"^(delete|remove)$",
@@ -264,7 +264,7 @@ namespace TaskMan
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
-					.Concat(new [] { _includeAllFlag, _silentFlag, _verboseFlag }));
+					.Concat(new [] { _interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag }));
 
 			_completeTasksCommand = new Command(
 				@"^(complete|finish|accomplish)$",
@@ -272,7 +272,7 @@ namespace TaskMan
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
-					.Concat(new [] { _includeAllFlag, _silentFlag, _verboseFlag }));
+					.Concat(new [] { _interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag }));
 
 			_displayTasksCommand = new Command(
 				@"^(show|display|view)$",
@@ -287,7 +287,7 @@ namespace TaskMan
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
-					.Concat(new [] { _includeAllFlag, _silentFlag, _verboseFlag }));
+					.Concat(new [] { _interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag }));
 
 			_commands = privateFields
 				.Where(fieldInfo => fieldInfo.FieldType == typeof(Command))
