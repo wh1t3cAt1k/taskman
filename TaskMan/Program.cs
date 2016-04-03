@@ -176,9 +176,8 @@ namespace TaskMan
 
 		IEnumerable<Alias> _aliases;
 
-		Alias _viewCurrentListAlias;
-		Alias _switchTaskListAlias;
-		Alias _clearTaskListAlias;
+		Alias _configureTaskListAlias;
+		Alias _clearTasksAlias;
 
 		#endregion
 
@@ -293,15 +292,11 @@ namespace TaskMan
 
 			// Setup program aliases
 			// -
-			_viewCurrentListAlias = new Alias(
+			_configureTaskListAlias = new Alias(
 				"list",
 				$"{_configureCommand.ExampleUsage} {_configuration.CurrentTaskList.Name}");
 
-			_switchTaskListAlias = new Alias(
-				"switch",
-				$"{_configureCommand.ExampleUsage} {_configuration.CurrentTaskList.Name}");
-
-			_clearTaskListAlias = new Alias(
+			_clearTasksAlias = new Alias(
 				"clear",
 				$"{_deleteTasksCommand.ExampleUsage} {_includeAllFlag.ExampleUsage} {_interactiveFlag.ExampleUsage}");
 
@@ -432,7 +427,7 @@ namespace TaskMan
 			if (_interactiveFlag.IsSet && _interactiveFlag)
 			{
 				OutputWriteLine(string.Format(actionDescription, formatArguments));
-				OutputWriteLine(Messages.YesNoConfirmationPrompt);
+				OutputWrite(Messages.YesNoConfirmationPrompt);
 
 				confirmationResult = ConfirmActionRegex.IsMatch(Console.ReadLine());
 			}
@@ -462,7 +457,8 @@ namespace TaskMan
 				"tasks", 
 				willBe);
 
-			relevantTasks.Take(3).ForEach(task => task.Display(actionDescription));
+			relevantTasks.Take(3).ForEach(
+				task => DisplayTask(task, actionDescription));
 
 			if (relevantTasks.Skip(3).Any())
 			{
@@ -471,7 +467,7 @@ namespace TaskMan
 					relevantTasks.Skip(3).Count());
 			}
 
-			return ConfirmOperation(actionDescription.ToString());
+			return ConfirmOperation(actionDescription.ToString().TrimEnd('\n'));
 		}
 
 		public void Run(IEnumerable<string> originalArguments)
@@ -595,7 +591,7 @@ namespace TaskMan
 			{
 				this.CurrentOperation = "display tasks";
 
-				filteredTasks.ForEach(task => task.Display(_output));
+				filteredTasks.ForEach(task => DisplayTask(task));
 			}
 			else if (executingCommand == _deleteTasksCommand)
 			{
@@ -938,6 +934,73 @@ namespace TaskMan
 			{
 				return null;
 			}
+		}
+
+		/// <summary>
+		/// Writes the string representation of the current task (followed by a line terminator) into
+		/// the standard output stream or explicitly provided <see cref="TextWriter"/> output. 
+		/// For console output, optional background and foreground <see cref="ConsoleColor"/>
+		/// parameters can be specified to override the standard colouring scheme.
+		/// </summary>
+		void DisplayTask(Task task, TextWriter output = null)
+		{
+			output = output ?? _output;
+
+			ConsoleColor normalTaskColor = 
+				TaskHelper.ParseColor(_configuration.NormalTaskColor.GetValue());
+
+//			ConsoleColor finishedTaskColor =
+//				TaskHelper
+
+			ConsoleColor importantTaskColor =
+				TaskHelper.ParseColor(_configuration.ImportantTaskColor.GetValue());
+
+			ConsoleColor criticalTaskColor =
+				TaskHelper.ParseColor(_configuration.CriticalTaskColor.GetValue());
+
+			string taskPrefix = task.IsFinished ?
+				_configuration.FinishedPrefix.GetValue() :
+				string.Empty;
+
+			string taskSymbol = string.Empty;
+
+			if (task.Priority == Priority.Important)
+			{
+				taskSymbol = _configuration.ImportantSymbol.GetValue();
+			}
+			else if (task.Priority == Priority.Critical)
+			{
+				taskSymbol = _configuration.CriticalSymbol.GetValue();
+			}
+
+			if (task.IsFinished)
+			{
+				taskSymbol = _configuration.FinishedSymbol.GetValue();
+			}
+
+			ConsoleColor oldForegroundColor = Console.ForegroundColor;
+
+			if (output == Console.Out)
+			{
+				Console.ForegroundColor =
+					task.IsFinished ?
+						TaskHelper.ParseColor(_configuration.FinishedTaskColor.GetValue()) :
+						task.Priority == Priority.Critical ?
+							TaskHelper.ParseColor(_configuration.CriticalTaskColor.GetValue()) :
+							task.Priority == Priority.Important ?
+								TaskHelper.ParseColor(_configuration.ImportantTaskColor.GetValue()) :
+								TaskHelper.ParseColor(_configuration.NormalTaskColor.GetValue());
+			}
+
+			output.WriteLine(
+				"{0}{1,-2}{2}{3,-6}{4}", 
+				taskPrefix,
+				taskSymbol,
+				_configuration.IdPrefix.GetValue(),
+				task.ID, 
+				task.Description);
+
+			Console.ForegroundColor = oldForegroundColor;
 		}
 	}
 }

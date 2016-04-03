@@ -36,6 +36,7 @@
 		public const string RequiredFlagNotSet = "Required flag {0} was not specified";
 		public const string UnknownFinishedFlag = "Unknown boolean completion flag '{0}'.";
 		public const string UnknownCommand = "Unknown command '{0}'. " + Messages.TypeHelpForCommandSyntax;
+		public const string UnknownColor = "Unknown console color '{0}'.";
 		public const string UnknownPriorityLevel = "Unknown priority level '{0}'.";
 		public const string UnknownIdOrIdRange = "Unknown ID or ID range '{0}'.";
 		public const string NoFilterConditionsUseAllIfIntended = "No task filter conditions specified. Use the --all flag if you intended to {0} all tasks.";

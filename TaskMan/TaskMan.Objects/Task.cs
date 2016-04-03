@@ -37,32 +37,7 @@ namespace TaskMan.Objects
 
 		public override string ToString()
 		{
-			string prioritySymbol;
-
-			switch (this.Priority)
-			{
-				case Priority.Important:
-					prioritySymbol = "!";
-					break;
-				case Priority.Critical:
-					prioritySymbol = "!!";
-					break;
-				default:
-					prioritySymbol = string.Empty;
-					break;
-			}
-
-			if (this.IsFinished)
-			{
-				prioritySymbol = "x";
-			}
-
-			return String.Format(
-				"{0}{1,-2} id. {2,-6}{3}", 
-				(this.IsFinished ? "--| " : string.Empty),
-				prioritySymbol,
-				ID, 
-				Description);
+			return $"{ID} {Description}";
 		}
 
 		public static readonly ConsoleColor NormalTaskColor = Console.ForegroundColor;
@@ -96,41 +71,6 @@ namespace TaskMan.Objects
 					return Task.NormalTaskColor;
 				}
 			}
-		}
-
-		/// <summary>
-		/// Writes the string representation of the current task (followed by a line terminator) into
-		/// the standard output stream or explicitly provided <see cref="TextWriter"/> output. 
-		/// For console output, optional background and foreground <see cref="ConsoleColor"/>
-		/// parameters can be specified to override the standard colouring scheme.
-		/// </summary>
-		public void Display(
-			TextWriter outputStream = null,
-			ConsoleColor? backgroundColor = null,
-			ConsoleColor? foregroundColor = null)
-		{
-			outputStream = outputStream ?? Console.Out;
-
-			if (!backgroundColor.HasValue)
-			{
-				backgroundColor = Console.BackgroundColor;
-			}
-
-			if (!foregroundColor.HasValue)
-			{
-				foregroundColor = this.ConsoleOutputColor;
-			}
-
-			ConsoleColor originalBackgroundColor = Console.BackgroundColor;
-			ConsoleColor originalForegroundColor = Console.ForegroundColor;
-
-			Console.BackgroundColor = backgroundColor.Value;
-			Console.ForegroundColor = foregroundColor.Value;
-
-			outputStream.WriteLine(this);
-
-			Console.BackgroundColor = originalBackgroundColor;
-			Console.ForegroundColor = originalForegroundColor;
 		}
 
 		public static int CompareTasks(Task firstTask, Task secondTask)

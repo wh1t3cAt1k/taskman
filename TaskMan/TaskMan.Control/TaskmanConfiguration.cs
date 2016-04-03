@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Reflection;
 
 using TaskMan.Objects;
 
@@ -11,6 +12,8 @@ namespace TaskMan.Control
 {
 	public class TaskmanParameter
 	{
+		TaskmanConfiguration _configuration;
+
 		/// <summary>
 		/// Gets the parameter name that should serve as a key in the
 		/// configuration file.
@@ -38,14 +41,18 @@ namespace TaskMan.Control
 		public bool IsUserScoped { get; }
 
 		public TaskmanParameter(
+			TaskmanConfiguration configuration,
 			string name, 
 			string validationPattern = ".*", 
 			string defaultValue = null, 
 			bool isUserScoped = false)
 		{
+			if (configuration == null) throw new ArgumentNullException(nameof(configuration));
 			if (name == null) throw new ArgumentNullException(nameof(name));
 			if (validationPattern == null) throw new ArgumentNullException(nameof(validationPattern));
-			
+
+			this._configuration = configuration;
+
 			this.Name = name;
 			this.ValidationRegex = 
 				new Regex(validationPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -60,6 +67,16 @@ namespace TaskMan.Control
 			}
 
 			this.DefaultValue = defaultValue;
+		}
+
+		/// <summary>
+		/// Gets the value of this parameter using the
+		/// configuration object that this parameter
+		/// belongs to.
+		/// </summary>
+		public string GetValue()
+		{
+			return _configuration.GetParameter(this.Name);
 		}
 	}
 
@@ -80,8 +97,58 @@ namespace TaskMan.Control
 			}
 		}
 
+		private const string IDENTIFIER_PATTERN = "[A-Za-z][A-Za-z0-9]*";
+		private const string ENUM_VALUE_PATTERN = "[A-Za-z][A-Za-z0-9]*|[0-9]+";
+		private const string ANY_PATTERN = ".*";
+
 		public TaskmanParameter CurrentTaskList 
-			=> new TaskmanParameter("list", "[A-Za-z][A-Za-z0-9]*", "default", true);
+			=> new TaskmanParameter(this, "list", IDENTIFIER_PATTERN, "inbox", true);
+
+		public TaskmanParameter ImportantSymbol
+			=> new TaskmanParameter(this, "importantsymbol", ANY_PATTERN, "!");
+
+		public TaskmanParameter CriticalSymbol
+			=> new TaskmanParameter(this, "criticalsymbol", ANY_PATTERN, "!!");
+
+		public TaskmanParameter FinishedSymbol
+			=> new TaskmanParameter(this, "finishedsymbol", ANY_PATTERN, "x");
+
+		public TaskmanParameter PendingPrefix
+			=> new TaskmanParameter(this, "pendingprefix", ANY_PATTERN, String.Empty);
+
+		public TaskmanParameter FinishedPrefix
+			=> new TaskmanParameter(this, "finishedprefix", ANY_PATTERN, "--| ");
+
+		public TaskmanParameter IdPrefix
+			=> new TaskmanParameter(this, "idprefix", ANY_PATTERN, " id. ");
+
+		public TaskmanParameter NormalTaskColor =>
+			new TaskmanParameter(
+				this,
+				"normalcolor", 
+				ENUM_VALUE_PATTERN,
+				Console.ForegroundColor.ToString());
+
+		public TaskmanParameter FinishedTaskColor =>
+			new TaskmanParameter(
+				this,
+				"finishedcolor",
+				ENUM_VALUE_PATTERN,
+				ConsoleColor.Gray.ToString());
+
+		public TaskmanParameter ImportantTaskColor =>
+			new TaskmanParameter(
+				this,
+				"importantcolor",
+				ENUM_VALUE_PATTERN,
+				ConsoleColor.Green.ToString());
+
+		public TaskmanParameter CriticalTaskColor =>
+			new TaskmanParameter(
+				this,
+				"criticalcolor",
+				ENUM_VALUE_PATTERN,
+				ConsoleColor.Yellow.ToString()); 
 
 		private IEnumerable<TaskmanParameter> _supportedParameters;
 
@@ -90,7 +157,11 @@ namespace TaskMan.Control
 			_globalConfiguration = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 			_userConfiguration = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoaming);
 
-			_supportedParameters = new [] { CurrentTaskList };
+			_supportedParameters = typeof(TaskmanConfiguration)
+				.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+				.Where(propertyInfo => propertyInfo.PropertyType == typeof(TaskmanParameter))
+				.Select(propertyInfo => propertyInfo.GetValue(this))
+				.Cast<TaskmanParameter>();
 
 			if (!Directory.Exists(this.UserConfigurationDirectory))
 			{

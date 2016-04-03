@@ -57,6 +57,19 @@ namespace TaskMan.Objects
 			return priority;
 		}
 
+		public static ConsoleColor ParseColor(string colorString)
+		{
+			ConsoleColor color;
+
+			if (!Enum.TryParse(colorString, out color) ||
+			    !Enum.GetValues(typeof(ConsoleColor)).Cast<ConsoleColor>().Contains(color))
+			{
+				throw new TaskManException(Messages.UnknownColor, colorString);
+			}
+
+			return color;
+		}
+
 		/// <summary>
 		/// Tries to parse a string value into a sequence of <see cref="Task"/> IDs.
 		/// Supports: 
