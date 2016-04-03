@@ -2,14 +2,15 @@
 {
 	public static class Messages
 	{
-		public const string ClearConfirmationMessage = "All tasks will be deleted. Confirm (y[es]/n[o]): ";
+		public const string AndNumberMore = "...and {0} more.";
+		public const string YesNoConfirmationPrompt = "Confirm (y[es]/n[o]): ";
+		public const string Cancelled = "Cancelled.";
 		public const string CouldNotReadTaskList = "An error occurred while trying to read task list: {0}";
 		public const string Error = "Error: {0}";
 		public const string ErrorPerformingOperation = "Cannot {0}: {1}";
 		public const string ExceptionStackTrace = "Exception stack trace: ";
 		public const string FlagNotSet = "The {0} flag value has not been set.";
-		public const string NoParameterName = "No parameter name provided for '{0}'.";
-		public const string NoParameterValue = "No parameter value provided for '{0} {1}'.";
+		public const string NoParameterName = "No parameter name specified for '{0}'.";
 		public const string ParameterWasSetToValue = "Parameter '{0}' was set to '{1}'.";
 		public const string EntityDoesNotMakeSenseWithEntity = "'{0}' does not make sense with '{1}'.";
 		public const string InsufficientSetParameters = "Insufficient parameters in 'set' command. " + Messages.TypeHelpForCommandSyntax;
@@ -29,7 +30,9 @@
 		public const string TasksWereUpdated = "Updated {0} task(s) with new '{1}' value of '{2}'.";
 		public const string TaskWasDeleted = "Task with ID {0} [{1}] was successfully deleted.";
 		public const string TasksWereDeleted = "{0} tasks were successfully deleted.";
+		public const string TheFollowingObjectWillBeAction = "The following {0} will be {1}: ";
 		public const string TypeHelpForCommandSyntax = "Type 'taskman --help' to view command syntax.";
+		public const string ParameterNameWillBeSetToValue = "Parameter '{0}' will be set to '{1}'.";
 		public const string RequiredFlagNotSet = "Required flag {0} was not specified";
 		public const string UnknownFinishedFlag = "Unknown boolean completion flag '{0}'.";
 		public const string UnknownCommand = "Unknown command '{0}'. " + Messages.TypeHelpForCommandSyntax;

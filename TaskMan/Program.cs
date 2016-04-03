@@ -87,10 +87,6 @@ namespace TaskMan
 			"specifies that the provided configuration parameter should be set globally and not just for the current user",
 			"G|global");
 
-		Flag<bool> _configurationViewFlag = new Flag<bool>(
-			"specifies that the provided configuration parameter should be displayed and not set",
-			"view");
-
 		Flag<bool> _interactiveFlag = new Flag<bool>(
 			"displays a confirmation prompt before executing an operation", 
 			"I|interactive");
@@ -250,7 +246,7 @@ namespace TaskMan
 			_configureCommand = new Command(
 				@"^(config|configure)$",
 				isReadUpdateDelete: false,
-				supportedFlags: new [] { _configurationGlobalFlag, _configurationViewFlag });
+				supportedFlags: new [] { _configurationGlobalFlag, _interactiveFlag });
 
 			_addTaskCommand = new Command(
 				@"^(add|new|create)$", 
@@ -414,35 +410,63 @@ namespace TaskMan
 		}
 
 		/// <summary>
-		/// Confirms with the user that an action will be performed
-		/// upon the specified tasks (e.g. updated, added, etc).
+		/// Confirms with the user that the described action will
+		/// be executed.
 		/// </summary>
-		bool ConfirmOperation(IEnumerable<Task> relevantTasks, string willBe)
+		/// 
+		/// <returns>
+		/// <c>true</c>, if operation was confirmed, 
+		/// <c>false</c> otherwise.
+		/// </returns>
+		bool ConfirmOperation(
+			string actionDescription, 
+			params object[] formatArguments)
 		{
 			bool confirmationResult = true;
 
 			if (_interactiveFlag.IsSet && _interactiveFlag)
 			{
-				OutputWriteLine("The following tasks will be {0}: ", willBe);
-
-				relevantTasks.Take(3).ForEach(task => task.Display());
-
-				if (relevantTasks.Skip(3).Any())
-				{
-					OutputWriteLine($"(...and {relevantTasks.Skip(3).Count()} more)");
-				}
-
-				OutputWrite("Confirm (y/n): ");
+				OutputWriteLine(string.Format(actionDescription, formatArguments));
+				OutputWriteLine(Messages.YesNoConfirmationPrompt);
 
 				confirmationResult = ConfirmActionRegex.IsMatch(Console.ReadLine());
 			}
 
 			if (!confirmationResult)
 			{
-				OutputWriteLine("Cancelled.");
+				OutputWriteLine(Messages.Cancelled);
 			}
 
 			return confirmationResult;
+		}
+
+		/// <summary>
+		/// Confirms with the user that an action will be performed
+		/// upon the specified tasks (e.g. updated, added, etc).
+		/// </summary>
+		/// <returns>
+		/// <c>true</c>, if operation was confirmed, 
+		/// <c>false</c> otherwise.
+		/// </returns>
+		bool ConfirmTaskOperation(IEnumerable<Task> relevantTasks, string willBe)
+		{
+			StringWriter actionDescription = new StringWriter();
+
+			actionDescription.WriteLine(
+				Messages.TheFollowingObjectWillBeAction, 
+				"tasks", 
+				willBe);
+
+			relevantTasks.Take(3).ForEach(task => task.Display(actionDescription));
+
+			if (relevantTasks.Skip(3).Any())
+			{
+				actionDescription.WriteLine(
+					Messages.AndNumberMore, 
+					relevantTasks.Skip(3).Count());
+			}
+
+			return ConfirmOperation(actionDescription.ToString());
 		}
 
 		public void Run(IEnumerable<string> originalArguments)
@@ -574,7 +598,7 @@ namespace TaskMan
 
 				RequireExplicitFiltering(commandName, taskList, filteredTasks);
 
-				if (!ConfirmOperation(filteredTasks, "deleted")) return;
+				if (!ConfirmTaskOperation(filteredTasks, "deleted")) return;
 
 				int totalTasksBefore = taskList.Count;
 
@@ -610,7 +634,7 @@ namespace TaskMan
 
 				RequireExplicitFiltering(commandName, taskList, filteredTasks);
 
-				if (!ConfirmOperation(filteredTasks, "updated")) return;
+				if (!ConfirmTaskOperation(filteredTasks, "updated")) return;
 
 				UpdateTasks(commandLineArguments, taskList, filteredTasks);
 			}
@@ -620,7 +644,7 @@ namespace TaskMan
 
 				RequireExplicitFiltering(commandName, taskList, filteredTasks);
 
-				if (!ConfirmOperation(filteredTasks, "completed")) return;
+				if (!ConfirmTaskOperation(filteredTasks, "completed")) return;
 
 				int totalTasksFinished = 
 					filteredTasks.ForEach(task => task.IsFinished = true);
@@ -654,22 +678,24 @@ namespace TaskMan
 
 				string parameterName = commandLineArguments.PopFirst();
 
-				if (_configurationViewFlag.IsSet && 
-					_configurationViewFlag.Value)
+				if (!commandLineArguments.Any())
 				{
+					// When no parameter value is provided, it means
+					// we should show the parameter.
+					// -
 					OutputWriteLine(_configuration.GetParameter(parameterName));
 				}
 				else
 				{
-					if (!commandLineArguments.Any())
-					{
-						throw new TaskManException(
-							Messages.NoParameterValue,
-							commandName,
-							parameterName);
-					}
-
 					string parameterValue = commandLineArguments.PopFirst();
+
+					if (!ConfirmOperation(
+						Messages.ParameterNameWillBeSetToValue,
+						parameterName,
+						parameterValue)) 
+					{
+						return;
+					}
 
 					_configuration.SetParameter(
 						parameterName,
@@ -898,7 +924,7 @@ namespace TaskMan
 
 			Task newTask = new Task(taskList.Count, description, taskPriority);
 
-			if (this.ConfirmOperation(new List<Task> { newTask }, "added"))
+			if (this.ConfirmTaskOperation(new List<Task> { newTask }, "added"))
 			{
 				taskList.Add(newTask);
 				return newTask;
