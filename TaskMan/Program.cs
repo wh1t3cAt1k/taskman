@@ -176,6 +176,7 @@ namespace TaskMan
 
 		IEnumerable<Alias> _aliases;
 
+		Alias _viewCurrentListAlias;
 		Alias _switchTaskListAlias;
 		Alias _clearTaskListAlias;
 
@@ -292,6 +293,10 @@ namespace TaskMan
 
 			// Setup program aliases
 			// -
+			_viewCurrentListAlias = new Alias(
+				"list",
+				$"{_configureCommand.ExampleUsage} {_configuration.CurrentTaskList.Name}");
+
 			_switchTaskListAlias = new Alias(
 				"switch",
 				$"{_configureCommand.ExampleUsage} {_configuration.CurrentTaskList.Name}");
