@@ -1,18 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace TaskMan.Objects
 {
-	public enum TaskDisplayCondition
-	{
-		All = 0,
-		Current = 1,
-		Finished = 2
-	}
-
 	/// <summary>
 	/// Denotes a particular task to be done, with a description text,
 	/// importance level, and completion flag.
@@ -26,7 +15,7 @@ namespace TaskMan.Objects
 		public string Description { get; set; }
 
 		public Task(
-			int id = 0,
+			int id = -1,
 			string description = "",
 			Priority priority = Priority.Normal)
 		{
@@ -38,39 +27,6 @@ namespace TaskMan.Objects
 		public override string ToString()
 		{
 			return $"{ID} {Description}";
-		}
-
-		public static readonly ConsoleColor NormalTaskColor = Console.ForegroundColor;
-		public static readonly ConsoleColor FinishedTaskColor = ConsoleColor.Gray;
-		public static readonly ConsoleColor ImportantTaskColor = ConsoleColor.Green;
-		public static readonly ConsoleColor CriticalTaskColor = ConsoleColor.Yellow;
-
-		/// <summary>
-		/// Gets the foreground color with which the Task would be output
-		/// into the console.
-		/// </summary>
-		/// <value>The color of the console output.</value>
-		public ConsoleColor ConsoleOutputColor
-		{
-			get
-			{
-				if (this.IsFinished)
-				{
-					return Task.FinishedTaskColor;
-				}
-				else if (this.Priority == Priority.Important)
-				{
-					return Task.ImportantTaskColor;
-				}
-				else if (this.Priority == Priority.Critical)
-				{
-					return Task.CriticalTaskColor;
-				}
-				else
-				{
-					return Task.NormalTaskColor;
-				}
-			}
 		}
 
 		public static int CompareTasks(Task firstTask, Task secondTask)
@@ -107,5 +63,5 @@ namespace TaskMan.Objects
 		{
 			return Task.CompareTasks(this, otherTask);
 		}
-	}		
+	}
 }

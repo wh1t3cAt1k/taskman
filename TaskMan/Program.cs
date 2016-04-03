@@ -946,18 +946,6 @@ namespace TaskMan
 		{
 			output = output ?? _output;
 
-			ConsoleColor normalTaskColor = 
-				TaskHelper.ParseColor(_configuration.NormalTaskColor.GetValue());
-
-//			ConsoleColor finishedTaskColor =
-//				TaskHelper
-
-			ConsoleColor importantTaskColor =
-				TaskHelper.ParseColor(_configuration.ImportantTaskColor.GetValue());
-
-			ConsoleColor criticalTaskColor =
-				TaskHelper.ParseColor(_configuration.CriticalTaskColor.GetValue());
-
 			string taskPrefix = task.IsFinished ?
 				_configuration.FinishedPrefix.GetValue() :
 				string.Empty;
