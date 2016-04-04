@@ -51,12 +51,16 @@ namespace TaskMan.Objects
 				string propertyName,
 				SortingDirection direction = SortingDirection.Ascending)
 			{
-				this.Property = typeof(Task).GetProperty(propertyName, BindingFlags.IgnoreCase);
+				this.Property = typeof(Task)
+					.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.IgnoreCase);
+
 				this.Direction = direction;
 
 				if (this.Property == null)
 				{
-					throw new TaskManException(Messages.CannotSortNoSuchProperty);
+					throw new TaskManException(
+						Messages.CannotSortNoSuchProperty, 
+						propertyName);
 				}
 			}
 		}
