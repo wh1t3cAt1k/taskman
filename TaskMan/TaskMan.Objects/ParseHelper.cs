@@ -122,11 +122,11 @@ namespace TaskMan.Objects
 		/// </summary>
 		/// <returns>The sorting steps.</returns>
 		/// <param name="sortString">Sort string.</param>
-		public static IEnumerable<Task.SortingStep> ParseSortingSteps(string sortString)
+		public static IEnumerable<Task.ComparisonStep> ParseSortingSteps(string sortString)
 		{
 			Match match = SortingStepRegex.Match(sortString);
 
-			List<Task.SortingStep> sortingSteps = new List<Task.SortingStep>();
+			List<Task.ComparisonStep> sortingSteps = new List<Task.ComparisonStep>();
 
 			foreach (Capture capture in match.Groups[1].Captures)
 			{
@@ -156,7 +156,7 @@ namespace TaskMan.Objects
 				}
 				else
 				{
-					sortingSteps.Add(new Task.SortingStep(
+					sortingSteps.Add(new Task.ComparisonStep(
 						propertyName: matchingFields.Single().Name,
 						direction:
 							sortOrder == '+' ? 

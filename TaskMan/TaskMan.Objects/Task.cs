@@ -39,14 +39,15 @@ namespace TaskMan.Objects
 		}
 
 		/// <summary>
-		/// Represents a task sorting step.
+		/// Represents a task comparison step that
+		/// is primarily used during task sorting.
 		/// </summary>
-		public class SortingStep
+		public class ComparisonStep
 		{
 			public PropertyInfo Property { get; }
 			public SortingDirection Direction { get; }
 
-			public SortingStep(
+			public ComparisonStep(
 				string propertyName,
 				SortingDirection direction = SortingDirection.Ascending)
 			{
@@ -64,7 +65,7 @@ namespace TaskMan.Objects
 		/// Gets the task comparison delegate based on the sorting steps
 		/// provided.
 		/// </summary>
-		public static Comparison<Task> GetComparison(IEnumerable<SortingStep> sortingSteps)
+		public static Comparison<Task> GetComparison(IEnumerable<ComparisonStep> sortingSteps)
 		{
 			// Each comparison step can either return a definitive integer value
 			// like CompareTo() does, in which case further steps won't be performed,
@@ -100,7 +101,7 @@ namespace TaskMan.Objects
 				}
 			});
 
-			foreach (SortingStep sortingStep in sortingSteps)
+			foreach (ComparisonStep sortingStep in sortingSteps)
 			{
 				comparisonSteps.Add((firstTask, secondTask) =>
 				{
@@ -119,11 +120,11 @@ namespace TaskMan.Objects
 			// -
 			return new Comparison<Task>((firstTask, secondTask) =>
 			{
-				int? comparisonResult = null;
+				int? comparisonResult;
 
-				foreach (Func<Task, Task, int?> sortingStep in comparisonSteps)
+				foreach (Func<Task, Task, int?> nextComparison in comparisonSteps)
 				{
-					comparisonResult = sortingStep(firstTask, secondTask);
+					comparisonResult = nextComparison(firstTask, secondTask);
 					if (comparisonResult.HasValue) return comparisonResult.Value;
 				}
 
@@ -131,17 +132,17 @@ namespace TaskMan.Objects
 			});
 		}
 
-		static readonly Comparison<Task> DefaultComparison = GetComparison(new[]
-		{
-			new SortingStep(nameof(Task.IsFinished), SortingDirection.Ascending),
-			new SortingStep(nameof(Task.Priority), SortingDirection.Ascending),
-			new SortingStep(nameof(Task.ID), SortingDirection.Ascending),
-			new SortingStep(nameof(Task.Description), SortingDirection.Ascending)
-		});
-
 		public static int Compare(Task firstTask, Task secondTask)
 		{
-			return DefaultComparison(firstTask, secondTask);
+			Comparison<Task> defaultComparison = GetComparison(new []
+			{
+				new ComparisonStep(nameof(Task.IsFinished), SortingDirection.Ascending),
+				new ComparisonStep(nameof(Task.Priority), SortingDirection.Ascending),
+				new ComparisonStep(nameof(Task.ID), SortingDirection.Ascending),
+				new ComparisonStep(nameof(Task.Description), SortingDirection.Ascending)
+			});
+
+			return defaultComparison(firstTask, secondTask);
 		}
 
 		public int CompareTo(Task otherTask)
