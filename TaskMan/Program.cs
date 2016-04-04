@@ -159,7 +159,7 @@ namespace TaskMan
 
 		Flag<string> _orderByFlag = new Flag<string>(
 			"orders the tasks by the specified criteria",
-			"o=|orderby=");
+			"o=|order=|sort=");
 
 		#endregion
 
