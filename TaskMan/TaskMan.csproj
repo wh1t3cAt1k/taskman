@@ -15,7 +15,6 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <SignManifests>true</SignManifests>
     <SignAssembly>false</SignAssembly>
-    <ApplicationIcon>taskman.ico</ApplicationIcon>
     <StartupObject>TaskMan.Program</StartupObject>
     <ManifestCertificateThumbprint>17F47555940EBD135DA300956A9F687E0CD278EF</ManifestCertificateThumbprint>
     <ManifestKeyFile>TaskMan_TemporaryKey.pfx</ManifestKeyFile>
@@ -98,10 +97,10 @@
     <Compile Include="TaskMan.Objects\Priority.cs" />
     <Compile Include="TaskMan.Control\TaskFilterFlag.cs" />
     <Compile Include="TaskMan.Objects\TaskManException.cs" />
-    <Compile Include="TaskMan.Objects\TaskHelper.cs" />
     <Compile Include="TaskMan.Control\TaskmanConfiguration.cs" />
     <Compile Include="TaskMan.Control\Alias.cs" />
     <Compile Include="TaskMan.Control\PrototypeHelper.cs" />
+    <Compile Include="TaskMan.Objects\ParseHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
@@ -152,4 +151,14 @@
     <Folder Include="TaskMan.Control\" />
     <Folder Include="TaskMan.Objects\" />
   </ItemGroup>
+  <ProjectExtensions>
+    <MonoDevelop>
+      <Properties>
+        <Policies>
+          <TextStylePolicy TabsToSpaces="False" inheritsSet="VisualStudio" inheritsScope="text/plain" scope="text/x-csharp" />
+          <CSharpFormattingPolicy IndentSwitchSection="True" NewLinesForBracesInProperties="True" NewLinesForBracesInAccessors="True" NewLinesForBracesInAnonymousMethods="True" NewLinesForBracesInControlBlocks="True" NewLinesForBracesInAnonymousTypes="True" NewLinesForBracesInObjectCollectionArrayInitializers="True" NewLinesForBracesInLambdaExpressionBody="True" NewLineForElse="True" NewLineForCatch="True" NewLineForFinally="True" NewLineForMembersInObjectInit="True" NewLineForMembersInAnonymousTypes="True" NewLineForClausesInQuery="True" SpacingAfterMethodDeclarationName="False" SpaceAfterMethodCallName="False" SpaceBeforeOpenSquareBracket="False" inheritsSet="Mono" inheritsScope="text/x-csharp" scope="text/x-csharp" />
+        </Policies>
+      </Properties>
+    </MonoDevelop>
+  </ProjectExtensions>
 </Project>

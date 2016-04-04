@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Reflection;
 
 namespace TaskMan.Objects
 {
-	public static class TaskHelper
+	public static class ParseHelper
 	{
 		static readonly RegexOptions StandardRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
 
@@ -13,11 +14,11 @@ namespace TaskMan.Objects
 		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
 
 		/// <summary>
-		/// Tries to parse a string value into a <see cref="Task.Finished"/>
-		/// value. 0 and "false" are parsed into <c>false</c>, 1 and "true" 
-		/// are parsed into <c>true</c>, case-insensitively.
+		/// Tries to parse a string value into a boolean value.
+		/// 0 and "false" are parsed into <c>false</c>, 
+		/// 1 and "true" are parsed into <c>true</c>, case-insensitively.
 		/// </summary>
-		public static bool ParseFinished(string value)
+		public static bool ParseBool(string value)
 		{
 			int integerResult;
 			bool booleanResult;
@@ -34,7 +35,7 @@ namespace TaskMan.Objects
 			}
 			else
 			{
-				throw new TaskManException(Messages.UnknownFinishedFlag, value);
+				throw new TaskManException(Messages.UknownBooleanValue, value);
 			}
 		}
 
@@ -77,7 +78,7 @@ namespace TaskMan.Objects
 		/// 2. ID ranges like '5-36'
 		/// 3. ID lists like '5,6,7'
 		/// </summary>
-		public static IEnumerable<int> ParseId(string idString)
+		public static IEnumerable<int> ParseTaskId(string idString)
 		{
 			Match idSequenceMatch = IdSequenceRegex.Match(idString);
 			Match idRangeMatch = IdRangeRegex.Match(idString);
@@ -106,6 +107,65 @@ namespace TaskMan.Objects
 					Messages.UnknownIdOrIdRange,
 					idString);
 			}
+		}
+
+		/// <summary>
+		/// Example: "i+d+p-", which means
+		/// "ascending by IsFinished flag,
+		/// then ascending by Description,
+		/// then descending by Priority".
+		/// </summary>
+		static readonly Regex SortingStepRegex = new Regex(@"^([A-Za-z][A-Za-z0-9]*?(?:\+|\-))+$", StandardRegexOptions);
+
+		/// <summary>
+		/// Tries to parse a string value into a sequence of 
+		/// </summary>
+		/// <returns>The sorting steps.</returns>
+		/// <param name="sortString">Sort string.</param>
+		public static IEnumerable<Task.SortingStep> ParseSortingSteps(string sortString)
+		{
+			Match match = SortingStepRegex.Match(sortString);
+
+			List<Task.SortingStep> sortingSteps = new List<Task.SortingStep>();
+
+			foreach (Capture capture in match.Groups[1].Captures)
+			{
+				string propertyNamePrefix = 
+					capture.Value.Substring(0, capture.Value.Length - 1);
+				
+				char sortOrder = capture.Value[capture.Length - 1];
+
+				IEnumerable<PropertyInfo> matchingFields = typeof(Task)
+					.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+					.Where(propertyInfo => 
+					       propertyInfo.Name.StartsWith(propertyNamePrefix, StringComparison.OrdinalIgnoreCase));
+
+				if (!matchingFields.Any())
+				{
+					throw new TaskManException(
+						Messages.BadSortingStepNoSuchPropertyPrefix,
+						propertyNamePrefix,
+						sortOrder);
+				}
+				else if (!matchingFields.IsSingleton())
+				{
+					throw new TaskManException(
+						Messages.BadSortingStepAmbiguousPropertyPrefix,
+						propertyNamePrefix,
+						sortOrder);
+				}
+				else
+				{
+					sortingSteps.Add(new Task.SortingStep(
+						propertyName: matchingFields.Single().Name,
+						direction:
+							sortOrder == '+' ? 
+							Task.SortingDirection.Ascending : 
+							Task.SortingDirection.Descending));
+				}
+			}
+
+			return sortingSteps;
 		}
 	}
 }

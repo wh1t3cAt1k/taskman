@@ -43,24 +43,21 @@ namespace TaskMan.Objects
 		/// </summary>
 		public class SortingStep
 		{
-			public FieldInfo Field { get; }
+			public PropertyInfo Property { get; }
 			public SortingDirection Direction { get; }
 
 			public SortingStep(
-				FieldInfo field, 
+				string propertyName,
 				SortingDirection direction = SortingDirection.Ascending)
 			{
-				this.Field = field;
+				this.Property = typeof(Task).GetProperty(propertyName, BindingFlags.IgnoreCase);
 				this.Direction = direction;
-			}
 
-			public SortingStep(
-				string fieldName,
-				SortingDirection direction = SortingDirection.Ascending)
-				: this(
-					typeof(Task).GetField(fieldName, BindingFlags.IgnoreCase),
-					direction)
-			{ }
+				if (this.Property == null)
+				{
+					throw new TaskManException(Messages.CannotSortNoSuchProperty);
+				}
+			}
 		}
 
 		/// <summary>
@@ -76,11 +73,15 @@ namespace TaskMan.Objects
 			List<Func<Task, Task, int?>> comparisonSteps = 
 				new List<Func<Task, Task, int?>>();
 
+			// The first two steps always check reference equality
+			// and 'null' case -- a task that is 'null' is always
+			// 'smaller' than a non-null task.
+			// -
 			comparisonSteps.Add((firstTask, secondTask) =>
 			{
 				return object.ReferenceEquals(firstTask, secondTask) ?
-					0 :
-					null;
+		        	0 :
+					null as int?;
 			});
 
 			comparisonSteps.Add((firstTask, secondTask) =>
@@ -91,7 +92,7 @@ namespace TaskMan.Objects
 				}
 				else if (firstTask == null || secondTask == null)
 				{
-					return (firstTask == null ? 1 : -1);
+					return (firstTask == null ? -1 : 1);
 				}
 				else
 				{
@@ -105,59 +106,47 @@ namespace TaskMan.Objects
 				{
 					int? comparisonResult =
 						(int)sortingStep.Direction *
-						((IComparable)sortingStep.Field.GetValue(firstTask)).CompareTo(secondTask);
+		                ((IComparable)sortingStep.Property.GetValue(firstTask)).CompareTo(secondTask);
 					
 					return (comparisonResult != 0 ? comparisonResult : null);
 				});
 			}
 
+			// The result is a comparison that sequentially
+			// compares via each comparison step. It stops when
+			// any step returns a definite (non-null) value, and
+			// returns that value as the overall comparison result.
+			// -
 			return new Comparison<Task>((firstTask, secondTask) =>
+			{
+				int? comparisonResult = null;
+
+				foreach (Func<Task, Task, int?> sortingStep in comparisonSteps)
 				{
-					int? comparisonResult = null;
+					comparisonResult = sortingStep(firstTask, secondTask);
+					if (comparisonResult.HasValue) return comparisonResult.Value;
+				}
 
-					foreach (Func<Task, Task, int?> sortingStep in comparisonSteps)
-					{
-						comparisonResult = sortingStep(firstTask, secondTask);
-						if (comparisonResult.HasValue) return comparisonResult.Value;
-					}
-
-					return 0;
-				});
-		}
-
-		public static int CompareTasks(Task firstTask, Task secondTask)
-		{
-			if (object.ReferenceEquals(firstTask, secondTask))
-			{
 				return 0;
-			}
-			else if (firstTask == null || secondTask == null)
-			{
-				return (firstTask == null ? 1 : -1);
-			}
-			else if (firstTask.IsFinished != secondTask.IsFinished)
-			{
-				return (firstTask.IsFinished ? 1 : -1);
-			}
-			else if (firstTask.Priority != secondTask.Priority)
-			{
-				return firstTask.Priority - secondTask.Priority;
-			}
-			else if (firstTask.ID != secondTask.ID)
-			{
-				return checked(firstTask.ID - secondTask.ID);
-			}
-			else
-			{
-				return firstTask.Description.CompareTo(secondTask.Description);
-			}
+			});
 		}
 
-		public static Comparison<Task> TaskComparison = new Comparison<Task>(CompareTasks);
+		static readonly Comparison<Task> DefaultComparison = GetComparison(new[]
+		{
+			new SortingStep(nameof(Task.IsFinished), SortingDirection.Ascending),
+			new SortingStep(nameof(Task.Priority), SortingDirection.Ascending),
+			new SortingStep(nameof(Task.ID), SortingDirection.Ascending),
+			new SortingStep(nameof(Task.Description), SortingDirection.Ascending)
+		});
+
+		public static int Compare(Task firstTask, Task secondTask)
+		{
+			return DefaultComparison(firstTask, secondTask);
+		}
 
 		public int CompareTo(Task otherTask)
 		{
-			return Task.CompareTasks(this, otherTask);
+			return Compare(this, otherTask);
 		}
 	}
 }

@@ -112,7 +112,7 @@ namespace TaskMan
 			"p=|priority=",
 			filterPriority: 1,
 			filterPredicate: (flagValue, task) => 
-				task.Priority == TaskHelper.ParsePriority(flagValue));
+				task.Priority == ParseHelper.ParsePriority(flagValue));
 
 		Flag<string> _identityFilterFlag = new TaskFilterFlag<string>(
             "filters tasks by their ID or ID range",
@@ -120,7 +120,7 @@ namespace TaskMan
 			filterPriority: 1,
 			filterPredicate: (flagValue, task) => 
 			{
-				IEnumerable<int> allowedIds = TaskHelper.ParseId(flagValue);
+				IEnumerable<int> allowedIds = ParseHelper.ParseTaskId(flagValue);
 				return allowedIds.Contains(task.ID);
 			});
 
@@ -860,7 +860,7 @@ namespace TaskMan
 
 			if (TaskSetPriorityRegex.IsMatch(parameterToChange))
 			{
-				Priority priority = TaskHelper.ParsePriority(cliArguments.PopFirst());
+				Priority priority = ParseHelper.ParsePriority(cliArguments.PopFirst());
 				parameterStringValue = priority.ToString();
 
 				totalTasksUpdated = tasksToUpdate.ForEach(task => task.Priority = priority);
@@ -873,7 +873,7 @@ namespace TaskMan
 			}
 			else if (TaskSetFinishedRegex.IsMatch(parameterToChange))
 			{
-				bool isFinished = TaskHelper.ParseFinished(cliArguments.PopFirst());
+				bool isFinished = ParseHelper.ParseBool(cliArguments.PopFirst());
 				parameterStringValue = isFinished.ToString();
 
 				totalTasksUpdated = tasksToUpdate.ForEach(task => task.IsFinished = isFinished);
@@ -920,7 +920,7 @@ namespace TaskMan
 			string description = string.Join(" ", cliArguments);
 
 			Priority taskPriority = _priorityFlag.IsSet ? 
-				TaskHelper.ParsePriority(_priorityFlag.Value) : 
+				ParseHelper.ParsePriority(_priorityFlag.Value) : 
 				Priority.Normal;
 
 			Task newTask = new Task(taskList.Count, description, taskPriority);
@@ -972,12 +972,12 @@ namespace TaskMan
 			{
 				Console.ForegroundColor =
 					task.IsFinished ?
-						TaskHelper.ParseColor(_configuration.FinishedTaskColor.GetValue()) :
+						ParseHelper.ParseColor(_configuration.FinishedTaskColor.GetValue()) :
 						task.Priority == Priority.Critical ?
-							TaskHelper.ParseColor(_configuration.CriticalTaskColor.GetValue()) :
+							ParseHelper.ParseColor(_configuration.CriticalTaskColor.GetValue()) :
 							task.Priority == Priority.Important ?
-								TaskHelper.ParseColor(_configuration.ImportantTaskColor.GetValue()) :
-								TaskHelper.ParseColor(_configuration.NormalTaskColor.GetValue());
+								ParseHelper.ParseColor(_configuration.ImportantTaskColor.GetValue()) :
+								ParseHelper.ParseColor(_configuration.NormalTaskColor.GetValue());
 			}
 
 			output.WriteLine(
