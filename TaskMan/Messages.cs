@@ -43,5 +43,6 @@
 		public const string UnknownPriorityLevel = "Unknown priority level '{0}'.";
 		public const string UnknownIdOrIdRange = "Unknown ID or ID range '{0}'.";
 		public const string NoFilterConditionsUseAllIfIntended = "No task filter conditions specified. Use the --all flag if you intended to {0} all tasks.";
+		public const string IncorrectSortingStepsSyntax = "Sorting string does not match the required syntax ('property+' or 'property-')";
 	}
 }

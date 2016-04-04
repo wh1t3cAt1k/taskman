@@ -14,6 +14,14 @@ namespace TaskMan.Objects
 		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
 
 		/// <summary>
+		/// Example: "i+d+p-", which means
+		/// "ascending by IsFinished flag,
+		/// then ascending by Description,
+		/// then descending by Priority".
+		/// </summary>
+		static readonly Regex SortingStepRegex = new Regex(@"^([A-Za-z][A-Za-z0-9]*?(?:\+|\-))+$", StandardRegexOptions);
+
+		/// <summary>
 		/// Tries to parse a string value into a boolean value.
 		/// 0 and "false" are parsed into <c>false</c>, 
 		/// 1 and "true" are parsed into <c>true</c>, case-insensitively.
@@ -110,14 +118,6 @@ namespace TaskMan.Objects
 		}
 
 		/// <summary>
-		/// Example: "i+d+p-", which means
-		/// "ascending by IsFinished flag,
-		/// then ascending by Description,
-		/// then descending by Priority".
-		/// </summary>
-		static readonly Regex SortingStepRegex = new Regex(@"^([A-Za-z][A-Za-z0-9]*?(?:\+|\-))+$", StandardRegexOptions);
-
-		/// <summary>
 		/// Tries to parse a string value into a sequence of 
 		/// </summary>
 		/// <returns>The sorting steps.</returns>
@@ -125,6 +125,11 @@ namespace TaskMan.Objects
 		public static IEnumerable<Task.ComparisonStep> ParseComparisonSteps(string sortString)
 		{
 			Match match = SortingStepRegex.Match(sortString);
+
+			if (!match.Success)
+			{
+				throw new TaskManException(Messages.IncorrectSortingStepsSyntax);
+			}
 
 			List<Task.ComparisonStep> sortingSteps = new List<Task.ComparisonStep>();
 
