@@ -110,9 +110,12 @@ namespace TaskMan.Objects
 			{
 				comparisonSteps.Add((firstTask, secondTask) =>
 				{
+					IComparable firstPropertyValue = (IComparable)sortingStep.Property.GetValue(firstTask);
+					IComparable secondPropertyValue = (IComparable)sortingStep.Property.GetValue(secondTask);
+
 					int? comparisonResult =
 						(int)sortingStep.Direction *
-		                ((IComparable)sortingStep.Property.GetValue(firstTask)).CompareTo(secondTask);
+						firstPropertyValue.CompareTo(secondPropertyValue);
 					
 					return (comparisonResult != 0 ? comparisonResult : null);
 				});
