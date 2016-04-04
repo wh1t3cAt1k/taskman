@@ -122,7 +122,7 @@ namespace TaskMan.Objects
 		/// </summary>
 		/// <returns>The sorting steps.</returns>
 		/// <param name="sortString">Sort string.</param>
-		public static IEnumerable<Task.ComparisonStep> ParseSortingSteps(string sortString)
+		public static IEnumerable<Task.ComparisonStep> ParseComparisonSteps(string sortString)
 		{
 			Match match = SortingStepRegex.Match(sortString);
 

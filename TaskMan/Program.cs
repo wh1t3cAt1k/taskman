@@ -157,6 +157,10 @@ namespace TaskMan
 			filterPriority: 3,
 			filterPredicate: (flagValue, task, taskIndex) => taskIndex < flagValue);
 
+		Flag<string> _orderByFlag = new Flag<string>(
+			"orders the tasks by the specified criteria",
+			"o=|orderby=");
+
 		#endregion
 
 		#region Command Verbs
@@ -275,7 +279,7 @@ namespace TaskMan
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
-					.Concat(new [] { _includeAllFlag, _verboseFlag }));
+					.Concat(new Flag[] { _includeAllFlag, _verboseFlag, _orderByFlag }));
 			
 			_updateTasksCommand = new Command(
 				@"^(update|change|modify|set)$",
@@ -377,8 +381,6 @@ namespace TaskMan
 		/// <param name="tasks">A collection of tasks.</param>
 		void SaveTasksIntoFile(List<Task> tasks)
 		{
-			tasks.Sort();
-
 			FileStream outputFileStream = 
 				new FileStream(this.CurrentTaskListFile, FileMode.Create, FileAccess.Write);
 
@@ -535,6 +537,25 @@ namespace TaskMan
 			this.CurrentOperation = "read tasks from the task file";
 
 			List<Task> taskList = _readTasks();
+
+			this.CurrentOperation = "sort the task list";
+
+			if (_orderByFlag.IsSet)
+			{
+				// If explicit sorting flag is present,
+				// sort using the provided rules.
+				// -
+				taskList.Sort(
+					Task.GetComparison(
+						ParseHelper.ParseComparisonSteps(
+							_orderByFlag.Value)));
+			}
+			else
+			{
+				// Otherwise, sort using default rules.
+				// -
+				taskList.Sort(Task.Compare);
+			}
 
 			this.CurrentOperation = "filter the task list";
 
