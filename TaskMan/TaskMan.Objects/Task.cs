@@ -51,8 +51,9 @@ namespace TaskMan.Objects
 				string propertyName,
 				SortingDirection direction = SortingDirection.Ascending)
 			{
-				this.Property = typeof(Task)
-					.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.IgnoreCase);
+				this.Property = typeof(Task).GetProperty(
+					propertyName, 
+					BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 
 				this.Direction = direction;
 
