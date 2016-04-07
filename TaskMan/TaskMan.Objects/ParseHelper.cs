@@ -55,7 +55,7 @@ namespace TaskMan.Objects
 		{
 			Priority priority;
 
-			if (!Enum.TryParse(priorityString, out priority) ||
+			if (!Enum.TryParse(priorityString, true, out priority) ||
 				!Enum.GetValues(typeof(Priority)).Cast<Priority>().Contains(priority))
 			{
 				throw new TaskManException(
@@ -70,7 +70,7 @@ namespace TaskMan.Objects
 		{
 			ConsoleColor color;
 
-			if (!Enum.TryParse(colorString, out color) ||
+			if (!Enum.TryParse(colorString, true, out color) ||
 			    !Enum.GetValues(typeof(ConsoleColor)).Cast<ConsoleColor>().Contains(color))
 			{
 				throw new TaskManException(Messages.UnknownColor, colorString);
