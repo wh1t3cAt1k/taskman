@@ -560,7 +560,7 @@ namespace TaskMan
 					OutputWriteLine(Messages.TaskListIsEmpty);
 					return;
 				}
-			
+
 				IEnumerable<ITaskFilter> filterFlagsSpecified = _flags
 					.Where(flag => flag.IsSet)
 					.OfType<ITaskFilter>();

@@ -167,7 +167,7 @@ namespace TaskMan.Control
 			this,
 			"sortorder",
 			ParseHelper.SortOrderRegex,
-			"is+pr+id+");
+			"is+pr-id+");
 
 		private IEnumerable<TaskmanParameter> _supportedParameters;
 
