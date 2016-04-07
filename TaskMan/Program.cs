@@ -959,24 +959,20 @@ namespace TaskMan
 		{
 			output = output ?? _output;
 
-			string taskPrefix = task.IsFinished ?
-				_configuration.FinishedPrefix.GetValue() :
-				string.Empty;
-
-			string taskSymbol = string.Empty;
+			string taskPrefix = string.Empty;
 
 			if (task.Priority == Priority.Important)
 			{
-				taskSymbol = _configuration.ImportantSymbol.GetValue();
+				taskPrefix = _configuration.ImportantSymbol.GetValue();
 			}
 			else if (task.Priority == Priority.Critical)
 			{
-				taskSymbol = _configuration.CriticalSymbol.GetValue();
+				taskPrefix = _configuration.CriticalSymbol.GetValue();
 			}
 
 			if (task.IsFinished)
 			{
-				taskSymbol = _configuration.FinishedSymbol.GetValue();
+				taskPrefix = _configuration.FinishedSymbol.GetValue();
 			}
 
 			ConsoleColor oldForegroundColor = Console.ForegroundColor;
@@ -994,9 +990,8 @@ namespace TaskMan
 			}
 
 			output.WriteLine(
-				"{0}{1,-2}{2}{3,-6}{4}", 
+				"{0,-3}{1}{2,-6}{3}", 
 				taskPrefix,
-				taskSymbol,
 				_configuration.IdPrefix.GetValue(),
 				task.ID, 
 				task.Description);

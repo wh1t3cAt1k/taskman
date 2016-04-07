@@ -21,6 +21,11 @@ namespace TaskMan.Control
 		public string Name { get; }
 
 		/// <summary>
+		/// Gets the human-friendly description of the parameter.
+		/// </summary>
+		public string Description { get; }
+
+		/// <summary>
 		/// Gets the default value for the current parameter.
 		/// </summary>
 		public string DefaultValue { get; }
@@ -43,12 +48,14 @@ namespace TaskMan.Control
 		public TaskmanParameter(
 			TaskmanConfiguration configuration,
 			string name,
+			string description,
 			Regex validationRegex,
 			string defaultValue = null,
 			bool isUserScoped = false)
 		{
 			if (configuration == null) throw new ArgumentNullException(nameof(configuration));
 			if (name == null) throw new ArgumentNullException(nameof(name));
+			if (description == null) throw new ArgumentNullException(nameof(description));
 			if (validationRegex == null) throw new ArgumentNullException(nameof(validationRegex));
 
 			this._configuration = configuration;
@@ -70,12 +77,14 @@ namespace TaskMan.Control
 		public TaskmanParameter(
 			TaskmanConfiguration configuration,
 			string name, 
+			string description,
 			string validationPattern = ".*", 
 			string defaultValue = null, 
 			bool isUserScoped = false)
 			: this(
 				configuration,
 				name,
+				description,
 				new Regex(validationPattern),
 				defaultValue,
 				isUserScoped)
@@ -113,59 +122,74 @@ namespace TaskMan.Control
 		private const string ENUM_VALUE_PATTERN = "[A-Za-z][A-Za-z0-9]*|[0-9]+";
 		private const string ANY_PATTERN = ".*";
 
-		public TaskmanParameter CurrentTaskList 
-			=> new TaskmanParameter(this, "list", IDENTIFIER_PATTERN, "inbox", true);
+		public TaskmanParameter CurrentTaskList => new TaskmanParameter(
+			this, 
+			"list", 
+			"the name of the task list currently used",
+			IDENTIFIER_PATTERN, 
+			"inbox", 
+			true);
 
-		public TaskmanParameter ImportantSymbol
-			=> new TaskmanParameter(this, "importantsymbol", ANY_PATTERN, "!");
+		public TaskmanParameter ImportantSymbol => new TaskmanParameter(
+			this, 
+			"importantsymbol",
+			"symbol that precedes important tasks",
+			ANY_PATTERN, 
+			"!");
 
-		public TaskmanParameter CriticalSymbol
-			=> new TaskmanParameter(this, "criticalsymbol", ANY_PATTERN, "!!");
+		public TaskmanParameter CriticalSymbol => new TaskmanParameter(
+			this, 
+			"symbol that precedes critical tasks", 
+			"criticalsymbol",
+			ANY_PATTERN, 
+			"!!");
 
-		public TaskmanParameter FinishedSymbol
-			=> new TaskmanParameter(this, "finishedsymbol", ANY_PATTERN, "x");
+		public TaskmanParameter FinishedSymbol => new TaskmanParameter(
+			this, 
+			"finishedsymbol", 
+			"symbol that precedes tasks that are finished",
+			ANY_PATTERN, 
+			"x");
 
-		public TaskmanParameter PendingPrefix
-			=> new TaskmanParameter(this, "pendingprefix", ANY_PATTERN, String.Empty);
+		public TaskmanParameter IdPrefix => new TaskmanParameter(
+			this, 
+			"idprefix", 
+			"string prefix that precedes the task ID value",
+			ANY_PATTERN, 
+			" id. ");
 
-		public TaskmanParameter FinishedPrefix
-			=> new TaskmanParameter(this, "finishedprefix", ANY_PATTERN, String.Empty);
+		public TaskmanParameter NormalTaskColor => new TaskmanParameter(
+			this,
+			"normalcolor",
+			"color that is used for normal priority tasks",
+			ENUM_VALUE_PATTERN,
+			Console.ForegroundColor.ToString());
 
-		public TaskmanParameter IdPrefix
-			=> new TaskmanParameter(this, "idprefix", ANY_PATTERN, " id. ");
+		public TaskmanParameter FinishedTaskColor => new TaskmanParameter(
+			this,
+			"finishedcolor",
+			"color that is used for finished tasks",
+			ENUM_VALUE_PATTERN,
+			ConsoleColor.Gray.ToString());
 
-		public TaskmanParameter NormalTaskColor =>
-			new TaskmanParameter(
-				this,
-				"normalcolor", 
-				ENUM_VALUE_PATTERN,
-				Console.ForegroundColor.ToString());
+		public TaskmanParameter ImportantTaskColor => new TaskmanParameter(
+			this,
+			"importantcolor",
+			"color that is used for important tasks",
+			ENUM_VALUE_PATTERN,
+			ConsoleColor.Green.ToString());
 
-		public TaskmanParameter FinishedTaskColor =>
-			new TaskmanParameter(
-				this,
-				"finishedcolor",
-				ENUM_VALUE_PATTERN,
-				ConsoleColor.Gray.ToString());
+		public TaskmanParameter CriticalTaskColor => new TaskmanParameter(
+			this,
+			"criticalcolor",
+			"color that is used for critical tasks",
+			ENUM_VALUE_PATTERN,
+			ConsoleColor.Yellow.ToString());
 
-		public TaskmanParameter ImportantTaskColor =>
-			new TaskmanParameter(
-				this,
-				"importantcolor",
-				ENUM_VALUE_PATTERN,
-				ConsoleColor.Green.ToString());
-
-		public TaskmanParameter CriticalTaskColor =>
-			new TaskmanParameter(
-				this,
-				"criticalcolor",
-				ENUM_VALUE_PATTERN,
-				ConsoleColor.Yellow.ToString());
-
-		public TaskmanParameter SortOrder =>
-		new TaskmanParameter(
+		public TaskmanParameter SortOrder => new TaskmanParameter(
 			this,
 			"sortorder",
+			"defines the tasks sorting order in the output",
 			ParseHelper.SortOrderRegex,
 			"is+pr-id+");
 
