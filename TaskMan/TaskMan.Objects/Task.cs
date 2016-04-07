@@ -13,18 +13,25 @@ namespace TaskMan.Objects
 	public class Task: IComparable<Task>
 	{
 		public int ID { get; set; }
+
 		public bool IsFinished { get; set; }
+
 		public Priority Priority { get; set; }
+
 		public string Description { get; set; }
+
+		public DateTime? DueDate { get; set; }
 
 		public Task(
 			int id = -1,
 			string description = "",
-			Priority priority = Priority.Normal)
+			Priority priority = Priority.Normal,
+			DateTime? dueDate = null)
 		{
 			this.ID = id;
 			this.Description = description;
 			this.Priority = priority;
+			this.DueDate = dueDate;
 		}
 
 		public override string ToString()
@@ -144,10 +151,7 @@ namespace TaskMan.Objects
 		{
 			Comparison<Task> defaultComparison = GetComparison(new []
 			{
-				new ComparisonStep(nameof(Task.IsFinished), SortingDirection.Ascending),
-				new ComparisonStep(nameof(Task.Priority), SortingDirection.Ascending),
 				new ComparisonStep(nameof(Task.ID), SortingDirection.Ascending),
-				new ComparisonStep(nameof(Task.Description), SortingDirection.Ascending)
 			});
 
 			return defaultComparison(firstTask, secondTask);

@@ -540,23 +540,15 @@ namespace TaskMan
 
 			this.CurrentOperation = "sort the task list";
 
-			if (_orderByFlag.IsSet)
-			{
-				// If explicit sorting flag is present,
-				// sort using the provided rules.
-				// -
-				taskList.Sort(
-					Task.GetComparison(
-						ParseHelper.ParseComparisonSteps(
-							_orderByFlag.Value)));
-			}
-			else
-			{
-				// Otherwise, sort using default rules.
-				// -
-				taskList.Sort(Task.Compare);
-			}
+			string sortingSteps = _orderByFlag.IsSet ?
+				_orderByFlag.Value :
+				_configuration.SortOrder.GetValue();
 
+			taskList.Sort(
+				Task.GetComparison(
+					ParseHelper.ParseComparisonSteps(
+						sortingSteps)));
+	
 			this.CurrentOperation = "filter the task list";
 
 			IEnumerable<Task> filteredTasks = taskList;

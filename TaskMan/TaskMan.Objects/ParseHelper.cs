@@ -8,18 +8,18 @@ namespace TaskMan.Objects
 {
 	public static class ParseHelper
 	{
-		static readonly RegexOptions StandardRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
+		public static readonly RegexOptions StandardRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
 
-		static readonly Regex IdSequenceRegex = new Regex(@"^(:?([0-9]+)\s*?,\s*?)*([0-9]+)$", StandardRegexOptions);
-		static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
+		public static readonly Regex IdSequenceRegex = new Regex(@"^(:?([0-9]+)\s*?,\s*?)*([0-9]+)$", StandardRegexOptions);
+		public static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
 
 		/// <summary>
-		/// Example: "i+d+p-", which means
+		/// Example: "is+desc+pr-", which means
 		/// "ascending by IsFinished flag,
 		/// then ascending by Description,
 		/// then descending by Priority".
 		/// </summary>
-		static readonly Regex SortingStepRegex = new Regex(@"^([A-Za-z][A-Za-z0-9]*?(?:\+|\-))+$", StandardRegexOptions);
+		public static readonly Regex SortOrderRegex = new Regex(@"^([A-Za-z][A-Za-z0-9]*?(?:\+|\-))+$", StandardRegexOptions);
 
 		/// <summary>
 		/// Tries to parse a string value into a boolean value.
@@ -124,7 +124,7 @@ namespace TaskMan.Objects
 		/// <param name="sortString">Sort string.</param>
 		public static IEnumerable<Task.ComparisonStep> ParseComparisonSteps(string sortString)
 		{
-			Match match = SortingStepRegex.Match(sortString);
+			Match match = SortOrderRegex.Match(sortString);
 
 			if (!match.Success)
 			{

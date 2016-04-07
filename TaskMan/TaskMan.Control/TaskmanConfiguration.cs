@@ -42,25 +42,23 @@ namespace TaskMan.Control
 
 		public TaskmanParameter(
 			TaskmanConfiguration configuration,
-			string name, 
-			string validationPattern = ".*", 
-			string defaultValue = null, 
+			string name,
+			Regex validationRegex,
+			string defaultValue = null,
 			bool isUserScoped = false)
 		{
 			if (configuration == null) throw new ArgumentNullException(nameof(configuration));
 			if (name == null) throw new ArgumentNullException(nameof(name));
-			if (validationPattern == null) throw new ArgumentNullException(nameof(validationPattern));
+			if (validationRegex == null) throw new ArgumentNullException(nameof(validationRegex));
 
 			this._configuration = configuration;
 
 			this.Name = name;
-			this.ValidationRegex = 
-				new Regex(validationPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
+			this.ValidationRegex = validationRegex;
 			this.IsUserScoped = isUserScoped;
 
 			if (defaultValue != null &&
-			    !this.ValidationRegex.IsMatch(defaultValue))
+				!this.ValidationRegex.IsMatch(defaultValue))
 			{
 				throw new ArgumentException(
 					"The specified default value does not match the given validation expression");
@@ -68,6 +66,20 @@ namespace TaskMan.Control
 
 			this.DefaultValue = defaultValue;
 		}
+
+		public TaskmanParameter(
+			TaskmanConfiguration configuration,
+			string name, 
+			string validationPattern = ".*", 
+			string defaultValue = null, 
+			bool isUserScoped = false)
+			: this(
+				configuration,
+				name,
+				new Regex(validationPattern),
+				defaultValue,
+				isUserScoped)
+		{ }
 
 		/// <summary>
 		/// Gets the value of this parameter using the
@@ -117,7 +129,7 @@ namespace TaskMan.Control
 			=> new TaskmanParameter(this, "pendingprefix", ANY_PATTERN, String.Empty);
 
 		public TaskmanParameter FinishedPrefix
-			=> new TaskmanParameter(this, "finishedprefix", ANY_PATTERN, "--| ");
+			=> new TaskmanParameter(this, "finishedprefix", ANY_PATTERN, String.Empty);
 
 		public TaskmanParameter IdPrefix
 			=> new TaskmanParameter(this, "idprefix", ANY_PATTERN, " id. ");
@@ -148,7 +160,14 @@ namespace TaskMan.Control
 				this,
 				"criticalcolor",
 				ENUM_VALUE_PATTERN,
-				ConsoleColor.Yellow.ToString()); 
+				ConsoleColor.Yellow.ToString());
+
+		public TaskmanParameter SortOrder =>
+		new TaskmanParameter(
+			this,
+			"sortorder",
+			ParseHelper.SortOrderRegex,
+			"is+pr+id+");
 
 		private IEnumerable<TaskmanParameter> _supportedParameters;
 
