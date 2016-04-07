@@ -118,11 +118,10 @@ namespace TaskMan.Objects
 		}
 
 		/// <summary>
-		/// Tries to parse a string value into a sequence of 
+		/// Tries to parse a string value into a sequence of comparison
+		/// steps that determine the tasks' sorting order.
 		/// </summary>
-		/// <returns>The sorting steps.</returns>
-		/// <param name="sortString">Sort string.</param>
-		public static IEnumerable<Task.ComparisonStep> ParseComparisonSteps(string sortString)
+		public static IEnumerable<Task.ComparisonStep> ParseSortOrder(string sortString)
 		{
 			Match match = SortOrderRegex.Match(sortString);
 

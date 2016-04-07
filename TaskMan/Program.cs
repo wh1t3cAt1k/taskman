@@ -546,7 +546,7 @@ namespace TaskMan
 
 			taskList.Sort(
 				Task.GetComparison(
-					ParseHelper.ParseComparisonSteps(
+					ParseHelper.ParseSortOrder(
 						sortingSteps)));
 	
 			this.CurrentOperation = "filter the task list";
