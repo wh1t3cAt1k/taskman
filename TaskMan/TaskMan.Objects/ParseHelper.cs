@@ -157,7 +157,8 @@ namespace TaskMan.Objects
 					throw new TaskManException(
 						Messages.BadSortingStepAmbiguousPropertyPrefix,
 						propertyNamePrefix,
-						sortOrder);
+						sortOrder,
+						string.Join(", ", matchingFields.Select(propertyInfo => propertyInfo.Name)));
 				}
 				else
 				{
