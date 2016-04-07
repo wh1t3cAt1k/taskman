@@ -147,7 +147,7 @@ namespace TaskMan
 
 		Flag<int> _numberSkipFlag = new TaskFilterFlag<int>(
             "skips a given number of tasks when displaying the result",
-            "s=|skip=",
+            "skip=",
             filterPriority: 2,
             filterPredicate: (flagValue, task, taskIndex) => taskIndex + 1 > flagValue);
 
@@ -159,7 +159,7 @@ namespace TaskMan
 
 		Flag<string> _orderByFlag = new Flag<string>(
 			"orders the tasks by the specified criteria",
-			"o=|order=|sort=");
+			"s=|orderby=|sort=");
 
 		#endregion
 
