@@ -10,8 +10,11 @@ namespace TaskMan.Objects
 	{
 		public static readonly RegexOptions StandardRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
 
-		public static readonly Regex IdSequenceRegex = new Regex(@"^(:?([0-9]+)\s*?,\s*?)*([0-9]+)$", StandardRegexOptions);
-		public static readonly Regex IdRangeRegex = new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
+		public static readonly Regex IdSequenceRegex = 
+			new Regex(@"^(:?([0-9]+)\s*?,\s*?)*([0-9]+)$", StandardRegexOptions);
+		
+		public static readonly Regex IdRangeRegex = 
+			new Regex(@"^([0-9]+)-([0-9]+)$", StandardRegexOptions);
 
 		/// <summary>
 		/// Example: "is+desc+pr-", which means
@@ -19,7 +22,8 @@ namespace TaskMan.Objects
 		/// then ascending by Description,
 		/// then descending by Priority".
 		/// </summary>
-		public static readonly Regex SortOrderRegex = new Regex(@"^([A-Za-z][A-Za-z0-9]*?(?:\+|\-))+$", StandardRegexOptions);
+		public static readonly Regex SortOrderRegex = 
+			new Regex(@"^([A-Za-z][A-Za-z0-9]*?(?:\+|\-))+$", StandardRegexOptions);
 
 		/// <summary>
 		/// Tries to parse a string value into a boolean value.
@@ -118,10 +122,10 @@ namespace TaskMan.Objects
 		}
 
 		/// <summary>
-		/// Tries to parse a string value into a sequence of comparison
+		/// Parses a string value into a sequence of comparison
 		/// steps that determine the tasks' sorting order.
 		/// </summary>
-		public static IEnumerable<Task.ComparisonStep> ParseSortOrder(string sortString)
+		public static IEnumerable<Task.ComparisonStep> ParseTaskSortOrder(string sortString)
 		{
 			Match match = SortOrderRegex.Match(sortString);
 
@@ -171,6 +175,91 @@ namespace TaskMan.Objects
 			}
 
 			return sortingSteps;
+		}
+
+		/// <summary>
+		/// Shift by the given amount of years, months,
+		/// weeks and days relative to the current date
+		/// or to the date specified by the user.
+		/// </summary>
+		public static readonly Regex DueDateShiftRegex = new Regex(
+			@"(?:^|::)" +
+			@"(?:(\+|\-)([0-9]+)y)?" +
+			@"(?:(\+|\-)([0-9]+)m)?" +
+			@"(?:(\+|\-)([0-9]+)w)?" +
+			@"(?:(\+|\-)([0-9])+d)?" +
+			@"$",
+			StandardRegexOptions);
+
+		/// <summary>
+		/// Modulo operation, always returns a positive number.
+		/// </summary>
+		private static int Mod(int first, int second)
+		{
+			return (first % second + second) % second;
+		}
+
+		/// <summary>
+		/// Parses a string value into a task due date.
+		/// </summary>
+		public static DateTime ParseTaskDueDate(string value)
+		{
+			DateTime result = DateTime.Today;
+
+			bool dateParseSuccess = DateTime.TryParse(
+				value.Split(
+					new string[] { "::" },
+					StringSplitOptions.RemoveEmptyEntries).First(),
+				out result);
+
+			Match dateShiftMatch = DueDateShiftRegex.Match(value);
+
+			bool dateShiftSuccess = dateShiftMatch.Success;
+
+			if (!dateParseSuccess && !dateShiftSuccess)
+			{
+				throw new TaskManException(Messages.UnknownDueDate, value);
+			}
+			else if (dateShiftSuccess)
+			{
+				// Add years
+				// -
+				if (dateShiftMatch.Groups[1].Success)
+				{
+					result = result.AddYears(
+						int.Parse(dateShiftMatch.Groups[2].Value) *
+						(dateShiftMatch.Groups[1].Value == "+" ? 1 : -1));	
+				}
+
+				// Add months
+				// -
+				if (dateShiftMatch.Groups[3].Success)
+				{
+					result = result.AddMonths(
+						int.Parse(dateShiftMatch.Groups[4].Value) *
+						(dateShiftMatch.Groups[3].Value == "+" ? 1 : -1));
+				}
+
+				// Add weeks
+				// -
+				if (dateShiftMatch.Groups[5].Success)
+				{
+					result = result.AddDays(
+						7 * int.Parse(dateShiftMatch.Groups[6].Value) *
+						(dateShiftMatch.Groups[5].Value == "+" ? 1 : -1));
+				}
+
+				// Add days
+				// -
+				if (dateShiftMatch.Groups[7].Success)
+				{
+					result = result.AddDays(
+						int.Parse(dateShiftMatch.Groups[8].Value) *
+						(dateShiftMatch.Groups[7].Value == "+" ? 1 : -1));
+				}
+			}
+
+			return result;
 		}
 	}
 }

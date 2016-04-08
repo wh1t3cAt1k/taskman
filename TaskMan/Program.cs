@@ -546,7 +546,7 @@ namespace TaskMan
 
 			taskList.Sort(
 				Task.GetComparison(
-					ParseHelper.ParseSortOrder(
+					ParseHelper.ParseTaskSortOrder(
 						sortingSteps)));
 	
 			this.CurrentOperation = "filter the task list";
@@ -990,11 +990,12 @@ namespace TaskMan
 			}
 
 			output.WriteLine(
-				"{0,-3}{1}{2,-6}{3}", 
+				"{0,-3} {1}{2,-5} {3,-30} {4}", 
 				taskPrefix,
 				_configuration.IdPrefix.GetValue(),
 				task.ID, 
-				task.Description);
+				task.Description,
+				task.DueDate);
 
 			Console.ForegroundColor = oldForegroundColor;
 		}
