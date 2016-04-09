@@ -103,12 +103,26 @@ namespace TaskMan
 			"forces an operation to be executed upon all tasks", 
 			"A|all");
 
-		Flag<string> _descriptionFlag = new Flag<string>(
-			"specifies the description for a task (not functional yet)",
-			"d|description");
+		Flag<string> _dueDateFlag = new TaskFilterFlag<string>(
+			"filters tasks by being due on the specified date or specifies a new task's due date",
+			"d|due|duedate",
+			filterPriority: 1,
+			filterPredicate: (flagValue, task) => 
+			{
+				if (!task.DueDate.HasValue)
+				{
+					return false;
+				}
+				else
+				{
+					return
+						task.DueDate.Value.Date ==
+						ParseHelper.ParseTaskDueDate(flagValue);
+				}
+			});
 
 		Flag<string> _priorityFlag = new TaskFilterFlag<string>(
-			"filters tasks by priority or specifies a task's priority", 
+			"filters tasks by priority or specifies a new task's priority", 
 			"p=|priority=",
 			filterPriority: 1,
 			filterPredicate: (flagValue, task) => 
@@ -256,7 +270,7 @@ namespace TaskMan
 				@"^(add|new|create)$", 
 				isReadUpdateDelete: false,
 				supportedFlags: 
-					new Flag[] { _interactiveFlag, _descriptionFlag, _priorityFlag, _silentFlag, _verboseFlag });
+					new Flag[] { _interactiveFlag, _dueDateFlag, _priorityFlag, _silentFlag, _verboseFlag });
 
 			_deleteTasksCommand = new Command(
 				@"^(delete|remove)$",
@@ -598,7 +612,10 @@ namespace TaskMan
 					Messages.TaskWasAdded,
 					addedTask.Description,
 					addedTask.ID,
-					addedTask.Priority);
+					addedTask.Priority,
+					addedTask.DueDate.HasValue ? 
+						$"and a due date of {addedTask.DueDate}" : 
+						"no due date");
 			}
 			else if (executingCommand == _displayTasksCommand)
 			{
@@ -935,6 +952,10 @@ namespace TaskMan
 			Priority taskPriority = _priorityFlag.IsSet ? 
 				ParseHelper.ParsePriority(_priorityFlag.Value) : 
 				Priority.Normal;
+
+			DateTime? dueDate = _dueDateFlag.IsSet ?
+				ParseHelper.ParseTaskDueDate(_dueDateFlag.Value) :
+                null as DateTime?;
 
 			Task newTask = new Task(taskList.Count, description, taskPriority);
 

@@ -23,7 +23,7 @@
 		public const string CannotSortNoSuchProperty = "Cannot sort by '{0}', there is no such task property.";
 		public const string BadSortingStepNoSuchPropertyPrefix = "Invalid sorting step '{0}{1}', there is no task property that starts with '{0}'.";
 		public const string BadSortingStepAmbiguousPropertyPrefix = "Ambiguous sorting step '{0}{1}', there is more than one task property that starts with '{0}': {2}.";
-		public const string TaskWasAdded = "Task [{0}] was added with an ID of {1}, priority: {2}.";
+		public const string TaskWasAdded = "Task [{0}] was added with an ID of {1}, priority: {2}, {3}.";
 		public const string TaskWasFinished = "Task with ID {0} [{1}] was successfully marked as finished.";
 		public const string TasksWereFinished = "{0} tasks were successfully marked as finished.";
 		public const string TaskListIsEmpty = "The task list is empty.";

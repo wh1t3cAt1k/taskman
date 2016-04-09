@@ -199,6 +199,58 @@ namespace TaskMan.Objects
 			return (first % second + second) % second;
 		}
 
+		private static DateTime WeekBeginning(DateTime? day = null)
+		{
+			day = day ?? DateTime.Today;
+
+			return day.Value.AddDays(
+				-Mod(day.Value.DayOfWeek - DayOfWeek.Monday, 7));
+		}
+
+		private static DateTime MonthEnd(DateTime? day = null)
+		{
+			day = day ?? DateTime.Today;
+
+			return new DateTime(
+				day.Value.Year,
+				day.Value.Month,
+				DateTime.DaysInMonth(day.Value.Year, day.Value.Month));
+		}
+
+		private static DateTime YearEnd(DateTime? day = null)
+		{
+			day = day ?? DateTime.Today;
+
+			return new DateTime(
+				day.Value.Year,
+				12,
+				31);
+		}
+
+		private static readonly Dictionary<string, Func<DateTime>> NaturalLanguageDueDates =
+			new Dictionary<string, Func<DateTime>> {
+				{ "today", () => DateTime.Today },
+				{ "tomorrow", () => DateTime.Today.AddDays(1) },
+				{ "this monday", () => WeekBeginning() },
+				{ "this tuesday", () => WeekBeginning().AddDays(1) },
+				{ "this wednesday", () => WeekBeginning().AddDays(2) },
+				{ "this thursday", () => WeekBeginning().AddDays(3) },
+				{ "this friday", () => WeekBeginning().AddDays(4) },
+				{ "this saturday", () => WeekBeginning().AddDays(5) },
+				{ "this sunday|this week", () => WeekBeginning().AddDays(6) },
+				{ "next monday", () => WeekBeginning().AddDays(7) },
+				{ "next tuesday", () => WeekBeginning().AddDays(8) },
+				{ "next wednesday", () => WeekBeginning().AddDays(9) },
+				{ "next thursday", () => WeekBeginning().AddDays(10) },
+				{ "next friday", () => WeekBeginning().AddDays(11) },
+				{ "next saturday", () => WeekBeginning().AddDays(12) },
+				{ "next sunday|next week", () => WeekBeginning().AddDays(13) },
+				{ "this month", () => MonthEnd() },
+				{ "next month", () => MonthEnd().AddMonths(1) },
+				{ "this year", () => YearEnd() },
+				{ "next year", () => YearEnd().AddYears(1) },
+			};
+
 		/// <summary>
 		/// Parses a string value into a task due date.
 		/// </summary>
@@ -212,11 +264,23 @@ namespace TaskMan.Objects
 					StringSplitOptions.RemoveEmptyEntries).First(),
 				out result);
 
+			bool humanReadableParseSuccess = false;
+
+			string matchingKey = NaturalLanguageDueDates
+				.Keys
+				.FirstOrDefault(key => Regex.IsMatch(key, value));
+
+			if (matchingKey != null)
+			{
+				humanReadableParseSuccess = true;
+				result = NaturalLanguageDueDates[matchingKey]();
+			}
+
 			Match dateShiftMatch = DueDateShiftRegex.Match(value);
 
 			bool dateShiftSuccess = dateShiftMatch.Success;
 
-			if (!dateParseSuccess && !dateShiftSuccess)
+			if (!dateParseSuccess && !humanReadableParseSuccess && !dateShiftSuccess)
 			{
 				throw new TaskManException(Messages.UnknownDueDate, value);
 			}
