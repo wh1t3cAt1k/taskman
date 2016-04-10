@@ -608,14 +608,16 @@ namespace TaskMan
 
 				_saveTasks(taskList);
 
+				string taskDueDate = addedTask.DueDate?.ToString("ddd, yyyy-MM-dd");
+
 				OutputWriteLine(
 					Messages.TaskWasAdded,
 					addedTask.Description,
 					addedTask.ID,
 					addedTask.Priority,
-					addedTask.DueDate.HasValue ? 
-						$"and a due date of {addedTask.DueDate}" : 
-						"no due date");
+					taskDueDate != null ?
+						$", due {taskDueDate}." : 
+						".");
 			}
 			else if (executingCommand == _displayTasksCommand)
 			{
