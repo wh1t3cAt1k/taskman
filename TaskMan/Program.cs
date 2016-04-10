@@ -58,6 +58,8 @@ namespace TaskMan
 	{
 		#region Constants
 
+		const string TASK_DUE_DATE_FORMAT = "dddd, yyyy-MM-dd";
+
 		static readonly RegexOptions StandardRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
 
 		static readonly Regex ConfirmActionRegex = new Regex(@"^\s*y(es)?\s*$", StandardRegexOptions);
@@ -608,15 +610,16 @@ namespace TaskMan
 
 				_saveTasks(taskList);
 
-				string taskDueDate = addedTask.DueDate?.ToString("ddd, yyyy-MM-dd");
+				string taskDueDate = 
+					addedTask.DueDate?.ToString(TASK_DUE_DATE_FORMAT);
 
 				OutputWriteLine(
 					Messages.TaskWasAdded,
 					addedTask.Description,
 					addedTask.ID,
-					addedTask.Priority,
+					addedTask.Priority.ToString().ToLower(),
 					taskDueDate != null ?
-						$", due {taskDueDate}." : 
+						$", due on {taskDueDate}." : 
 						".");
 			}
 			else if (executingCommand == _displayTasksCommand)
@@ -1016,13 +1019,19 @@ namespace TaskMan
 								ParseHelper.ParseColor(_configuration.NormalTaskColor.GetValue());
 			}
 
+			/*
+			using (TableWriter tableWriter = new TableWriter(
+				_output,
+				new TableWriter.FieldRule(3, 
+			*/
+
 			output.WriteLine(
-				"{0,-3} {1}{2,-5} {3,-30} {4}", 
+				"{0,-3} {1}{2,-5} {3,-40} {4}", 
 				taskPrefix,
 				_configuration.IdPrefix.GetValue(),
 				task.ID, 
 				task.Description,
-				task.DueDate);
+				task.DueDate?.ToString(TASK_DUE_DATE_FORMAT));
 
 			Console.ForegroundColor = oldForegroundColor;
 		}

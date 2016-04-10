@@ -187,7 +187,7 @@ namespace TaskMan.Objects
 			@"(?:(\+|\-)([0-9]+)y)?" +
 			@"(?:(\+|\-)([0-9]+)m)?" +
 			@"(?:(\+|\-)([0-9]+)w)?" +
-			@"(?:(\+|\-)([0-9])+d)?" +
+			@"(?:(\+|\-)([0-9]+)d)?" +
 			@"$",
 			StandardRegexOptions);
 
@@ -256,20 +256,29 @@ namespace TaskMan.Objects
 		/// </summary>
 		public static DateTime ParseTaskDueDate(string value)
 		{
-			DateTime result = DateTime.Today;
+			DateTime result;
 
+			// Parse explicit datetime value.
+			// -
 			bool dateParseSuccess = DateTime.TryParse(
 				value.Split(
 					new string[] { "::" },
 					StringSplitOptions.RemoveEmptyEntries).First(),
 				out result);
 
+			if (!dateParseSuccess)
+			{
+				result = DateTime.Today;
+			}
+
+			// Parse natural language due date.
+			// -
 			bool humanReadableParseSuccess = false;
 
 			string matchingKey = NaturalLanguageDueDates
 				.Keys
 				.FirstOrDefault(key => 
-					Regex.IsMatch(key, value, RegexOptions.IgnoreCase));
+					Regex.IsMatch(key, Regex.Escape(value), RegexOptions.IgnoreCase));
 
 			if (matchingKey != null)
 			{
@@ -277,6 +286,8 @@ namespace TaskMan.Objects
 				result = NaturalLanguageDueDates[matchingKey]();
 			}
 
+			// Parse due date shift values, if any.
+			// -
 			Match dateShiftMatch = DueDateShiftRegex.Match(value);
 
 			bool dateShiftSuccess = dateShiftMatch.Success;
@@ -285,7 +296,8 @@ namespace TaskMan.Objects
 			{
 				throw new TaskManException(Messages.UnknownDueDate, value);
 			}
-			else if (dateShiftSuccess)
+
+			if (dateShiftSuccess)
 			{
 				// Add years
 				// -
@@ -293,7 +305,7 @@ namespace TaskMan.Objects
 				{
 					result = result.AddYears(
 						int.Parse(dateShiftMatch.Groups[2].Value) *
-						(dateShiftMatch.Groups[1].Value == "+" ? 1 : -1));	
+						(dateShiftMatch.Groups[1].Value == "+" ? 1 : -1));
 				}
 
 				// Add months
