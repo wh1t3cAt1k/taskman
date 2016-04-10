@@ -48,7 +48,7 @@
     <WarningLevel>4</WarningLevel>
     <LangVersion>6</LangVersion>
     <PlatformTarget>x86</PlatformTarget>
-    <Commandlineparameters>add mytask -d +2m</Commandlineparameters>
+    <Commandlineparameters>show</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Optimize>true</Optimize>

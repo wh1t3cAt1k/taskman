@@ -91,7 +91,7 @@ namespace TaskMan.Objects
 			else if (fieldRule.LineBreaking == LineBreaking.Whitespace)
 			{
 				Queue<string> textParts = new Queue<string>(Regex
-					.Split(@"(\s)", text)
+					.Split(text, @"(\s)")
                     .SelectMany(part =>
 					{
 						if (part.Length <= fieldRule.Width)
