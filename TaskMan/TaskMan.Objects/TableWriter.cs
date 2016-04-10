@@ -203,7 +203,8 @@ namespace TaskMan.Objects
 						// because its line collection is already empty.
 						// -
 						_output.Write(
-							Enumerable.Repeat(" ", _fieldRules[fieldIndex].Width));
+							string.Concat(
+								Enumerable.Repeat(" ", _fieldRules[fieldIndex].Width)));
 					}
 				});
 
