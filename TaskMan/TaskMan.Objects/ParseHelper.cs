@@ -268,7 +268,8 @@ namespace TaskMan.Objects
 
 			string matchingKey = NaturalLanguageDueDates
 				.Keys
-				.FirstOrDefault(key => Regex.IsMatch(key, value));
+				.FirstOrDefault(key => 
+					Regex.IsMatch(key, value, RegexOptions.IgnoreCase));
 
 			if (matchingKey != null)
 			{

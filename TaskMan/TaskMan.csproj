@@ -48,7 +48,7 @@
     <WarningLevel>4</WarningLevel>
     <LangVersion>6</LangVersion>
     <PlatformTarget>x86</PlatformTarget>
-    <Commandlineparameters>add wellop</Commandlineparameters>
+    <Commandlineparameters>add mytask -d Tomorrow</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Optimize>true</Optimize>

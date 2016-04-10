@@ -105,7 +105,7 @@ namespace TaskMan
 
 		Flag<string> _dueDateFlag = new TaskFilterFlag<string>(
 			"filters tasks by being due on the specified date or specifies a new task's due date",
-			"d|due|duedate",
+			"d=|due=|duedate=",
 			filterPriority: 1,
 			filterPredicate: (flagValue, task) => 
 			{
