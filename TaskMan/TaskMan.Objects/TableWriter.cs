@@ -181,7 +181,7 @@ namespace TaskMan.Objects
 			for (int fieldIndex = 0; fieldIndex < fieldValues.Length; ++fieldIndex)
 			{
 				rowLines[fieldIndex] = MakeFieldLines(
-					fieldValues[fieldIndex].ToString(),
+					fieldValues[fieldIndex]?.ToString() ?? "",
 					_fieldRules[fieldIndex]);
 			}
 

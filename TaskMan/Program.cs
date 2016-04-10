@@ -471,8 +471,8 @@ namespace TaskMan
 			StringWriter actionDescription = new StringWriter();
 
 			actionDescription.WriteLine(
-				Messages.TheFollowingObjectWillBeAction, 
-				"tasks", 
+				Messages.TheFollowingObjectWillBeAction,
+				"tasks",
 				willBe);
 
 			relevantTasks.Take(3).ForEach(
