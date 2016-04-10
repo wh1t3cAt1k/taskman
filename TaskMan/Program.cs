@@ -1019,17 +1019,18 @@ namespace TaskMan
 								ParseHelper.ParseColor(_configuration.NormalTaskColor.GetValue());
 			}
 
-			/*
-			using (TableWriter tableWriter = new TableWriter(
+			TableWriter tableWriter = new TableWriter(
 				_output,
-				new TableWriter.FieldRule(3, 
-			*/
-
-			output.WriteLine(
-				"{0,-3} {1}{2,-5} {3,-40} {4}", 
+				new TableWriter.FieldRule(3, LineBreaking.None, Align.Left),
+				new TableWriter.FieldRule(5, LineBreaking.None, Align.Right),
+				new TableWriter.FieldRule(5, LineBreaking.None, Align.Left),
+				new TableWriter.FieldRule(40, LineBreaking.Whitespace, Align.Left),
+				new TableWriter.FieldRule(10, LineBreaking.Whitespace, Align.Left));
+			
+			tableWriter.WriteLine(
 				taskPrefix,
 				_configuration.IdPrefix.GetValue(),
-				task.ID, 
+				task.ID,
 				task.Description,
 				task.DueDate?.ToString(TASK_DUE_DATE_FORMAT));
 

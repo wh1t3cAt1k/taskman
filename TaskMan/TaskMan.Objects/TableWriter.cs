@@ -6,47 +6,52 @@ using System.IO;
 
 namespace TaskMan.Objects
 {
+	/// <summary>
+	/// Specifies the line breaking rule if
+	/// the text to be written into a field
+	/// exceeds the field length.
+	/// </summary>
+	public enum LineBreaking
+	{
+		/// <summary>
+		/// Allows line breaking inside the word.
+		/// </summary>
+		None,
+		/// <summary>
+		/// Preferably breaks on whitespace,
+		/// but can break inside a word if it 
+		/// is longer than the field width.
+		/// </summary>
+		Whitespace,
+	}
+
+	/// <summary>
+	/// Specifies the text alignment inside
+	/// a field.
+	/// </summary>
+	public enum Align
+	{
+		/// <summary>
+		/// Aligns the text left inside the
+		/// field.
+		/// </summary>
+		Left,
+		/// <summary>
+		/// Aligns the text right inside the
+		/// field.
+		/// </summary>
+		Right,
+		/// <summary>
+		/// Aligns the text centrally inside
+		/// the field.
+		/// </summary>
+		Center,
+	}
+
 	public class TableWriter : IDisposable
 	{
 		FieldRule[] _fieldRules;
 		TextWriter _output;
-
-		/// <summary>
-		/// Specifies the line breaking rule if
-		/// the text to be written into a field
-		/// exceeds the field length.
-		/// </summary>
-		public enum LineBreaking
-		{
-			/// <summary>
-			/// Allows line breaking inside the word.
-			/// </summary>
-			None,
-			/// <summary>
-			/// Preferably breaks on whitespace,
-			/// but can break inside a word if it 
-			/// is longer than the field width.
-			/// </summary>
-			Whitespace,
-		}
-
-		/// <summary>
-		/// Specifies the text alignment inside
-		/// a field.
-		/// </summary>
-		public enum Align
-		{
-			/// <summary>
-			/// Aligns the text left inside the
-			/// field.
-			/// </summary>
-			Left,
-			/// <summary>
-			/// Aligns the text right inside the
-			/// field.
-			/// </summary>
-			Right,
-		}
 
 		public struct FieldRule
 		{
@@ -78,18 +83,10 @@ namespace TaskMan.Objects
 			
 			if (fieldRule.LineBreaking == LineBreaking.None)
 			{
-				int textIndex = 0;
-
-				for (; textIndex < text.Length; textIndex += fieldRule.Width)
-				{
-					resultingLines.Add(
-						text.Substring(textIndex, fieldRule.Width));
-				}
-
-				if (textIndex < text.Length)
-				{
-					resultingLines.Add(text.Substring(textIndex));
-				}
+				resultingLines = text
+					.Split(fieldRule.Width)
+					.Select(characters => new string(characters.ToArray()))
+					.ToList();
 			}
 			else if (fieldRule.LineBreaking == LineBreaking.Whitespace)
 			{
@@ -103,11 +100,10 @@ namespace TaskMan.Objects
 						}
 						else 
 						{
-							return new[]
-							{
-								part.Substring(0, fieldRule.Width),
-								part.Substring(fieldRule.Width),
-							};
+							return part
+								.Split(fieldRule.Width)
+								.Select(characters => new string(characters.ToArray()))
+								.ToArray();
 						}
 					}));
 
@@ -125,6 +121,11 @@ namespace TaskMan.Objects
 
 					nextLine += linePart;
 				}
+
+				if (!string.IsNullOrEmpty(nextLine))
+				{
+					resultingLines.Add(nextLine.Trim());
+				}
 			}
 
 			return new Queue<string>(resultingLines.Select(line =>
@@ -133,9 +134,17 @@ namespace TaskMan.Objects
 				{
 					return line.PadRight(fieldRule.Width);
 				}
-				else
+				else if (fieldRule.Align == Align.Right)
 				{
 					return line.PadLeft(fieldRule.Width);
+				}
+				else if (fieldRule.Align == Align.Center)
+				{
+					throw new NotImplementedException();
+				}
+				else
+				{
+					throw new Exception();
 				}
 			}));
 		}

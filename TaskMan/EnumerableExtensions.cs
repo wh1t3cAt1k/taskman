@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TaskMan
 {
@@ -40,6 +41,18 @@ namespace TaskMan
 			}
 
 			return currentIndex;
+		}
+
+		/// <summary>
+		/// Splits the source sequence into subsequences so that
+		/// each subsequence has the required maximum number of elements.
+		/// </summary>
+		public static IEnumerable<IEnumerable<T>> Split<T>(this IEnumerable<T> sequence, int count)
+		{
+			if (count <= 0) throw new ArgumentOutOfRangeException(nameof(count));
+			int currentElementIndex = 0;
+
+			return sequence.GroupBy(_ => currentElementIndex / count);
 		}
 
 		/// <summary>
