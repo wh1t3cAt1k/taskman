@@ -949,7 +949,7 @@ namespace TaskMan
 
 			string description = string.Join(" ", cliArguments);
 
-			Priority taskPriority = _priorityFlag.IsSet ? 
+			Priority priority = _priorityFlag.IsSet ? 
 				ParseHelper.ParsePriority(_priorityFlag.Value) : 
 				Priority.Normal;
 
@@ -957,7 +957,11 @@ namespace TaskMan
 				ParseHelper.ParseTaskDueDate(_dueDateFlag.Value) :
                 null as DateTime?;
 
-			Task newTask = new Task(taskList.Count, description, taskPriority);
+			Task newTask = new Task(
+				taskList.Count, 
+				description, 
+				priority, 
+				dueDate);
 
 			if (this.ConfirmTaskOperation(new List<Task> { newTask }, "added"))
 			{
