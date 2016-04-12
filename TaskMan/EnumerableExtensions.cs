@@ -46,19 +46,22 @@ namespace TaskMan
 		public static void ForEach<T>(this IEnumerable<T> sequence, Action<T, bool, bool> action)
 		{
 			IEnumerator<T> enumerator = sequence.GetEnumerator();
-			IEnumerator<T> enumeratorAhead = sequence.GetEnumerator();
 
 			if (!enumerator.MoveNext()) return;
 
 			bool isLastElement;
 
+			T current = enumerator.Current;
+
 			isLastElement = !enumerator.MoveNext();
-			action(enumerator.Current, true, isLastElement);
+			action(current, true, isLastElement);
 
 			while (!isLastElement)
 			{
+				current = enumerator.Current;
+
 				isLastElement = !enumerator.MoveNext();
-				action(enumerator.Current, false, isLastElement);
+				action(current, false, isLastElement);
 			}
 		}
 

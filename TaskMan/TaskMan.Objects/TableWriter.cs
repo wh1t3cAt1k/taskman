@@ -141,10 +141,10 @@ namespace TaskMan.Objects
 			{
 				if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
 
-				if (paddingLeft <= 0) throw new ArgumentOutOfRangeException(nameof(paddingLeft));
-				if (paddingRight <= 0) throw new ArgumentOutOfRangeException(nameof(paddingRight));
-				if (paddingTop <= 0) throw new ArgumentOutOfRangeException(nameof(paddingTop));
-				if (paddingBottom <= 0) throw new ArgumentOutOfRangeException(nameof(paddingBottom));
+				if (paddingLeft < 0) throw new ArgumentOutOfRangeException(nameof(paddingLeft));
+				if (paddingRight < 0) throw new ArgumentOutOfRangeException(nameof(paddingRight));
+				if (paddingTop < 0) throw new ArgumentOutOfRangeException(nameof(paddingTop));
+				if (paddingBottom < 0) throw new ArgumentOutOfRangeException(nameof(paddingBottom));
 
 				this.Width = width;
 				this.Align = align;
@@ -340,7 +340,11 @@ namespace TaskMan.Objects
 			{
 				_output.Write(isFirstColumn ? leftJoint : middleJoint);
 				_output.Write(HORIZONTAL_LINE.Repeat(fieldRule.FullWidth));
-				_output.Write(isLastColumn ? rightJoint : middleJoint);
+
+				if (isLastColumn)
+				{
+					_output.Write(rightJoint);
+				}
 			});
 
 			_output.WriteLine();

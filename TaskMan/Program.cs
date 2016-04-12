@@ -1021,13 +1021,16 @@ namespace TaskMan
 
 			TableWriter tableWriter = new TableWriter(
 				_output,
-				new TableWriter.FieldRule(3, LineBreaking.None, Align.Left),
+				TableBorders.All,
+				new TableWriter.FieldRule(3, LineBreaking.None, Align.Left, paddingTop: 2, paddingLeft: 1),
 				new TableWriter.FieldRule(5, LineBreaking.None, Align.Right),
 				new TableWriter.FieldRule(5, LineBreaking.None, Align.Left),
-				new TableWriter.FieldRule(50, LineBreaking.Whitespace, Align.Left),
+				new TableWriter.FieldRule(45, LineBreaking.None, Align.Left),
 				new TableWriter.FieldRule(15, LineBreaking.Whitespace, Align.Left));
 			
 			tableWriter.WriteLine(
+				true,
+				true,
 				taskPrefix,
 				_configuration.IdPrefix.GetValue(),
 				task.ID,
