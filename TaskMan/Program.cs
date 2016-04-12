@@ -1024,8 +1024,8 @@ namespace TaskMan
 				new TableWriter.FieldRule(3, LineBreaking.None, Align.Left),
 				new TableWriter.FieldRule(5, LineBreaking.None, Align.Right),
 				new TableWriter.FieldRule(5, LineBreaking.None, Align.Left),
-				new TableWriter.FieldRule(40, LineBreaking.Whitespace, Align.Left),
-				new TableWriter.FieldRule(10, LineBreaking.Whitespace, Align.Left));
+				new TableWriter.FieldRule(50, LineBreaking.Whitespace, Align.Left),
+				new TableWriter.FieldRule(15, LineBreaking.Whitespace, Align.Left));
 			
 			tableWriter.WriteLine(
 				taskPrefix,

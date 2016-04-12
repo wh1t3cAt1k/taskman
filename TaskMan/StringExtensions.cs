@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 namespace TaskMan
 {
@@ -22,6 +23,20 @@ namespace TaskMan
 			{
 				return char.ToLower(text[0]) + text.Substring(1);
 			}
+		}
+
+		public static string Repeat(this string text, int times)
+		{
+			if (times < 0) throw new ArgumentOutOfRangeException(nameof(times));
+
+			StringBuilder resultBuilder = new StringBuilder(times);
+
+			for (int counter = 0; counter < times; ++counter)
+			{
+				resultBuilder.Append(text);
+			}
+
+			return resultBuilder.ToString();
 		}
 	}
 }

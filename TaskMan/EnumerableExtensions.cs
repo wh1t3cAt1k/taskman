@@ -43,6 +43,25 @@ namespace TaskMan
 			return currentIndex;
 		}
 
+		public static void ForEach<T>(this IEnumerable<T> sequence, Action<T, bool, bool> action)
+		{
+			IEnumerator<T> enumerator = sequence.GetEnumerator();
+			IEnumerator<T> enumeratorAhead = sequence.GetEnumerator();
+
+			if (!enumerator.MoveNext()) return;
+
+			bool isLastElement;
+
+			isLastElement = !enumerator.MoveNext();
+			action(enumerator.Current, true, isLastElement);
+
+			while (!isLastElement)
+			{
+				isLastElement = !enumerator.MoveNext();
+				action(enumerator.Current, false, isLastElement);
+			}
+		}
+
 		/// <summary>
 		/// Splits the source sequence into subsequences so that
 		/// each subsequence has the required maximum number of elements.
