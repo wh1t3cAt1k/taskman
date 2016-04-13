@@ -156,7 +156,7 @@ namespace TaskMan.Control
 			"idprefix", 
 			"string prefix that precedes the task ID value",
 			ANY_PATTERN, 
-			" id. ");
+			"id. ");
 
 		public TaskmanParameter NormalTaskColor => new TaskmanParameter(
 			this,

@@ -74,7 +74,7 @@ namespace TaskMan
 			if (count <= 0) throw new ArgumentOutOfRangeException(nameof(count));
 			int currentElementIndex = 0;
 
-			return sequence.GroupBy(_ => currentElementIndex / count);
+			return sequence.GroupBy(_ => currentElementIndex++ / count);
 		}
 
 		/// <summary>

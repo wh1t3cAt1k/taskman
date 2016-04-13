@@ -58,7 +58,7 @@ namespace TaskMan
 	{
 		#region Constants
 
-		const string TASK_DUE_DATE_FORMAT = "dddd, yyyy-MM-dd";
+		const string TASK_DUE_DATE_FORMAT = "ddd, yyyy-MM-dd";
 
 		static readonly RegexOptions StandardRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
 
@@ -475,8 +475,8 @@ namespace TaskMan
 				"tasks",
 				willBe);
 
-			relevantTasks.Take(3).ForEach(
-				task => DisplayTask(task, actionDescription));
+			relevantTasks.Take(3).ForEach((task, isFirstTask, isLastTask) 
+				=> DisplayTask(task, isFirstTask, isLastTask, actionDescription));
 
 			if (relevantTasks.Skip(3).Any())
 			{
@@ -626,7 +626,8 @@ namespace TaskMan
 			{
 				this.CurrentOperation = "display tasks";
 
-				filteredTasks.ForEach(task => DisplayTask(task));
+				filteredTasks.ForEach((task, isFirstTask, isLastTask) 
+					=> DisplayTask(task, isFirstTask, isLastTask));
 			}
 			else if (executingCommand == _deleteTasksCommand)
 			{
@@ -985,7 +986,7 @@ namespace TaskMan
 		/// For console output, optional background and foreground <see cref="ConsoleColor"/>
 		/// parameters can be specified to override the standard colouring scheme.
 		/// </summary>
-		void DisplayTask(Task task, TextWriter output = null)
+		void DisplayTask(Task task, bool isFirstTask, bool isLastTask, TextWriter output = null)
 		{
 			output = output ?? _output;
 
@@ -1022,17 +1023,16 @@ namespace TaskMan
 			TableWriter tableWriter = new TableWriter(
 				_output,
 				TableBorders.All,
-				new TableWriter.FieldRule(3, LineBreaking.None, Align.Left, paddingTop: 2, paddingLeft: 1),
-				new TableWriter.FieldRule(5, LineBreaking.None, Align.Right),
+				new TableWriter.FieldRule(2, LineBreaking.None, Align.Left, paddingTop: 2),
 				new TableWriter.FieldRule(5, LineBreaking.None, Align.Left),
 				new TableWriter.FieldRule(45, LineBreaking.None, Align.Left),
 				new TableWriter.FieldRule(15, LineBreaking.Whitespace, Align.Left));
 			
 			tableWriter.WriteLine(
-				true,
+				isFirstTask,
+				isLastTask,
 				true,
 				taskPrefix,
-				_configuration.IdPrefix.GetValue(),
 				task.ID,
 				task.Description,
 				task.DueDate?.ToString(TASK_DUE_DATE_FORMAT));
