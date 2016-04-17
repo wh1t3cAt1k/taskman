@@ -10,7 +10,6 @@ using Mono.Options;
 
 using TaskMan.Control;
 using TaskMan.Objects;
-using System.Configuration;
 
 namespace TaskMan
 {
@@ -57,8 +56,6 @@ namespace TaskMan
 	public class TaskMan
 	{
 		#region Constants
-
-		const string TASK_DUE_DATE_FORMAT = "ddd, yyyy-MM-dd";
 
 		static readonly RegexOptions StandardRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase;
 
@@ -109,19 +106,15 @@ namespace TaskMan
 			"filters tasks by being due on the specified date or specifies a new task's due date",
 			"d=|due=|duedate=",
 			filterPriority: 1,
-			filterPredicate: (flagValue, task) => 
-			{
-				if (!task.DueDate.HasValue)
-				{
-					return false;
-				}
-				else
-				{
-					return
-						task.DueDate.Value.Date ==
-						ParseHelper.ParseTaskDueDate(flagValue);
-				}
-			});
+			filterPredicate: (flagValue, task) =>
+				task.DueDate == ParseHelper.ParseTaskDueDate(flagValue));
+
+		Flag<string> _dueBeforeFlag = new TaskFilterFlag<string>(
+			"filters tasks by being due no later than the specified date",
+			"D=|before=",
+			filterPriority: 1,
+			filterPredicate: (flagValue, task) =>
+				task.DueDate <= ParseHelper.ParseTaskDueDate(flagValue));
 
 		Flag<string> _priorityFlag = new TaskFilterFlag<string>(
 			"filters tasks by priority or specifies a new task's priority", 
@@ -154,7 +147,7 @@ namespace TaskMan
 
 		Flag<string> _descriptionFilterFlag = new TaskFilterFlag<string>(
 			"filters tasks by their description matching a regex", 
-			"r=|like=",
+			"l=|like=",
 			filterPriority: 1,
 			filterPredicate: (pattern, task) => Regex.IsMatch(
 				task.Description, 
@@ -177,6 +170,14 @@ namespace TaskMan
 			"orders the tasks by the specified criteria",
 			"s=|orderby=|sort=");
 
+		Flag<bool> _renumberFlag = new Flag<bool>(
+			"before showing tasks, reassign task IDs in the display order",
+			"r|renumber");
+
+		Flag<bool> _defaultFlag = new Flag<bool>(
+			"resets a parameter to its default value",
+			"default|reset");
+
 		#endregion
 
 		#region Command Verbs
@@ -189,6 +190,8 @@ namespace TaskMan
 		Command _displayTasksCommand;
 		Command _updateTasksCommand;
 		Command _configureCommand;
+		Command _listCommand;
+		Command _renumberCommand;
 
 		#endregion
 
@@ -196,10 +199,58 @@ namespace TaskMan
 
 		IEnumerable<Alias> _aliases;
 
-		Alias _configureTaskListAlias;
+		Alias _switchTaskListAlias;
 		Alias _clearTasksAlias;
 
 		#endregion
+
+		#region Program State
+
+		/// <summary>
+		/// Mono OptionSet object for command line flag parsing.
+		/// </summary>
+		private OptionSet _optionSet;
+
+		TextWriter _output = Console.Out;
+		TextWriter _error = Console.Error;
+
+		/// <summary>
+		/// Sets the function that would be called to read the task list.
+		/// Can be used to override the default function that reads the tasks from file, 
+		/// e.g. for the purpose of unit testing.
+		/// </summary>
+		Func<List<Task>> _readTasks;
+
+		/// <summary>
+		/// Sets the function that saves the task list.
+		/// Can be used to override the default function that saves 
+		/// the tasks into file, e.g. for the purpose of unit testing.
+		/// </summary>
+		Action<List<Task>> _saveTasks;
+
+		TaskmanConfiguration _configuration = new TaskmanConfiguration();
+
+		/// <summary>
+		/// Represents the unparsed remainder of the command 
+		/// line arguments.
+		/// </summary>
+		LinkedList<string> _commandLineArguments;
+
+		/// <summary>
+		/// Represents the subset of tasks relevant for the
+		/// current operation.
+		/// </summary>
+		IEnumerable<Task> _filteredTasks;
+
+		/// <summary>
+		/// Represents the whole task list as read from
+		/// the task list file.
+		/// </summary>
+		List<Task> _allTasks;
+
+		#endregion
+
+		#region Properties
 
 		/// <summary>
 		/// Gets or sets the current operation performed by the program.
@@ -232,13 +283,22 @@ namespace TaskMan
 		}
 
 		/// <summary>
-		/// Mono OptionSet object for command line flag parsing.
+		/// Gets the full filename of the file that stores
+		/// the current task list. Does not guarantee that 
+		/// the file exists.
 		/// </summary>
-		private OptionSet _optionSet;
+		private string CurrentTaskListFile
+		{
+			get
+			{
+				return Path.Combine(
+					_configuration.UserConfigurationDirectory,
+					_configuration.GetValue(_configuration.CurrentTaskList.Name) + ".tmf");
+			}
+		}
 
-		TextWriter _output = Console.Out;
-		TextWriter _error = Console.Error;
-			
+		#endregion
+					
 		public TaskMan(
 			Func<List<Task>> taskReadFunction = null,
 			Action<List<Task>> taskSaveFunction = null,
@@ -266,7 +326,7 @@ namespace TaskMan
 			_configureCommand = new Command(
 				@"^(config|configure)$",
 				isReadUpdateDelete: false,
-				supportedFlags: new [] { _configurationGlobalFlag, _interactiveFlag });
+				supportedFlags: new [] { _configurationGlobalFlag, _interactiveFlag, _defaultFlag });
 
 			_addTaskCommand = new Command(
 				@"^(add|new|create)$", 
@@ -295,7 +355,7 @@ namespace TaskMan
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
-					.Concat(new Flag[] { _includeAllFlag, _verboseFlag, _orderByFlag }));
+					.Concat(new Flag[] { _includeAllFlag, _verboseFlag, _orderByFlag, _renumberFlag }));
 			
 			_updateTasksCommand = new Command(
 				@"^(update|change|modify|set)$",
@@ -305,6 +365,16 @@ namespace TaskMan
 					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
 					.Concat(new [] { _interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag }));
 
+			_listCommand = new Command(
+				@"^(list)$",
+				isReadUpdateDelete: false,
+				supportedFlags: new Flag[0]);
+
+			_renumberCommand = new Command(
+				@"^(renumber)$",
+				isReadUpdateDelete: false,
+				supportedFlags: new [] { _orderByFlag });
+
 			_commands = privateFields
 				.Where(fieldInfo => fieldInfo.FieldType == typeof(Command))
 				.Select(fieldInfo => fieldInfo.GetValue(this))
@@ -312,8 +382,8 @@ namespace TaskMan
 
 			// Setup program aliases
 			// -
-			_configureTaskListAlias = new Alias(
-				"list",
+			_switchTaskListAlias = new Alias(
+				"switch",
 				$"{_configureCommand.ExampleUsage} {_configuration.CurrentTaskList.Name}");
 
 			_clearTasksAlias = new Alias(
@@ -332,37 +402,6 @@ namespace TaskMan
 
 			_output = outputStream ?? this._output;
 			_error = errorStream ?? this._error;
-		}
-
-		/// <summary>
-		/// Sets the function that would be called to read the task list.
-		/// Can be used to override the default function that reads the tasks from file, 
-		/// e.g. for the purpose of unit testing.
-		/// </summary>
-		Func<List<Task>> _readTasks;
-
-		/// <summary>
-		/// Sets the function that saves the task list.
-		/// Can be used to override the default function that saves the tasks into file,
-		/// e.g. for the purpose of unit testing.
-		/// </summary>
-		Action<List<Task>> _saveTasks;
-
-		TaskmanConfiguration _configuration = new TaskmanConfiguration();
-
-		/// <summary>
-		/// Gets the full filename of the file that stores
-		/// the current task list. Does not guarantee that 
-		/// the file exists.
-		/// </summary>
-		private string CurrentTaskListFile 
-		{
-			get
-			{
-				return Path.Combine(
-					_configuration.UserConfigurationDirectory,
-					_configuration.GetParameter(_configuration.CurrentTaskList.Name) + ".tmf");
-			}
 		}
 
 		/// <summary>
@@ -466,8 +505,10 @@ namespace TaskMan
 		/// <c>true</c>, if operation was confirmed, 
 		/// <c>false</c> otherwise.
 		/// </returns>
-		bool ConfirmTaskOperation(IEnumerable<Task> relevantTasks, string willBe)
+		bool ConfirmTaskOperation(string willBe, IEnumerable<Task> relevantTasks = null)
 		{
+			relevantTasks = relevantTasks ?? _filteredTasks;
+
 			StringWriter actionDescription = new StringWriter();
 
 			actionDescription.WriteLine(
@@ -475,14 +516,14 @@ namespace TaskMan
 				"tasks",
 				willBe);
 
-			relevantTasks.Take(3).ForEach((task, isFirstTask, isLastTask) 
+			_filteredTasks.Take(3).ForEach((task, isFirstTask, isLastTask) 
 				=> DisplayTask(task, isFirstTask, isLastTask, actionDescription));
 
-			if (relevantTasks.Skip(3).Any())
+			if (_filteredTasks.Skip(3).Any())
 			{
 				actionDescription.WriteLine(
 					Messages.AndNumberMore, 
-					relevantTasks.Skip(3).Count());
+					_filteredTasks.Skip(3).Count());
 			}
 
 			return ConfirmOperation(actionDescription.ToString().TrimEnd('\n'));
@@ -509,10 +550,10 @@ namespace TaskMan
 
 			this.CurrentOperation = "parse command line arguments";
 
-			LinkedList<string> commandLineArguments =
+			_commandLineArguments =
 				new LinkedList<string>(_optionSet.Parse(originalArguments));
 
-			string commandName = commandLineArguments.First?.Value;
+			string commandName = _commandLineArguments.First?.Value;
 
 			if (commandName == null)
 			{
@@ -525,11 +566,11 @@ namespace TaskMan
 					// TaskMan operates as "show" by default.
 					// -
 					commandName = "show";
-					commandLineArguments = new LinkedList<string>(new [] { commandName }); 
+					_commandLineArguments = new LinkedList<string>(new [] { commandName }); 
 				}
 			}
 
-			commandLineArguments.RemoveFirst();
+			_commandLineArguments.RemoveFirst();
 
 			this.CurrentOperation = "recognize the command";
 
@@ -552,26 +593,34 @@ namespace TaskMan
 
 			this.CurrentOperation = "read tasks from the task file";
 
-			List<Task> taskList = _readTasks();
+			_allTasks = _readTasks();
 
 			this.CurrentOperation = "sort the task list";
 
 			string sortingSteps = _orderByFlag.IsSet ?
 				_orderByFlag.Value :
-				_configuration.SortOrder.GetValue();
+				_configuration.SortOrder.Value;
 
-			taskList.Sort(
+			_allTasks.Sort(
 				Task.GetComparison(
 					ParseHelper.ParseTaskSortOrder(
 						sortingSteps)));
+
+			this.CurrentOperation = "renumber tasks";
+
+			if (executingCommand == _renumberCommand ||
+				_renumberFlag.IsSet && _renumberFlag)
+			{
+				_allTasks.ForEach((task, index) => task.ID = index);
+			}
 	
 			this.CurrentOperation = "filter the task list";
 
-			IEnumerable<Task> filteredTasks = taskList;
+			_filteredTasks = _allTasks;
 
 			if (executingCommand.IsReadUpdateDelete)
 			{
-				if (!taskList.Any())
+				if (!_allTasks.Any())
 				{
 					OutputWriteLine(Messages.TaskListIsEmpty);
 					return;
@@ -583,13 +632,13 @@ namespace TaskMan
 
 				if (filterFlagsSpecified.Any())
 				{
-					filteredTasks = filterFlagsSpecified
+					_filteredTasks = filterFlagsSpecified
 						.OrderBy(taskFilter => taskFilter.FilterPriority)
 						.Aggregate(
-							seed: taskList as IEnumerable<Task>, 
+							seed: _allTasks as IEnumerable<Task>, 
 							func: (taskSequence, filter) => filter.Filter(taskSequence));
 
-					if (!filteredTasks.Any())
+					if (!_filteredTasks.Any())
 					{
 						OutputWriteLine(Messages.NoTasksMatchingGivenConditions);
 						return;
@@ -601,17 +650,17 @@ namespace TaskMan
 			{
 				this.CurrentOperation = "add a new task";
 
-				Task addedTask = AddTask(commandLineArguments, taskList);
+				Task addedTask = AddTask();
 
 				// Only when the user discarded the task 
 				// creation in an interactive mode.
 				// -
 				if (addedTask == null) return;
 
-				_saveTasks(taskList);
+				_saveTasks(_allTasks);
 
-				string taskDueDate = 
-					addedTask.DueDate?.ToString(TASK_DUE_DATE_FORMAT);
+				string taskDueDate =
+					addedTask.DueDate?.ToString("ddd, yyyy-MM-dd");
 
 				OutputWriteLine(
 					Messages.TaskWasAdded,
@@ -619,44 +668,55 @@ namespace TaskMan
 					addedTask.ID,
 					addedTask.Priority.ToString().ToLower(),
 					taskDueDate != null ?
-						$", due on {taskDueDate}." : 
+						$", due on {taskDueDate}." :
 						".");
 			}
 			else if (executingCommand == _displayTasksCommand)
 			{
 				this.CurrentOperation = "display tasks";
 
-				filteredTasks.ForEach((task, isFirstTask, isLastTask) 
+				RequireNoMoreArguments();
+
+				_filteredTasks.ForEach((task, isFirstTask, isLastTask)
 					=> DisplayTask(task, isFirstTask, isLastTask));
+
+				if (_renumberFlag.IsSet && _renumberFlag)
+				{
+					// Only makes sense to save
+					// if renumbering happened.
+					// -
+					_saveTasks(_allTasks);
+				}
 			}
 			else if (executingCommand == _deleteTasksCommand)
 			{
 				this.CurrentOperation = "delete tasks";
 
-				RequireExplicitFiltering(commandName, taskList, filteredTasks);
+				RequireExplicitFiltering(commandName);
+				RequireNoMoreArguments();
 
-				if (!ConfirmTaskOperation(filteredTasks, "deleted")) return;
+				if (!ConfirmTaskOperation("deleted")) return;
 
-				int totalTasksBefore = taskList.Count;
+				int totalTasksBefore = _allTasks.Count;
 
-				taskList = taskList.Except(filteredTasks).ToList();
-				taskList.ForEach((task, index) => task.ID = index);
+				_allTasks = _allTasks.Except(_filteredTasks).ToList();
+				_allTasks.ForEach((task, index) => task.ID = index);
 
-				int totalTasksAfter = taskList.Count;
+				int totalTasksAfter = _allTasks.Count;
 
-				_saveTasks(taskList);
+				_saveTasks(_allTasks);
 
-				if (!taskList.Any())
+				if (!_allTasks.Any())
 				{
 					File.Delete(this.CurrentTaskListFile);
 				}
 
-				if (filteredTasks.IsSingleton())
+				if (_filteredTasks.IsSingleton())
 				{
 					OutputWriteLine(
-						Messages.TaskWasDeleted, 
-						filteredTasks.Single().ID, 
-						filteredTasks.Single().Description);
+						Messages.TaskWasDeleted,
+						_filteredTasks.Single().ID,
+						_filteredTasks.Single().Description);
 				}
 				else
 				{
@@ -669,31 +729,32 @@ namespace TaskMan
 			{
 				this.CurrentOperation = "update task parameters";
 
-				RequireExplicitFiltering(commandName, taskList, filteredTasks);
+				RequireExplicitFiltering(commandName);
 
-				if (!ConfirmTaskOperation(filteredTasks, "updated")) return;
+				if (!ConfirmTaskOperation("updated")) return;
 
-				UpdateTasks(commandLineArguments, taskList, filteredTasks);
+				UpdateTasks();
 			}
 			else if (executingCommand == _completeTasksCommand)
 			{
 				this.CurrentOperation = "finish tasks";
 
-				RequireExplicitFiltering(commandName, taskList, filteredTasks);
+				RequireExplicitFiltering(commandName);
+				RequireNoMoreArguments();
 
-				if (!ConfirmTaskOperation(filteredTasks, "completed")) return;
+				if (!ConfirmTaskOperation("completed")) return;
 
-				int totalTasksFinished = 
-					filteredTasks.ForEach(task => task.IsFinished = true);
+				int totalTasksFinished =
+					_filteredTasks.ForEach(task => task.IsFinished = true);
 
-				_saveTasks(taskList);
+				_saveTasks(_allTasks);
 
-				if (filteredTasks.IsSingleton())
+				if (_filteredTasks.IsSingleton())
 				{
 					OutputWriteLine(
-						Messages.TaskWasFinished, 
-						filteredTasks.Single().ID, 
-						filteredTasks.Single().Description);
+						Messages.TaskWasFinished,
+						_filteredTasks.Single().ID,
+						_filteredTasks.Single().Description);
 				}
 				else
 				{
@@ -706,41 +767,57 @@ namespace TaskMan
 			{
 				this.CurrentOperation = "configure program parameters";
 
-				if (!commandLineArguments.Any())
-				{
-					throw new TaskManException(
-						Messages.NoParameterName,
-						commandName);
-				}
+				ConfigureProgramParameters();
+			}
+			else if (executingCommand == _listCommand)
+			{
+				this.CurrentOperation = "display available task lists";
 
-				string parameterName = commandLineArguments.PopFirst();
-
-				if (!commandLineArguments.Any())
+				if (_commandLineArguments.Any())
 				{
-					// When no parameter value is provided, it means
-					// we should show the parameter.
-					// -
-					OutputWriteLine(_configuration.GetParameter(parameterName));
-				}
-				else
-				{
-					string parameterValue = commandLineArguments.PopFirst();
+					// If another argument remains, it is the
+					// new task list name.
+					// -.
+					string newListName = _commandLineArguments.PopFirst();
 
-					if (!ConfirmOperation(
-						Messages.ParameterNameWillBeSetToValue,
-						parameterName,
-						parameterValue)) 
+					RequireNoMoreArguments();
+
+					this.Run(new []
 					{
-						return;
-					}
+						_configureCommand.ExampleUsage,
+						_configuration.CurrentTaskList.Name,
+						newListName
+					});
 
-					_configuration.SetParameter(
-						parameterName,
-						parameterValue,
-						_configurationGlobalFlag.IsSet && _configurationGlobalFlag.Value);
-
-					OutputWriteLine(Messages.ParameterWasSetToValue, parameterName, parameterValue);
+					return;
 				}
+
+				IEnumerable<string> taskListFiles = Directory.EnumerateFiles(
+					_configuration.UserConfigurationDirectory,
+					"*.tmf",
+					SearchOption.TopDirectoryOnly);
+
+				OutputWriteLine(
+					Messages.CurrentTaskList,
+					_configuration.CurrentTaskList.Value);
+
+				OutputWriteLine(Messages.AvailableTaskLists);
+
+				taskListFiles
+					.Select(fileName => Path.GetFileNameWithoutExtension(fileName))
+					.OrderBy(listName => listName)
+					.ForEach((listName, index) => OutputWriteLine($"{index + 1}. {listName}"));
+			}
+			else if (executingCommand == _renumberCommand)
+			{
+				RequireNoMoreArguments();
+
+				// Renumbering already happened earlier.
+				// Just display the confirmation message 
+				// and save the list.
+				// -
+				_saveTasks(_allTasks);
+				OutputWriteLine(Messages.TasksWereRenumbered, _allTasks.Count);
 			}
 		}
 
@@ -792,6 +869,115 @@ namespace TaskMan
 			}
 
 			return false;
+		}
+
+		void ConfigureProgramParameters()
+		{
+			if (!_commandLineArguments.Any())
+			{
+				OutputWriteLine("Available configuration parameters: ");
+
+				TableWriter tableWriter = new TableWriter(
+					_output,
+					TableBorders.None,
+					new FieldRule(2, paddingRight: 2),
+					new FieldRule(16, paddingRight: 2),
+					new FieldRule(40, lineBreaking: LineBreaking.Whitespace, paddingRight: 2),
+					new FieldRule(15, lineBreaking: LineBreaking.Whitespace));
+
+				_configuration.SupportedParameters.OrderBy(parameter => parameter.Name).ForEach(
+					(parameter, index, isLast) =>
+				{
+					tableWriter.WriteLine(
+						index == 0,
+						isLast,
+						index + 1,
+						parameter.Name,
+						parameter.Description,
+						$"'{parameter.Value}'");
+				});
+
+				return;
+			}
+
+			string parameterName = _commandLineArguments.PopFirst();
+
+			if (!_commandLineArguments.Any() && _defaultFlag.IsSet && _defaultFlag)
+			{
+				string defaultValue = _configuration.GetDefaultValue(parameterName);
+
+				if (!ConfirmOperation(
+					Messages.ParameterNameWillBeSetToValue,
+					parameterName,
+					defaultValue))
+				{
+					return;
+				}
+
+
+				// No parameter value, but default flag
+				// is set, which means we should reset the 
+				// parameter to its default value.
+				// -
+				_configuration.SetParameter(
+					parameterName,
+					defaultValue,
+					_configurationGlobalFlag.IsSet && _configurationGlobalFlag);
+
+				OutputWriteLine(
+					Messages.ParameterResetToDefault,
+					parameterName,
+					defaultValue);
+			}
+			else if (!_commandLineArguments.Any() && !_defaultFlag.IsSet)
+			{
+				// Just show the parameter.
+				// 
+				OutputWriteLine(
+					Messages.CurrentUserValueOfParameter,
+					parameterName,
+					_configuration.GetValue(parameterName));
+				
+				OutputWriteLine(
+					Messages.CurrentGlobalValueOfParameter,
+					parameterName,
+					_configuration.GetValue(parameterName, forceGetGlobal: true) ?? "N/A");
+
+				OutputWriteLine(
+					Messages.DefaultValueOfParameter,
+					_configuration.GetDefaultValue(parameterName));
+			}
+			else
+			{
+				// Set the parameter value explicitly
+				// provided by the user.
+				// -
+				if (_defaultFlag.IsSet)
+				{
+					throw new TaskManException(
+						Messages.EntityDoesNotMakeSenseWithEntity,
+						_configureCommand.ExampleUsage,
+						_defaultFlag.ExampleUsage);
+				}
+
+				string parameterValue = _commandLineArguments.PopFirst();
+				RequireNoMoreArguments();
+
+				if (!ConfirmOperation(
+					Messages.ParameterNameWillBeSetToValue,
+					parameterName,
+					parameterValue))
+				{
+					return;
+				}
+
+				_configuration.SetParameter(
+					parameterName,
+					parameterValue,
+					_configurationGlobalFlag.IsSet && _configurationGlobalFlag.Value);
+
+				OutputWriteLine(Messages.ParameterWasSetToValue, parameterName, parameterValue);
+			}
 		}
 
 		/// <summary>
@@ -847,14 +1033,9 @@ namespace TaskMan
 		/// <see cref="TaskMan._includeAllFlag"/>, or throw an error.
 		/// </summary>
 		/// <param name="commandName">The executing command name.</param>
-		/// <param name="allTasks">All tasks.</param>
-		/// <param name="filteredTasks">Filtered tasks.</param>
-		void RequireExplicitFiltering(
-			string commandName, 
-			IEnumerable<Task> allTasks, 
-			IEnumerable<Task> filteredTasks)
+		void RequireExplicitFiltering(string commandName)
 		{
-			if (!_includeAllFlag.IsSet && filteredTasks == allTasks)
+			if (!_includeAllFlag.IsSet && _filteredTasks == _allTasks)
 			{
 				throw new TaskManException(
 					Messages.NoFilterConditionsUseAllIfIntended,
@@ -865,21 +1046,14 @@ namespace TaskMan
 		/// <summary>
 		/// Encapsulates the task modification logic in one method.
 		/// </summary>
-		/// <param name="cliArguments">
-		/// The command line arguments. The first argument should contain the name
-		/// of the parameter to update, the second argument should contain the value
-		/// for that parameter. All other values will be ignored.
-		/// </param>
-		/// <param name="taskList">All tasks.</param>
-		/// <param name="tasksToUpdate">The set of tasks that should be updated.</param>
-		void UpdateTasks(LinkedList<string> cliArguments, List<Task> taskList, IEnumerable<Task> tasksToUpdate)
+		void UpdateTasks()
 		{
-			if (!cliArguments.HasAtLeastTwoElements())
+			if (!_commandLineArguments.HasAtLeastTwoElements())
 			{ 
-				throw new TaskManException(Messages.InsufficientSetParameters);
+				throw new TaskManException(Messages.InsufficientUpdateParameters);
 			}
 			
-			string parameterToChange = cliArguments.PopFirst().ToLower();
+			string parameterToChange = _commandLineArguments.PopFirst().ToLower();
 			string parameterStringValue;
 
 			// Preserve old task description for better human-readable
@@ -887,45 +1061,49 @@ namespace TaskMan
 			// -
 			string oldTaskDescription = null;
 
-			if (tasksToUpdate.IsSingleton())
+			if (_filteredTasks.IsSingleton())
 			{
-				oldTaskDescription = tasksToUpdate.Single().Description;
+				oldTaskDescription = _filteredTasks.Single().Description;
 			}
 
 			int totalTasksUpdated;
 
 			if (TaskSetPriorityRegex.IsMatch(parameterToChange))
 			{
-				Priority priority = ParseHelper.ParsePriority(cliArguments.PopFirst());
+				Priority priority = ParseHelper.ParsePriority(_commandLineArguments.PopFirst());
 				parameterStringValue = priority.ToString();
 
-				totalTasksUpdated = tasksToUpdate.ForEach(task => task.Priority = priority);
+				RequireNoMoreArguments();
+
+				totalTasksUpdated = _filteredTasks.ForEach(task => task.Priority = priority);
 			}
 			else if (TaskSetDescriptionRegex.IsMatch(parameterToChange))
 			{
-				parameterStringValue = string.Join(" ", cliArguments);
+				parameterStringValue = string.Join(" ", _commandLineArguments);
 
-				totalTasksUpdated = tasksToUpdate.ForEach(task => task.Description = parameterStringValue);
+				totalTasksUpdated = _filteredTasks.ForEach(task => task.Description = parameterStringValue);
 			}
 			else if (TaskSetFinishedRegex.IsMatch(parameterToChange))
 			{
-				bool isFinished = ParseHelper.ParseBool(cliArguments.PopFirst());
+				bool isFinished = ParseHelper.ParseBool(_commandLineArguments.PopFirst());
 				parameterStringValue = isFinished.ToString();
 
-				totalTasksUpdated = tasksToUpdate.ForEach(task => task.IsFinished = isFinished);
+				RequireNoMoreArguments();
+
+				totalTasksUpdated = _filteredTasks.ForEach(task => task.IsFinished = isFinished);
 			}
 			else
 			{
 				throw new TaskManException(Messages.InvalidSetParameters);
 			}
 
-			this._saveTasks(taskList);
+			this._saveTasks(_allTasks);
 
 			if (totalTasksUpdated == 1)
 			{
 				OutputWriteLine(
 					Messages.TaskWasUpdated,
-					tasksToUpdate.Single().ID,
+					_filteredTasks.Single().ID,
 					oldTaskDescription,
 					parameterToChange,
 					parameterStringValue);
@@ -943,17 +1121,14 @@ namespace TaskMan
 		/// <summary>
 		/// Encapsulates the task adding logic in one method.
 		/// </summary>
-		/// <param name="cliArguments">Command line arguments.</param>
-		/// <param name="taskList">Task list.</param>
-		/// <returns>The <see cref="Task"/> object that was added into the <paramref name="taskList"/></returns>
-		Task AddTask(LinkedList<string> cliArguments, List<Task> taskList)
+		Task AddTask()
 		{
-			if (!cliArguments.Any())
+			if (!_commandLineArguments.Any())
 			{
 				throw new TaskManException(Messages.NoDescriptionSpecified);
 			}
 
-			string description = string.Join(" ", cliArguments);
+			string description = string.Join(" ", _commandLineArguments);
 
 			Priority priority = _priorityFlag.IsSet ? 
 				ParseHelper.ParsePriority(_priorityFlag.Value) : 
@@ -964,14 +1139,14 @@ namespace TaskMan
                 null as DateTime?;
 
 			Task newTask = new Task(
-				taskList.Count, 
+				_allTasks.Count, 
 				description, 
 				priority, 
 				dueDate);
 
-			if (this.ConfirmTaskOperation(new List<Task> { newTask }, "added"))
+			if (this.ConfirmTaskOperation("added", new List<Task> { newTask }))
 			{
-				taskList.Add(newTask);
+				_allTasks.Add(newTask);
 				return newTask;
 			}
 			else
@@ -990,21 +1165,14 @@ namespace TaskMan
 		{
 			output = output ?? _output;
 
-			string taskPrefix = string.Empty;
-
-			if (task.Priority == Priority.Important)
-			{
-				taskPrefix = _configuration.ImportantSymbol.GetValue();
-			}
-			else if (task.Priority == Priority.Critical)
-			{
-				taskPrefix = _configuration.CriticalSymbol.GetValue();
-			}
-
-			if (task.IsFinished)
-			{
-				taskPrefix = _configuration.FinishedSymbol.GetValue();
-			}
+			string taskPrefix =
+				task.IsFinished ?
+					_configuration.FinishedSymbol.Value :
+					task.Priority == Priority.Important ?
+						_configuration.ImportantSymbol.Value :
+						task.Priority == Priority.Critical ?
+							_configuration.CriticalSymbol.Value :
+							string.Empty;
 
 			ConsoleColor oldForegroundColor = Console.ForegroundColor;
 
@@ -1012,32 +1180,59 @@ namespace TaskMan
 			{
 				Console.ForegroundColor =
 					task.IsFinished ?
-						ParseHelper.ParseColor(_configuration.FinishedTaskColor.GetValue()) :
+						ParseHelper.ParseColor(_configuration.FinishedTaskColor.Value) :
 						task.Priority == Priority.Critical ?
-							ParseHelper.ParseColor(_configuration.CriticalTaskColor.GetValue()) :
+							ParseHelper.ParseColor(_configuration.CriticalTaskColor.Value) :
 							task.Priority == Priority.Important ?
-								ParseHelper.ParseColor(_configuration.ImportantTaskColor.GetValue()) :
-								ParseHelper.ParseColor(_configuration.NormalTaskColor.GetValue());
+								ParseHelper.ParseColor(_configuration.ImportantTaskColor.Value) :
+								ParseHelper.ParseColor(_configuration.NormalTaskColor.Value);
 			}
 
 			TableWriter tableWriter = new TableWriter(
 				_output,
-				TableBorders.All,
-				new TableWriter.FieldRule(2, LineBreaking.None, Align.Left, paddingTop: 2),
-				new TableWriter.FieldRule(5, LineBreaking.None, Align.Left),
-				new TableWriter.FieldRule(45, LineBreaking.None, Align.Left),
-				new TableWriter.FieldRule(15, LineBreaking.Whitespace, Align.Left));
-			
+				TableBorders.None,
+				new FieldRule(2, LineBreaking.Anywhere, Align.Left, paddingLeft: 0, paddingRight: 1),
+				new FieldRule(5, LineBreaking.Anywhere, Align.Left, paddingLeft: 0, paddingRight: 1),
+				new FieldRule(45, LineBreaking.Whitespace, Align.Left, paddingLeft: 1, paddingRight: 1),
+				new FieldRule(15, LineBreaking.Whitespace, Align.Left, paddingLeft: 1, paddingRight: 1));
+
 			tableWriter.WriteLine(
 				isFirstTask,
 				isLastTask,
-				true,
 				taskPrefix,
 				task.ID,
 				task.Description,
-				task.DueDate?.ToString(TASK_DUE_DATE_FORMAT));
+				GetDueDateRepresentation(task.DueDate));
 
 			Console.ForegroundColor = oldForegroundColor;
+		}
+
+		/// <summary>
+		/// Asserts that command line arguments
+		/// remainder is empty, or throws exception.
+		/// </summary>
+		void RequireNoMoreArguments()
+		{
+			if (_commandLineArguments.Any())
+			{
+				throw new TaskManException(
+					Messages.UnknownCommandLineArguments,
+					string.Join(" ", _commandLineArguments));
+			}
+		}
+
+		/// <summary>
+		/// Gets the due date representation for a given
+		/// task, using a special string value for today
+		/// or tomorrow.
+		/// </summary>
+		static string GetDueDateRepresentation(DateTime? dueDate)
+		{
+			if (dueDate == null) return string.Empty;
+			if (dueDate.Value.Date == DateTime.Today) return "Today";
+			if (dueDate.Value.Date == DateTime.Today.AddDays(1)) return "Tomorrow";
+
+			return dueDate.Value.ToString("MMMMM d, yyyy");
 		}
 	}
 }

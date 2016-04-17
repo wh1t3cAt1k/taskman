@@ -49,23 +49,24 @@ namespace TaskMan.Control
 			TaskmanConfiguration configuration,
 			string name,
 			string description,
+			string defaultValue,
 			Regex validationRegex,
-			string defaultValue = null,
 			bool isUserScoped = false)
 		{
 			if (configuration == null) throw new ArgumentNullException(nameof(configuration));
 			if (name == null) throw new ArgumentNullException(nameof(name));
 			if (description == null) throw new ArgumentNullException(nameof(description));
 			if (validationRegex == null) throw new ArgumentNullException(nameof(validationRegex));
+			if (defaultValue == null) throw new ArgumentNullException(nameof(defaultValue));
 
 			this._configuration = configuration;
 
 			this.Name = name;
+			this.Description = description;
 			this.ValidationRegex = validationRegex;
 			this.IsUserScoped = isUserScoped;
 
-			if (defaultValue != null &&
-				!this.ValidationRegex.IsMatch(defaultValue))
+			if (!this.ValidationRegex.IsMatch(defaultValue))
 			{
 				throw new ArgumentException(
 					"The specified default value does not match the given validation expression");
@@ -78,15 +79,15 @@ namespace TaskMan.Control
 			TaskmanConfiguration configuration,
 			string name, 
 			string description,
+			string defaultValue, 
 			string validationPattern = ".*", 
-			string defaultValue = null, 
 			bool isUserScoped = false)
 			: this(
 				configuration,
 				name,
 				description,
-				new Regex(validationPattern),
 				defaultValue,
+				new Regex(validationPattern),
 				isUserScoped)
 		{ }
 
@@ -95,10 +96,7 @@ namespace TaskMan.Control
 		/// configuration object that this parameter
 		/// belongs to.
 		/// </summary>
-		public string GetValue()
-		{
-			return _configuration.GetParameter(this.Name);
-		}
+		public string Value => _configuration.GetValue(this.Name);
 	}
 
 	public class TaskmanConfiguration
@@ -118,82 +116,78 @@ namespace TaskMan.Control
 			}
 		}
 
-		private const string IDENTIFIER_PATTERN = "[A-Za-z][A-Za-z0-9]*";
-		private const string ENUM_VALUE_PATTERN = "[A-Za-z][A-Za-z0-9]*|[0-9]+";
-		private const string ANY_PATTERN = ".*";
+		const string IDENTIFIER_PATTERN = @"[A-Za-z][A-Za-z0-9]*";
+		const string ENUM_VALUE_PATTERN = @"[A-Za-z][A-Za-z0-9]*|[0-9]+";
+		const string ANY_PATTERN = @".*";
+		const string SYMBOL_PATTERN = @"\S*";
 
 		public TaskmanParameter CurrentTaskList => new TaskmanParameter(
 			this, 
-			"list", 
+			"list",
 			"the name of the task list currently used",
-			IDENTIFIER_PATTERN, 
 			"inbox", 
+			IDENTIFIER_PATTERN, 
 			true);
 
 		public TaskmanParameter ImportantSymbol => new TaskmanParameter(
 			this, 
 			"importantsymbol",
 			"symbol that precedes important tasks",
-			ANY_PATTERN, 
-			"!");
+			"!",
+			SYMBOL_PATTERN); 
 
 		public TaskmanParameter CriticalSymbol => new TaskmanParameter(
 			this, 
-			"symbol that precedes critical tasks", 
 			"criticalsymbol",
-			ANY_PATTERN, 
-			"!!");
+			"symbol that precedes critical tasks", 
+			"!!",
+			SYMBOL_PATTERN);
 
 		public TaskmanParameter FinishedSymbol => new TaskmanParameter(
 			this, 
 			"finishedsymbol", 
 			"symbol that precedes tasks that are finished",
-			ANY_PATTERN, 
-			"x");
-
-		public TaskmanParameter IdPrefix => new TaskmanParameter(
-			this, 
-			"idprefix", 
-			"string prefix that precedes the task ID value",
-			ANY_PATTERN, 
-			"id. ");
+			"x",
+			SYMBOL_PATTERN);
 
 		public TaskmanParameter NormalTaskColor => new TaskmanParameter(
 			this,
 			"normalcolor",
 			"color that is used for normal priority tasks",
-			ENUM_VALUE_PATTERN,
-			Console.ForegroundColor.ToString());
+			Console.ForegroundColor.ToString(),
+			ENUM_VALUE_PATTERN);
 
 		public TaskmanParameter FinishedTaskColor => new TaskmanParameter(
 			this,
 			"finishedcolor",
 			"color that is used for finished tasks",
-			ENUM_VALUE_PATTERN,
-			ConsoleColor.Gray.ToString());
+			ConsoleColor.Gray.ToString(),
+			ENUM_VALUE_PATTERN);
 
 		public TaskmanParameter ImportantTaskColor => new TaskmanParameter(
 			this,
 			"importantcolor",
 			"color that is used for important tasks",
-			ENUM_VALUE_PATTERN,
-			ConsoleColor.Green.ToString());
+			ConsoleColor.Green.ToString(),
+			ENUM_VALUE_PATTERN);
 
 		public TaskmanParameter CriticalTaskColor => new TaskmanParameter(
 			this,
 			"criticalcolor",
 			"color that is used for critical tasks",
-			ENUM_VALUE_PATTERN,
-			ConsoleColor.Yellow.ToString());
+			ConsoleColor.Yellow.ToString(),
+			ENUM_VALUE_PATTERN);
 
 		public TaskmanParameter SortOrder => new TaskmanParameter(
 			this,
 			"sortorder",
-			"defines the tasks sorting order in the output",
-			ParseHelper.SortOrderRegex,
-			"is+pr-id+");
+			"defines the default tasks sorting order in the output",
+			"id+",
+			ParseHelper.SortOrderRegex);
 
-		private IEnumerable<TaskmanParameter> _supportedParameters;
+		public IEnumerable<TaskmanParameter> SupportedParameters => _supportedParameters;
+
+		IEnumerable<TaskmanParameter> _supportedParameters;
 
 		public TaskmanConfiguration()
 		{
@@ -214,14 +208,9 @@ namespace TaskMan.Control
 
 		public void SetParameter(string name, string value, bool setGlobally)
 		{
-			TaskmanParameter matchingParameter = _supportedParameters
-				.SingleOrDefault(parameter => parameter.Name == name);
+			TaskmanParameter matchingParameter = GetParameter(name);
 
-			if (matchingParameter == null)
-			{
-				throw new TaskManException($"Unknown parameter name '{name}'.");
-			}
-			else if (matchingParameter.IsUserScoped && setGlobally)
+			if (matchingParameter.IsUserScoped && setGlobally)
 			{
 				throw new TaskManException($"Parameter '{name}' can only be set at the user level");
 			}
@@ -234,20 +223,32 @@ namespace TaskMan.Control
 			configuration.Save(ConfigurationSaveMode.Full);
 		}
 
-		public string GetParameter(string name)
+		public string GetDefaultValue(string name)
+		{
+			return GetParameter(name).DefaultValue;
+		}
+
+		public TaskmanParameter GetParameter(string name)
 		{
 			TaskmanParameter matchingParameter = _supportedParameters
 				.SingleOrDefault(parameter => parameter.Name == name);
 
 			if (matchingParameter == null)
 			{
-				throw new TaskManException($"Unknown parameter name '{name}'.");
+				throw new TaskManException(Messages.UnknownParameterName, name);
 			}
+
+			return matchingParameter;
+		}
+
+		public string GetValue(string name, bool forceGetGlobal = false)
+		{
+			TaskmanParameter matchingParameter = GetParameter(name);
 
 			string userValue = _userConfiguration.AppSettings.Settings[name]?.Value;
 			string globalValue = _globalConfiguration.AppSettings.Settings[name]?.Value;
 
-			if (userValue != null)
+			if (userValue != null && !forceGetGlobal)
 			{
 				return userValue;
 			}
@@ -255,13 +256,13 @@ namespace TaskMan.Control
 			{
 				return globalValue;
 			}
-			else if (matchingParameter.DefaultValue != null)
+			else if (matchingParameter.IsUserScoped && forceGetGlobal)
 			{
-				return matchingParameter.DefaultValue;
+				return null;
 			}
 			else
 			{
-				throw new TaskManException($"Parameter {matchingParameter.Name} does not have a defaut value and an explicit value is not found in the configuration files."); 
+				return matchingParameter.DefaultValue;
 			}
 		}
 	}

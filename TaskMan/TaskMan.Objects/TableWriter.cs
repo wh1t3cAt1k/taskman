@@ -17,7 +17,7 @@ namespace TaskMan.Objects
 		/// <summary>
 		/// Allows line breaking inside the word.
 		/// </summary>
-		None,
+		Anywhere,
 		/// <summary>
 		/// Preferably breaks on whitespace,
 		/// but can break inside a word if it 
@@ -32,23 +32,12 @@ namespace TaskMan.Objects
 	/// </summary>
 	public enum Align
 	{
-		/// <summary>
-		/// Aligns the text left inside the
-		/// field.
-		/// </summary>
 		Left,
-		/// <summary>
-		/// Aligns the text right inside the
-		/// field.
-		/// </summary>
 		Right,
-		/// <summary>
-		/// Aligns the text centrally inside
-		/// the field.
-		/// </summary>
 		Center,
 	}
 
+	[Flags]
 	public enum TableBorders
 	{
 		None = 0,
@@ -65,6 +54,77 @@ namespace TaskMan.Objects
 		All = Outer | Inner,
 	}
 
+	public struct FieldRule
+	{
+		/// <summary>
+		/// Gets the field width.
+		/// </summary>
+		public int Width { get; }
+
+		/// <summary>
+		/// Gets the amount of left padding, in spaces.
+		/// </summary>
+		public int PaddingLeft { get; }
+
+		/// <summary>
+		/// Gets the amount of right padding, in spaces.
+		/// </summary>
+		public int PaddingRight { get; }
+
+		/// <summary>
+		/// Gets the full width of the field,
+		/// accounting for any left and right padding.
+		/// </summary>
+		public int FullWidth => Width + PaddingLeft + PaddingRight;
+
+		/// <summary>
+		/// Gets the amount of top padding, in lines.
+		/// </summary>
+		public int PaddingTop { get; }
+
+		/// <summary>
+		/// Gets the amount of bottom padding, in lines.
+		/// </summary>
+		/// <value>The padding bottom.</value>
+		public int PaddingBottom { get; }
+
+		/// <summary>
+		/// Gets the line breaking rules.
+		/// </summary>
+		public LineBreaking LineBreaking { get; }
+
+		/// <summary>
+		/// Gets the text alignment rules.
+		/// </summary>
+		public Align Align { get; }
+
+		public FieldRule(
+			int width = 10,
+			LineBreaking lineBreaking = LineBreaking.Anywhere,
+			Align align = Align.Left,
+			int paddingLeft = 0,
+			int paddingRight = 0,
+			int paddingTop = 0,
+			int paddingBottom = 0)
+		{
+			if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
+
+			if (paddingLeft < 0) throw new ArgumentOutOfRangeException(nameof(paddingLeft));
+			if (paddingRight < 0) throw new ArgumentOutOfRangeException(nameof(paddingRight));
+			if (paddingTop < 0) throw new ArgumentOutOfRangeException(nameof(paddingTop));
+			if (paddingBottom < 0) throw new ArgumentOutOfRangeException(nameof(paddingBottom));
+
+			this.Width = width;
+			this.Align = align;
+			this.LineBreaking = lineBreaking;
+
+			this.PaddingLeft = paddingLeft;
+			this.PaddingRight = paddingRight;
+			this.PaddingTop = paddingTop;
+			this.PaddingBottom = paddingBottom;
+		}
+	}
+
 	public class TableWriter : IDisposable
 	{
 		FieldRule[] _fieldRules;
@@ -78,84 +138,15 @@ namespace TaskMan.Objects
 		const string TOP_JOINT = "┬";
 		const string BOTTOM_JOINT = "┴";
 		const string LEFT_JOINT = "├";
-		const string JOINT = "┼";
 		const string RIGHT_JOINT = "┤";
 		const string HORIZONTAL_LINE = "─";
 		const string VERTICAL_LINE = "│";
+		const string INNER_JOINT = "┼";
+		const string INNER_HORIZONTAL_LINE = "─";
+		const string INNER_VERTICAL_LINE = "│";
 
 		private int LineHeight => 
 			_fieldRules.Max(fieldRule => fieldRule.PaddingTop + fieldRule.PaddingBottom);
-
-		public struct FieldRule
-		{
-			/// <summary>
-			/// Gets the field width.
-			/// </summary>
-			public int Width { get; }
-
-			/// <summary>
-			/// Gets the amount of left padding, in spaces.
-			/// </summary>
-			public int PaddingLeft { get; }
-
-			/// <summary>
-			/// Gets the amount of right padding, in spaces.
-			/// </summary>
-			public int PaddingRight { get; }
-
-			/// <summary>
-			/// Gets the full width of the field,
-			/// accounting for any left and right padding.
-			/// </summary>
-			public int FullWidth => Width + PaddingLeft + PaddingRight;
-
-			/// <summary>
-			/// Gets the amount of top padding, in lines.
-			/// </summary>
-			public int PaddingTop { get; }
-
-			/// <summary>
-			/// Gets the amount of bottom padding, in lines.
-			/// </summary>
-			/// <value>The padding bottom.</value>
-			public int PaddingBottom { get; }
-
-			/// <summary>
-			/// Gets the line breaking rules.
-			/// </summary>
-			public LineBreaking LineBreaking { get; }
-
-			/// <summary>
-			/// Gets the text alignment rules.
-			/// </summary>
-			public Align Align { get; }
-
-			public FieldRule(
-				int width = 10,
-				LineBreaking lineBreaking = LineBreaking.None,
-				Align align = Align.Left,
-				int paddingLeft = 0,
-				int paddingRight = 0,
-				int paddingTop = 0,
-				int paddingBottom = 0)
-			{
-				if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
-
-				if (paddingLeft < 0) throw new ArgumentOutOfRangeException(nameof(paddingLeft));
-				if (paddingRight < 0) throw new ArgumentOutOfRangeException(nameof(paddingRight));
-				if (paddingTop < 0) throw new ArgumentOutOfRangeException(nameof(paddingTop));
-				if (paddingBottom < 0) throw new ArgumentOutOfRangeException(nameof(paddingBottom));
-
-				this.Width = width;
-				this.Align = align;
-				this.LineBreaking = lineBreaking;
-
-				this.PaddingLeft = paddingLeft;
-				this.PaddingRight = paddingRight;
-				this.PaddingTop = paddingTop;
-				this.PaddingBottom = paddingBottom;
-			}
-		}
 
 		/// <summary>
 		/// Gets an empty line with whose width
@@ -164,7 +155,7 @@ namespace TaskMan.Objects
 		/// </summary>
 		private static string EmptyLine(FieldRule fieldRule)
 		{
-			return " ".Repeat(fieldRule.Width);
+			return " ".Replicate(fieldRule.Width);
 		}
 
 		/// <summary>
@@ -183,12 +174,11 @@ namespace TaskMan.Objects
 			resultingLines.AddRange(
 				Enumerable.Repeat(EmptyLine(fieldRule), fieldRule.PaddingTop));
 
-			if (fieldRule.LineBreaking == LineBreaking.None)
+			if (fieldRule.LineBreaking == LineBreaking.Anywhere)
 			{
-				resultingLines = text
+				resultingLines.AddRange(text
 					.Split(fieldRule.Width)
-					.Select(characters => new string(characters.ToArray()))
-					.ToList();
+					.Select(characters => new string(characters.ToArray())));
 			}
 			else if (fieldRule.LineBreaking == LineBreaking.Whitespace)
 			{
@@ -249,7 +239,12 @@ namespace TaskMan.Objects
 				}
 				else if (fieldRule.Align == Align.Center)
 				{
-					throw new NotImplementedException();
+					int remainingSpace = fieldRule.Width - line.Length;
+
+					return
+						" ".Replicate(remainingSpace / 2) +
+						line +
+						" ".Replicate((remainingSpace + 1) / 2);
 				}
 				else
 				{
@@ -298,37 +293,22 @@ namespace TaskMan.Objects
 			string middleJoint;
 			string rightJoint;
 
-			bool hasInnerVerticalBorders = 
-				(_tableBorders & TableBorders.InnerVertical) != 0;
-
 			if ((_tableBorders & borderType & TableBorders.OuterTop) != 0)
 			{
 				leftJoint = TOP_LEFT_JOINT;
-
-				middleJoint = hasInnerVerticalBorders ?
-					TOP_JOINT :
-					HORIZONTAL_LINE;
-
+				middleJoint = TOP_JOINT;
 				rightJoint = TOP_RIGHT_JOINT;
 			}
 			else if ((_tableBorders & borderType & TableBorders.InnerHorizontal) != 0)
 			{
 				leftJoint = LEFT_JOINT;
-
-				middleJoint = hasInnerVerticalBorders ?
-					JOINT :
-					HORIZONTAL_LINE;
-
+				middleJoint = INNER_JOINT;
 				rightJoint = RIGHT_JOINT;
 			}
 			else if ((_tableBorders & borderType & TableBorders.OuterBottom) != 0)
 			{
 				leftJoint = BOTTOM_LEFT_JOINT;
-
-				middleJoint = hasInnerVerticalBorders ?
-					BOTTOM_JOINT :
-					HORIZONTAL_LINE;
-
+				middleJoint = BOTTOM_JOINT;
 				rightJoint = BOTTOM_RIGHT_JOINT;
 			}
 			else
@@ -336,10 +316,21 @@ namespace TaskMan.Objects
 				return;
 			}
 
+			if (!borderType.HasFlag(TableBorders.OuterLeft)) leftJoint = string.Empty;
+			if (!borderType.HasFlag(TableBorders.InnerVertical)) middleJoint = string.Empty;
+			if (!borderType.HasFlag(TableBorders.OuterRight)) rightJoint = string.Empty;
+
+			string horizontalLineCharacter = 
+				borderType.HasFlag(TableBorders.InnerHorizontal) ?
+					INNER_HORIZONTAL_LINE :
+					HORIZONTAL_LINE;
+
 			_fieldRules.ForEach((fieldRule, isFirstColumn, isLastColumn) =>
 			{
 				_output.Write(isFirstColumn ? leftJoint : middleJoint);
-				_output.Write(HORIZONTAL_LINE.Repeat(fieldRule.FullWidth));
+				
+				_output.Write(
+					horizontalLineCharacter.Replicate(fieldRule.FullWidth));
 
 				if (isLastColumn)
 				{
@@ -360,10 +351,13 @@ namespace TaskMan.Objects
 			}
 
 			if ((_tableBorders & borderType & TableBorders.OuterLeft) != 0 ||
-			    (_tableBorders & borderType & TableBorders.InnerVertical) != 0 ||
 			    (_tableBorders & borderType & TableBorders.OuterRight) != 0)
 			{
 				_output.Write(VERTICAL_LINE);
+			}
+			else if ((_tableBorders & borderType & TableBorders.InnerVertical) != 0)
+			{
+				_output.Write(INNER_VERTICAL_LINE);
 			}
 			else
 			{
@@ -387,7 +381,7 @@ namespace TaskMan.Objects
 			for (int fieldIndex = 0; fieldIndex < fieldValues.Length; ++fieldIndex)
 			{
 				rowLines[fieldIndex] = MakeFieldLines(
-					fieldValues[fieldIndex]?.ToString() ?? string.Empty,
+					fieldValues[fieldIndex].ToString(),
 					_fieldRules[fieldIndex]);
 			}
 
@@ -401,7 +395,7 @@ namespace TaskMan.Objects
 				while (lineCollection.Count < maximumLines)
 				{
 					lineCollection.Enqueue(
-						" ".Repeat(_fieldRules[fieldIndex].FullWidth));
+						" ".Replicate(_fieldRules[fieldIndex].FullWidth));
 				}
 			});
 
@@ -430,8 +424,10 @@ namespace TaskMan.Objects
 				_output.WriteLine();
 			}
 
-			PrintHorizontalBorder(
-				isLastRow ? TableBorders.OuterBottom : TableBorders.InnerHorizontal);
+			if (isLastRow)
+			{
+				PrintHorizontalBorder(TableBorders.OuterBottom);
+			}
 		}
 
 		/// <summary>

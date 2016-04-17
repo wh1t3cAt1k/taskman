@@ -3,17 +3,27 @@
 	public static class Messages
 	{
 		public const string AndNumberMore = "...and {0} more.";
+		public const string AvailableTaskLists = "Available non-empty lists: ";
 		public const string YesNoConfirmationPrompt = "Confirm (y[es]/n[o]): ";
+		public const string ParameterResetToDefault = "Parameter '{0}' was reset to '{1}'.";
 		public const string Cancelled = "Cancelled.";
+		public const string UnknownCommandLineArguments = "Unknown command line arguments: {0}";
 		public const string CouldNotReadTaskList = "An error occurred while trying to read task list: {0}";
 		public const string Error = "Error: {0}";
 		public const string ErrorPerformingOperation = "Cannot {0}: {1}";
 		public const string ExceptionStackTrace = "Exception stack trace: ";
+		public const string NoParameterValue = "Parameter {0} does not have a defaut value and an explicit value is not found in the configuration files.";
 		public const string FlagNotSet = "The {0} flag value has not been set.";
 		public const string NoParameterName = "No parameter name specified for '{0}'.";
+		public const string UnknownParameterName = "Unknown parameter name '{0}'.";
 		public const string ParameterWasSetToValue = "Parameter '{0}' was set to '{1}'.";
+		public const string CurrentUserValueOfParameter = "User-level value: '{1}'.";
+		public const string CurrentGlobalValueOfParameter = "Global value: '{1}'.";
+		public const string ParameterHasNoDefault = "Parameter has no default.";
+		public const string DefaultValueOfParameter = "Default value: '{0}'.";
+		public const string CurrentTaskList = "Current list: '{0}'.";
 		public const string EntityDoesNotMakeSenseWithEntity = "'{0}' does not make sense with '{1}'.";
-		public const string InsufficientSetParameters = "Insufficient parameters in 'set' command. " + Messages.TypeHelpForCommandSyntax;
+		public const string InsufficientUpdateParameters = "Insufficient parameters in 'set' command. " + Messages.TypeHelpForCommandSyntax;
 		public const string InvalidTaskIdRange = "Invalid task ID range: the starting ID should not exceed the ending ID.";
 		public const string InvalidSetParameters = "Invalid 'set' command syntax. " + Messages.TypeHelpForCommandSyntax;
 		public const string MoreThanOneCommandMatchesInput = "More than one command matches the given input. Please be more specific.";
@@ -33,6 +43,7 @@
 		public const string TasksWereUpdated = "Updated {0} task(s) with new '{1}' value of '{2}'.";
 		public const string TaskWasDeleted = "Task with ID {0} [{1}] was successfully deleted.";
 		public const string TasksWereDeleted = "{0} tasks were successfully deleted.";
+		public const string TasksWereRenumbered = "{0} tasks were successfully renumbered.";
 		public const string TheFollowingObjectWillBeAction = "The following {0} will be {1}: ";
 		public const string TypeHelpForCommandSyntax = "Type 'taskman --help' to view command syntax.";
 		public const string ParameterNameWillBeSetToValue = "Parameter '{0}' will be set to '{1}'.";

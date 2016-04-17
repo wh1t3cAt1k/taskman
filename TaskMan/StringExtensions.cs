@@ -25,7 +25,7 @@ namespace TaskMan
 			}
 		}
 
-		public static string Repeat(this string text, int times)
+		public static string Replicate(this string text, int times)
 		{
 			if (times < 0) throw new ArgumentOutOfRangeException(nameof(times));
 

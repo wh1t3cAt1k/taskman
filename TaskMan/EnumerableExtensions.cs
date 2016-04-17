@@ -43,7 +43,26 @@ namespace TaskMan
 			return currentIndex;
 		}
 
+		/// <summary>
+		/// Performs an action upon each member of a sequence by incorporating
+		/// information about whether the current element is a first / last
+		/// element of a sequence.
+		/// </summary>
+		/// <param name="action">
+		/// The second / third arguments of the action specify whether the current
+		/// element is the first / last element of the sequence, respectively.
+		/// </param>
 		public static void ForEach<T>(this IEnumerable<T> sequence, Action<T, bool, bool> action)
+		{
+			sequence.ForEach((element, index, isLast) => action(element, index == 0, isLast));
+		}
+
+		/// <summary>
+		/// Performs an action upon each member of a sequence by incorporating
+		/// the current element's index and a value indicating whether the 
+		/// current element is the last element of the sequence.
+		/// </summary>
+		public static void ForEach<T>(this IEnumerable<T> sequence, Action<T, int, bool> action)
 		{
 			IEnumerator<T> enumerator = sequence.GetEnumerator();
 
@@ -52,16 +71,17 @@ namespace TaskMan
 			bool isLastElement;
 
 			T current = enumerator.Current;
+			int currentIndex = 0;
 
 			isLastElement = !enumerator.MoveNext();
-			action(current, true, isLastElement);
+			action(current, currentIndex++, isLastElement);
 
 			while (!isLastElement)
 			{
 				current = enumerator.Current;
 
 				isLastElement = !enumerator.MoveNext();
-				action(current, false, isLastElement);
+				action(current, currentIndex++, isLastElement);
 			}
 		}
 
