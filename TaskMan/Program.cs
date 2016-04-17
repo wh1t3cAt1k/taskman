@@ -516,10 +516,10 @@ namespace TaskMan
 				"tasks",
 				willBe);
 
-			_filteredTasks.Take(3).ForEach((task, isFirstTask, isLastTask) 
+			relevantTasks.Take(3).ForEach((task, isFirstTask, isLastTask) 
 				=> DisplayTask(task, isFirstTask, isLastTask, actionDescription));
 
-			if (_filteredTasks.Skip(3).Any())
+			if (relevantTasks.Skip(3).Any())
 			{
 				actionDescription.WriteLine(
 					Messages.AndNumberMore, 
