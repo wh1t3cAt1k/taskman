@@ -873,8 +873,12 @@ namespace TaskMan
 			{
 				this.CurrentOperation = "display help text";
 
-				_output.WriteLine(Assembly.GetExecutingAssembly().GetResourceText("TaskMan.HELP.txt"));
-				_optionSet.WriteOptionDescriptions(_output);
+				StringWriter optionDescriptions = new StringWriter();
+				_optionSet.WriteOptionDescriptions(optionDescriptions);
+
+				_output.WriteLine(
+					Assembly.GetExecutingAssembly().GetResourceText("TaskMan.HELP.txt"),
+					optionDescriptions);
 
 				return true;
 			}
@@ -1241,7 +1245,7 @@ namespace TaskMan
 				new FieldRule(2, LineBreaking.Anywhere, Align.Left, paddingLeft: 0, paddingRight: 1),
 				new FieldRule(5, LineBreaking.Anywhere, Align.Left, paddingLeft: 0, paddingRight: 1),
 				new FieldRule(45, LineBreaking.Whitespace, Align.Left, paddingLeft: 1, paddingRight: 1),
-				new FieldRule(15, LineBreaking.Whitespace, Align.Left, paddingLeft: 1, paddingRight: 1));
+				new FieldRule(20, LineBreaking.Whitespace, Align.Left, paddingLeft: 1, paddingRight: 1));
 
 			tableWriter.WriteLine(
 				isFirstTask,

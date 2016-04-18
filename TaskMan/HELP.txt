@@ -38,7 +38,8 @@
 
 	taskman (show|display) [flags]
 
-	> use flags to filter the tasks to be displayed.
+	> use flags to filter the tasks to be displayed
+	or specify the task display order.
 
 --> to complete tasks:
 
@@ -54,7 +55,7 @@
 
 --> to renumber tasks:
 
-	taskman renumber [orderbyflag]
+	taskman renumber [--orderby sortorder]
 
 	> renumbers the tasks, assigning them new zero-based IDs
 	in the order of display.
@@ -67,6 +68,9 @@
 	taskman (delete|remove) [flags]
 	 
 	> use flags to filter the tasks to be deleted.
+
+	> there is a 'clear' alias that removes
+	all tasks interactively.
 
 --> to configure program parameters:
 
@@ -84,6 +88,9 @@
 	> use --global flag to configure the parameter
 	globally and not just for the current user. 
 
+	> use --default flag to reset a parameter
+	to its default value.
+
 --> to view / switch the current task list:
 
 	taskman list [name]
@@ -100,14 +107,21 @@
 --> available command line options:
 
 {0}
-
 --> detailed discussion:
+
+	--id
+
+	> you can specify a list of comma-separated id's
+	like '1,2,10'.
+
+	> alternatively, you can specify a range of id's
+	like '5-20'.
 
 	--orderby
 
 	> the tasks exhibit the following properties that
 	you can order by: 'id', 'isfinished', 'duedate',
-	'description', 'priority'.
+	'description', and 'priority'.
 
 	> the value of the --orderby option should be a
 	sequence of task properties, followed by a '+'
@@ -141,3 +155,21 @@
 	> natural language syntax supports 'today',
 	'tomorrow', 'this/next monday..sunday', and
 	'this/next week/month/year'. 
+
+--> example usages:
+
+	> taskman add remember the milk --priority critical --due tomorrow
+
+	> taskman add pay bills --due 'this month'
+
+	> taskman show --like milk --orderby isfinished+desc-
+
+	> taskman show --skip 100 --limit 10
+
+	> taskman config sortorder priority+id+
+
+	> taskman set --id 1,2,10 priority Important
+
+	> taskman reopen --like 'change tires'
+
+	> taskman delete --all --interactive
