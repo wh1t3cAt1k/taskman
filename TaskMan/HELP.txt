@@ -11,7 +11,7 @@
 
 	taskman (add|new) [flags] description
 
-	> use flags to specify a task's priority.
+	> use flags to specify a task's priority or a due date.
 
 	> ID will be assigned to a task automatically.
     
@@ -24,12 +24,15 @@
 	> if 'parameter' is 'description',
 	then 'args' will be concatenated into the new description.
 		
-	> if 'parameter' is 'importance' or 'priority'
+	> if 'parameter' is 'importance' or 'priority',
 	then 'args' should be a number from 1 to 3, or the
 	priority's text value (e.g. 'Normal').
 
-	> if 'parameter' is 'finished'/'completed'/'accomplished'
+	> if 'parameter' is 'finished'/'completed'/'accomplished',
 	then 'args' should be '0', 'false', '1', or 'true'.
+
+	> if 'parameter' is 'duedate'/'due',
+	then 'args' should be the due date representation.
 
 --> to show tasks:
 
@@ -43,10 +46,98 @@
 
 	> use flags to filter the tasks to be marked as finished.
 
+--> to reopen tasks:
+
+	taskman (reopen|unfinish|uncomplete) [flags]
+
+	> use flags to filter the tasks to be reopened.
+
+--> to renumber tasks:
+
+	taskman renumber [orderbyflag]
+
+	> renumbers the tasks, assigning them new zero-based IDs
+	in the order of display.
+
+	> use an --orderby flag to override the sorting order
+	defined in the configuration file.
+
 --> to remove a task:
 
 	taskman (delete|remove) [flags]
 	 
 	> use flags to filter the tasks to be deleted.
 
+--> to configure program parameters:
+
+	taskman config [param] [--global|--default] [value]
+
+	> raw 'config' displays a list of available
+	parameters along with their current values.
+
+	> 'config param' displays the current value of
+	the parameter along with its default value
+
+	> 'config param value' assigns the provided value to
+	the specified parameter
+
+	> use --global flag to configure the parameter
+	globally and not just for the current user. 
+
+--> to view / switch the current task list:
+
+	taskman list [name]
+
+	> raw 'list' displays the current list name
+	along with the available non-empty task lists.
+
+	> no empty lists are displayed because the list
+	files are deleted as soon as they become empty.
+
+	> specifying a name argument will change the
+	currently used list. no spaces are allowed.
+
 --> available command line options:
+
+{0}
+
+--> detailed discussion:
+
+	--orderby
+
+	> the tasks exhibit the following properties that
+	you can order by: 'id', 'isfinished', 'duedate',
+	'description', 'priority'.
+
+	> the value of the --orderby option should be a
+	sequence of task properties, followed by a '+'
+	(sort ascending) or a '-' (sort descending).
+
+	> you can specify only a part of a property name
+	as long as it does not produce ambiguity.
+
+	> for example, --orderby pr+is+desc- will first
+	sort tasks ascending by priority, then ascending
+	by being finished, and then descending by description.
+
+	--duedate
+
+	> there are three ways to specify a task due date -
+	absolute, relative, and using natural language.
+
+	> using absolute syntax, just specify a string that
+	can be parsed into a datetime, like '21 Jan 2025'
+	or '2025-01-21'.
+
+	> relative syntax adds a given number of years,
+	months, weeks or days to a given date.
+
+		* for example, '+2m-2d' will add two months
+		and subtract two days relative to today.
+
+		* '2025-01-21::+2w' will add two weeks to
+		21 January 2025.
+
+	> natural language syntax supports 'today',
+	'tomorrow', 'this/next monday..sunday', and
+	'this/next week/month/year'. 

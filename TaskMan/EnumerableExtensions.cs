@@ -10,6 +10,16 @@ namespace TaskMan
 	/// </summary>
 	public static class EnumerableExtensions
 	{
+		public static IEnumerable<T> Except<T>(this IEnumerable<T> sequence, params T[] arguments)
+		{
+			return sequence.Except(arguments as IEnumerable<T>);
+		}
+
+		public static IEnumerable<T> Concat<T>(this IEnumerable<T> sequence, params T[] arguments)
+		{
+			return sequence.Concat(arguments as IEnumerable<T>);
+		}
+
 		/// <summary>
 		/// Peforms an action upon each member of a sequence.
 		/// </summary>

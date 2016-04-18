@@ -63,6 +63,7 @@ namespace TaskMan
 		static readonly Regex TaskSetDescriptionRegex = new Regex(@"^(description)$", StandardRegexOptions);
 		static readonly Regex TaskSetFinishedRegex = new Regex(@"^(finished|completed|accomplished)$", StandardRegexOptions);
 		static readonly Regex TaskSetPriorityRegex = new Regex(@"^(priority|importance)$", StandardRegexOptions);
+		static readonly Regex TaskSetDueDateRegex = new Regex(@"^(due|duedate)$", StandardRegexOptions);
 
 		#endregion
 
@@ -187,6 +188,7 @@ namespace TaskMan
 		Command _addTaskCommand;
 		Command _deleteTasksCommand; 
 		Command _completeTasksCommand;
+		Command _reopenTasksCommand;
 		Command _displayTasksCommand;
 		Command _updateTasksCommand;
 		Command _configureCommand;
@@ -339,31 +341,39 @@ namespace TaskMan
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
-					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
-					.Concat(new [] { _interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag }));
+					.Except(_numberLimitFlag, _numberSkipFlag)
+					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag));
 
 			_completeTasksCommand = new Command(
 				@"^(complete|finish|accomplish)$",
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
-					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
-					.Concat(new [] { _interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag }));
+					.Except(_numberLimitFlag, _numberSkipFlag)
+					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag));
+
+			_reopenTasksCommand = new Command(
+				@"^(uncomplete|unfinish|reopen)$",
+				isReadUpdateDelete: true,
+				supportedFlags: _flags
+					.Where(flag => flag is ITaskFilter)
+					.Except(_numberLimitFlag, _numberSkipFlag)
+					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag));
 
 			_displayTasksCommand = new Command(
 				@"^(show|display|view)$",
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
-					.Concat(new Flag[] { _includeAllFlag, _verboseFlag, _orderByFlag, _renumberFlag }));
+					.Concat(_includeAllFlag, _verboseFlag, _orderByFlag, _renumberFlag));
 			
 			_updateTasksCommand = new Command(
 				@"^(update|change|modify|set)$",
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
-					.Except(new [] { _numberLimitFlag, _numberSkipFlag })
-					.Concat(new [] { _interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag }));
+					.Except(_numberLimitFlag, _numberSkipFlag)
+					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag));
 
 			_listCommand = new Command(
 				@"^(list)$",
@@ -763,6 +773,34 @@ namespace TaskMan
 						totalTasksFinished);
 				}
 			}
+			else if (executingCommand == _reopenTasksCommand)
+			{
+				this.CurrentOperation = "reopen tasks";
+
+				RequireExplicitFiltering(commandName);
+				RequireNoMoreArguments();
+
+				if (!ConfirmOperation("reopened")) return;
+
+				int totalTasksReopened =
+					_filteredTasks.ForEach(task => task.IsFinished = false);
+
+				_saveTasks(_allTasks);
+
+				if (_filteredTasks.IsSingleton())
+				{
+					OutputWriteLine(
+						Messages.TaskWasReopened,
+						_filteredTasks.Single().ID,
+						_filteredTasks.Single().Description);
+				}
+				else
+				{
+					OutputWriteLine(
+						Messages.TasksWereReopened,
+						totalTasksReopened);
+				}
+			}
 			else if (executingCommand == _configureCommand)
 			{
 				this.CurrentOperation = "configure program parameters";
@@ -1092,6 +1130,15 @@ namespace TaskMan
 
 				totalTasksUpdated = _filteredTasks.ForEach(task => task.IsFinished = isFinished);
 			}
+			else if (TaskSetDueDateRegex.IsMatch(parameterToChange))
+			{
+				DateTime dueDate = ParseHelper.ParseTaskDueDate(_commandLineArguments.PopFirst());
+				parameterStringValue = dueDate.ToString("MMMMM dd, yyyy");
+
+				RequireNoMoreArguments();
+
+				totalTasksUpdated = _filteredTasks.ForEach(task => task.DueDate = dueDate);
+			}
 			else
 			{
 				throw new TaskManException(Messages.InvalidSetParameters);
@@ -1189,7 +1236,7 @@ namespace TaskMan
 			}
 
 			TableWriter tableWriter = new TableWriter(
-				_output,
+				output,
 				TableBorders.None,
 				new FieldRule(2, LineBreaking.Anywhere, Align.Left, paddingLeft: 0, paddingRight: 1),
 				new FieldRule(5, LineBreaking.Anywhere, Align.Left, paddingLeft: 0, paddingRight: 1),
