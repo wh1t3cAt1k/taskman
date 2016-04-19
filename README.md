@@ -3,7 +3,7 @@
 
 TaskMan is a simple CLI application that allows you to manage your everyday tasks in the form of a todo list.
 
-**Current version**: 0.2.0
+**Current version**: 0.3.0
 
 TaskMan follows (or at least intends to follow) [semantic versioning](http://semver.org/). No version until 1.0.0 can be considered 'stable' with regards to the program's functionality or public interface.
 

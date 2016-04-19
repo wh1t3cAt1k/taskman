@@ -1,4 +1,4 @@
---| taskman v0.2 by Pavel Kabir |--
+--| taskman v0.3 by Pavel Kabir |--
 
 --> Syntax: taskman [operation] [flags] [args]
 
