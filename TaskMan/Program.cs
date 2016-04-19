@@ -233,6 +233,9 @@ namespace TaskMan
 
 		Alias _switchTaskListAlias;
 		Alias _clearTasksAlias;
+		Alias _helpAlias;
+		Alias _versionAlias;
+		Alias _licenseAlias;
 
 		#endregion
 
@@ -429,6 +432,18 @@ namespace TaskMan
 			_clearTasksAlias = new Alias(
 				"clear",
 				$"{_deleteTasksCommand.ExampleUsage} {_includeAllFlag.ExampleUsage} {_interactiveFlag.ExampleUsage}");
+
+			_helpAlias = new Alias(
+				"help",
+				$"{_displayHelpFlag.ExampleUsage}");
+
+			_versionAlias = new Alias(
+				"version",
+				$"{_displayVersionFlag.ExampleUsage}");
+
+			_licenseAlias = new Alias(
+				"alias",
+				$"{_displayLicenseFlag.ExampleUsage}");
 
 			_aliases = privateFields
 				.Where(fieldInfo => fieldInfo.FieldType == typeof(Alias))
