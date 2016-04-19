@@ -33,7 +33,7 @@ namespace TaskMan
 					Console.Write(">> ");
 					args = StringExtensions.SplitCommandLine(Console.ReadLine()).ToArray();
 
-					if (Regex.IsMatch(args.First(), "^(exit|quit)$", RegexOptions.IgnoreCase))
+					if (Regex.IsMatch(args.FirstOrDefault(), "^(exit|quit)$", RegexOptions.IgnoreCase))
 						return;
 				}
 
