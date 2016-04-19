@@ -257,6 +257,26 @@ namespace TaskMan
 				.And.Not.Contain("second")
 				.And.Contains("third"));
 		}
+
+		[Test]
+		public void Test_SplitCommandLine_SplitsArgumentsCorrectly()
+		{
+			Assert.That(
+				StringExtensions.SplitCommandLine(@"show ""hello"""),
+				Is.EqualTo(new string[] { "show", "hello" }));
+
+			Assert.That(
+				StringExtensions.SplitCommandLine(@"show --orderby a+b-d+"),
+				Is.EqualTo(new string[] { "show", "--orderby", "a+b-d+" }));
+
+			Assert.That(
+				StringExtensions.SplitCommandLine(@"'show' '--like' 'hello'"),
+				Is.EqualTo(new string[] { "show", "--like", "hello" }));
+
+			Assert.That(
+				StringExtensions.SplitCommandLine(@"'""show""'"),
+				Is.EqualTo(new string[] { @"""show""" }));
+		}
 	}
 }
 

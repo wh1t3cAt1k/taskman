@@ -15,37 +15,55 @@ namespace TaskMan
 {
 	public class Program
 	{
-		public static int Main(string[] args)
+		public static void Main(string[] args)
 		{
-			TaskMan program = new TaskMan();
+			bool shellMode = 
+				args.Length == 1 &&
+				Regex.IsMatch(args[0], "^(shell|repl)$", RegexOptions.IgnoreCase);
 
-			try
+			if (shellMode)
 			{
-				program.Run(args);
-			}
-			catch (Exception exception)
-			{
-				if (program.IsVerbose)
-				{
-					program.ErrorStream.WriteLine(
-						Messages.ErrorPerformingOperation,
-						program.CurrentOperation,
-						exception.Message.DecapitaliseFirstLetter());
-
-					program.ErrorStream.WriteLine(Messages.ExceptionStackTrace);
-					program.ErrorStream.Write(exception.StackTrace);
-				}
-				else
-				{
-					program.ErrorStream.WriteLine(
-						Messages.Error,
-						exception.Message.DecapitaliseFirstLetter());
-				}
-
-				return -1;
+				Console.WriteLine("Entering shell.");
 			}
 
-			return 0;
+			do
+			{
+				if (shellMode)
+				{
+					Console.Write(">> ");
+					args = StringExtensions.SplitCommandLine(Console.ReadLine()).ToArray();
+
+					if (Regex.IsMatch(args.First(), "^(exit|quit)$", RegexOptions.IgnoreCase))
+						return;
+				}
+
+				TaskMan program = new TaskMan();
+
+				try
+				{
+					program.Run(args);
+				}
+				catch (Exception exception)
+				{
+					if (program.IsVerbose)
+					{
+						program.ErrorStream.WriteLine(
+							Messages.ErrorPerformingOperation,
+							program.CurrentOperation,
+							exception.Message.DecapitaliseFirstLetter());
+
+						program.ErrorStream.WriteLine(Messages.ExceptionStackTrace);
+						program.ErrorStream.Write(exception.StackTrace);
+					}
+					else
+					{
+						program.ErrorStream.WriteLine(
+							Messages.Error,
+							exception.Message.DecapitaliseFirstLetter());
+					}
+				}
+			}
+			while (shellMode);
 		}
 	}
 
