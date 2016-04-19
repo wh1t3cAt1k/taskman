@@ -112,7 +112,11 @@
 	> enters a looped read-eval-print mode 
 	continuously listening to new commands.
 
-	> to exit repl mode, type 'quit' or 'exit'.
+	> 'repl' and 'shell' are meta-commands
+	that are unavailable when already in REPL 
+	mode, so Leo would be disappointed.
+
+	> to exit REPL mode, type 'quit' or 'exit'.
 
 	> to clear screen in the shell mode, type 'cls'.
 

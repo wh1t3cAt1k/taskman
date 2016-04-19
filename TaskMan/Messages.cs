@@ -8,7 +8,7 @@
 		public const string ParameterResetToDefault = "Parameter '{0}' was reset to '{1}'.";
 		public const string Cancelled = "Cancelled.";
 		public const string EnteringShell = "Entering taskman REPL. Type 'quit' or 'exit' when finished.";
-		public const string ExitingShell = "You are leaving the taskman REPL. Goodbye.";
+		public const string ExitingShell = "Leaving taskman REPL. Goodbye.";
 		public const string UnknownCommandLineArguments = "Unknown command line arguments: {0}";
 		public const string CouldNotReadTaskList = "An error occurred while trying to read task list: {0}";
 		public const string Error = "Error: {0}";
