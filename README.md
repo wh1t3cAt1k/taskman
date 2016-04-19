@@ -1,17 +1,31 @@
 # TaskMan - a CLI todo list
 ## Description
 
-TaskMan is a simple CLI application that allows you to manage your everyday tasks in the form of a todo list.
+TaskMan is a convenient CLI application that allows you to manage your everyday tasks in the form of a to-do list.
 
-**Current version**: 0.3.0
+## Example usage
 
-TaskMan follows (or at least intends to follow) [semantic versioning](http://semver.org/). No version until 1.0.0 can be considered 'stable' with regards to the program's functionality or public interface.
+    > taskman add remember the milk --p critical --due tomorrow
+
+    > taskman show --like milk --orderby isfinished+desc-
+
+    > taskman config sortorder priority+id+
+
+    > taskman set --id 1,2,10 priority Important
+
+    > taskman reopen --like 'change tires'
+
+    > taskman delete --all --interactive
 
 ## Why TaskMan?
 
 * CLI is old school.
 * Improves typing speed.
 * You look like a hacker!
+
+**Current version**: 0.3.0
+
+TaskMan follows (or at least intends to follow) [semantic versioning](http://semver.org/). No version until 1.0.0 can be considered 'stable' with regards to the program's functionality or public interface.
 
 ## System requirements
 
