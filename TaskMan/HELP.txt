@@ -1,6 +1,7 @@
 ---| TaskMan v. 0.2 by Pavel Kabir |--
 
 --> Syntax: taskman [operation] [flags] [args]
+
 --> Operations:
 
 --> to show this help text: 
@@ -103,6 +104,17 @@
 
 	> specifying a name argument will change the
 	currently used list. no spaces are allowed.
+
+--> not to type 'taskman' each time:
+
+	taskman (repl|shell)
+
+	> enters a looped read-eval-print mode 
+	continuously listening to new commands.
+
+	> to exit repl mode, type 'quit' or 'exit'.
+
+	> to clear screen in the shell mode, type 'cls'.
 
 --> available command line options:
 

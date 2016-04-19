@@ -23,7 +23,7 @@ namespace TaskMan
 
 			if (shellMode)
 			{
-				Console.WriteLine("Entering shell.");
+				Console.WriteLine(Messages.EnteringShell);
 			}
 
 			do
@@ -33,8 +33,20 @@ namespace TaskMan
 					Console.Write(">> ");
 					args = StringExtensions.SplitCommandLine(Console.ReadLine()).ToArray();
 
-					if (Regex.IsMatch(args.FirstOrDefault(), "^(exit|quit)$", RegexOptions.IgnoreCase))
+					if (!args.Any())
+					{
+						continue;
+					}
+					else if (Regex.IsMatch(args.First(), "^(exit|quit)$", RegexOptions.IgnoreCase))
+					{
+						Console.WriteLine(Messages.ExitingShell);
 						return;
+					}
+					else if (Regex.IsMatch(args.First(), "^cls$", RegexOptions.IgnoreCase))
+					{
+						Console.Clear();
+						continue;
+					}
 				}
 
 				TaskMan program = new TaskMan();

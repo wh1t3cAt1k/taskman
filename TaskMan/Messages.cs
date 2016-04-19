@@ -7,6 +7,8 @@
 		public const string YesNoConfirmationPrompt = "Confirm (y[es]/n[o]): ";
 		public const string ParameterResetToDefault = "Parameter '{0}' was reset to '{1}'.";
 		public const string Cancelled = "Cancelled.";
+		public const string EnteringShell = "Entering taskman REPL. Type 'quit' or 'exit' when finished.";
+		public const string ExitingShell = "You are leaving the taskman REPL. Goodbye.";
 		public const string UnknownCommandLineArguments = "Unknown command line arguments: {0}";
 		public const string CouldNotReadTaskList = "An error occurred while trying to read task list: {0}";
 		public const string Error = "Error: {0}";
@@ -51,7 +53,7 @@
 		public const string ParameterNameWillBeSetToValue = "Parameter '{0}' will be set to '{1}'.";
 		public const string RequiredFlagNotSet = "Required flag {0} was not specified";
 		public const string UknownBooleanValue = "Cannot parse '{0}' into a boolean value.";
-		public const string UnknownCommand = "Unknown command '{0}'. " + Messages.TypeHelpForCommandSyntax;
+		public const string UnknownCommand = "Unknown command '{0}'. ";
 		public const string UnknownColor = "Unknown console color '{0}'.";
 		public const string UnknownPriorityLevel = "Unknown priority level '{0}'.";
 		public const string UnknownIdOrIdRange = "Unknown ID or ID range '{0}'.";
