@@ -257,6 +257,8 @@ namespace TaskMan
 		Alias _helpAlias;
 		Alias _versionAlias;
 		Alias _licenseAlias;
+		Alias _showPendingAlias;
+		Alias _showFinishedAlias;
 
 		#endregion
 
@@ -463,8 +465,16 @@ namespace TaskMan
 				$"{_displayVersionFlag.ExampleUsage}");
 
 			_licenseAlias = new Alias(
-				"alias",
+				"license",
 				$"{_displayLicenseFlag.ExampleUsage}");
+
+			_showPendingAlias = new Alias(
+				"showp",
+				$"{_displayTasksCommand.ExampleUsage} {_pendingFilterFlag.ExampleUsage}");
+
+			_showFinishedAlias = new Alias(
+				"showf",
+				$"{_displayTasksCommand.ExampleUsage} {_pendingFilterFlag.ExampleUsage}");
 
 			_aliases = privateFields
 				.Where(fieldInfo => fieldInfo.FieldType == typeof(Alias))
