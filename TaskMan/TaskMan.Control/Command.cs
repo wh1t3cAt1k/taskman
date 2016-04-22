@@ -59,7 +59,7 @@ namespace TaskMan.Control
 		/// <c>^(create|add|delete)$</c>, this property
 		/// must return <c>create</c>.
 		/// </example>
-		public string ExampleUsage 
+		public string Usage 
 		{
 			get
 			{

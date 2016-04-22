@@ -450,31 +450,31 @@ namespace TaskMan
 			// -
 			_switchTaskListAlias = new Alias(
 				"switch",
-				$"{_configureCommand.ExampleUsage} {_configuration.CurrentTaskList.Name}");
+				$"{_configureCommand.Usage} {_configuration.CurrentTaskList.Name}");
 
 			_clearTasksAlias = new Alias(
 				"clear",
-				$"{_deleteTasksCommand.ExampleUsage} {_includeAllFlag.ExampleUsage} {_interactiveFlag.ExampleUsage}");
+				$"{_deleteTasksCommand.Usage} {_includeAllFlag.Usage} {_interactiveFlag.Usage}");
 
 			_helpAlias = new Alias(
 				"help",
-				$"{_displayHelpFlag.ExampleUsage}");
+				$"{_displayHelpFlag.Usage}");
 
 			_versionAlias = new Alias(
 				"version",
-				$"{_displayVersionFlag.ExampleUsage}");
+				$"{_displayVersionFlag.Usage}");
 
 			_licenseAlias = new Alias(
 				"license",
-				$"{_displayLicenseFlag.ExampleUsage}");
+				$"{_displayLicenseFlag.Usage}");
 
 			_showPendingAlias = new Alias(
 				"showp",
-				$"{_displayTasksCommand.ExampleUsage} {_pendingFilterFlag.ExampleUsage}");
+				$"{_displayTasksCommand.Usage} {_pendingFilterFlag.Usage}");
 
 			_showFinishedAlias = new Alias(
 				"showf",
-				$"{_displayTasksCommand.ExampleUsage} {_pendingFilterFlag.ExampleUsage}");
+				$"{_displayTasksCommand.Usage} {_pendingFilterFlag.Usage}");
 
 			_aliases = privateFields
 				.Where(fieldInfo => fieldInfo.FieldType == typeof(Alias))
@@ -898,7 +898,7 @@ namespace TaskMan
 
 					this.Run(new []
 					{
-						_configureCommand.ExampleUsage,
+						_configureCommand.Usage,
 						_configuration.CurrentTaskList.Name,
 						newListName
 					});
@@ -1074,8 +1074,8 @@ namespace TaskMan
 				{
 					throw new TaskManException(
 						Messages.EntityDoesNotMakeSenseWithEntity,
-						_configureCommand.ExampleUsage,
-						_defaultFlag.ExampleUsage);
+						_configureCommand.Usage,
+						_defaultFlag.Usage);
 				}
 
 				string parameterValue = _commandLineArguments.PopFirst();

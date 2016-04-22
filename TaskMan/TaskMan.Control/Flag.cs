@@ -58,7 +58,7 @@ namespace TaskMan.Control
 		/// <c>d=|description=|desc=</c>, then this 
 		/// property will return <c>--description</c>.
 		/// </example>
-		public string ExampleUsage
+		public string Usage
 		{ 
 			get
 			{
