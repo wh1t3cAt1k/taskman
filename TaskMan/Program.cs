@@ -122,113 +122,28 @@ namespace TaskMan
 
 		IEnumerable<Flag> _flags;
 
-		Flag<bool> _displayHelpFlag = new Flag<bool>(
-			"displays TaskMan's help text", 
-			"?|help");
+		Flag<bool> _displayHelpFlag;
+		Flag<bool> _displayLicenseFlag;
+		Flag<bool> _displayVersionFlag;
+		Flag<bool> _configurationGlobalFlag;
+		Flag<bool> _interactiveFlag;
+		Flag<bool> _verboseFlag;
+		Flag<bool> _silentFlag;
+		Flag<bool> _includeAllFlag;
+		Flag<bool> _pendingFilterFlag;
+		Flag<bool> _finishedFilterFlag;
+		Flag<bool> _renumberFlag;
+		Flag<bool> _defaultFlag;
 
-		Flag<bool> _displayLicenseFlag = new Flag<bool>(
-			"displays TaskMan's licensing terms", 
-			"license");
+		Flag<string> _dueDateFlag;
+		Flag<string> _dueBeforeFlag;
+		Flag<string> _priorityFlag;
+		Flag<string> _identityFilterFlag;
+		Flag<string> _descriptionFilterFlag;
+		Flag<string> _orderByFlag;
 
-		Flag<bool> _displayVersionFlag = new Flag<bool>(
-			"displays TaskMan's version", 
-			"version");
-
-		Flag<bool> _configurationGlobalFlag = new Flag<bool>(
-			"specifies that the provided configuration parameter should be set globally and not just for the current user",
-			"G|global");
-
-		Flag<bool> _interactiveFlag = new Flag<bool>(
-			"displays a confirmation prompt before executing an operation", 
-			"I|interactive");
-
-		Flag<bool> _verboseFlag = new Flag<bool>(
-			"increase error message verbosity",
-			"v|verbose");
-
-		Flag<bool> _silentFlag = new Flag<bool>(
-			"do not display any messages except errors",
-			"S|silent");
-
-		Flag<bool> _includeAllFlag = new Flag<bool>(
-			"forces an operation to be executed upon all tasks", 
-			"A|all");
-
-		Flag<string> _dueDateFlag = new TaskFilterFlag<string>(
-			"filters tasks by being due on the specified date or specifies a new task's due date",
-			"d=|due=|duedate=",
-			filterPriority: 1,
-			filterPredicate: (flagValue, task) =>
-				task.DueDate == ParseHelper.ParseTaskDueDate(flagValue));
-
-		Flag<string> _dueBeforeFlag = new TaskFilterFlag<string>(
-			"filters tasks by being due no later than the specified date",
-			"D=|before=",
-			filterPriority: 1,
-			filterPredicate: (flagValue, task) =>
-				task.DueDate <= ParseHelper.ParseTaskDueDate(flagValue));
-
-		Flag<string> _priorityFlag = new TaskFilterFlag<string>(
-			"filters tasks by priority or specifies a new task's priority", 
-			"p=|priority=",
-			filterPriority: 1,
-			filterPredicate: (flagValue, task) => 
-				task.Priority == ParseHelper.ParsePriority(flagValue));
-
-		Flag<string> _identityFilterFlag = new TaskFilterFlag<string>(
-            "filters tasks by their ID or ID range",
-            "i=|id=",
-			filterPriority: 1,
-			filterPredicate: (flagValue, task) => 
-			{
-				IEnumerable<int> allowedIds = ParseHelper.ParseTaskId(flagValue);
-				return allowedIds.Contains(task.ID);
-			});
-
-		Flag<bool> _pendingFilterFlag = new TaskFilterFlag<bool>(
-			"filters out any finished tasks", 
-			"P|pending|unfinished",
-			filterPriority: 1,
-			filterPredicate: (_, task) => task.IsFinished == false);
-
-		Flag<bool> _finishedFilterFlag = new TaskFilterFlag<bool>(
-			"filters out any unfinished tasks", 
-			"F|finished|completed",
-			filterPriority: 1,
-			filterPredicate: (_, task) => task.IsFinished == true);
-
-		Flag<string> _descriptionFilterFlag = new TaskFilterFlag<string>(
-			"filters tasks by their description matching a regex", 
-			"l=|like=",
-			filterPriority: 1,
-			filterPredicate: (pattern, task) => Regex.IsMatch(
-				task.Description, 
-				pattern, 
-				RegexOptions.IgnoreCase));
-
-		Flag<int> _numberSkipFlag = new TaskFilterFlag<int>(
-            "skips a given number of tasks when displaying the result",
-            "skip=",
-            filterPriority: 2,
-            filterPredicate: (flagValue, task, taskIndex) => taskIndex + 1 > flagValue);
-
-		Flag<int> _numberLimitFlag = new TaskFilterFlag<int>(
-			"limits the total number of tasks displayed",
-			"n=|limit=",
-			filterPriority: 3,
-			filterPredicate: (flagValue, task, taskIndex) => taskIndex < flagValue);
-
-		Flag<string> _orderByFlag = new Flag<string>(
-			"orders the tasks by the specified criteria",
-			"s=|orderby=|sort=");
-
-		Flag<bool> _renumberFlag = new Flag<bool>(
-			"before showing tasks, reassign task IDs in the display order",
-			"r|renumber");
-
-		Flag<bool> _defaultFlag = new Flag<bool>(
-			"resets a parameter to its default value",
-			"default|reset");
+		Flag<int> _numberSkipFlag;
+		Flag<int> _numberLimitFlag;
 
 		#endregion
 
@@ -245,6 +160,7 @@ namespace TaskMan
 		Command _configureCommand;
 		Command _listCommand;
 		Command _renumberCommand;
+		Command _exportCommand;
 
 		#endregion
 
@@ -366,30 +282,153 @@ namespace TaskMan
 			this._optionSet = new OptionSet();
 
 			// Collect non-public instance fields
+			// and initialize flags / commands / aliases
 			// - 
 			IEnumerable<FieldInfo> privateFields = 
 				typeof(TaskMan).GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
 
-			// Collect flags
+			InitializeFlags(privateFields);
+			InitializeCommands(privateFields);
+			InitializeAliases(privateFields);
+
+			// Setup IO
 			// -
+			_readTasks = taskReadFunction ?? this.ReadTasksFromFile;
+			_saveTasks = taskSaveFunction ?? this.SaveTasksIntoFile;
+
+			_output = outputStream ?? this._output;
+			_error = errorStream ?? this._error;
+		}
+
+		private void InitializeFlags(IEnumerable<FieldInfo> privateFields)
+		{
+			_displayHelpFlag = new Flag<bool>(
+				"displays TaskMan's help text",
+				"?|help");
+
+			_displayLicenseFlag = new Flag<bool>(
+				"displays TaskMan's licensing terms",
+				"license");
+
+			_displayVersionFlag = new Flag<bool>(
+				"displays TaskMan's version",
+				"version");
+
+			_configurationGlobalFlag = new Flag<bool>(
+				"specifies that the provided configuration parameter should be set globally and not just for the current user",
+				"G|global");
+
+			_interactiveFlag = new Flag<bool>(
+				"displays a confirmation prompt before executing an operation",
+				"I|interactive");
+
+			_verboseFlag = new Flag<bool>(
+				"increase error message verbosity",
+				"v|verbose");
+
+			_silentFlag = new Flag<bool>(
+				"do not display any messages except errors",
+				"S|silent");
+
+			_includeAllFlag = new Flag<bool>(
+				"forces an operation to be executed upon all tasks",
+				"A|all");
+
+			_dueDateFlag = new TaskFilterFlag<string>(
+				"filters tasks by being due on the specified date or specifies a new task's due date",
+				"d=|due=|duedate=",
+				filterPriority: 1,
+				filterPredicate: (flagValue, task) =>
+					task.DueDate == ParseHelper.ParseTaskDueDate(flagValue));
+
+			_dueBeforeFlag = new TaskFilterFlag<string>(
+				"filters tasks by being due no later than the specified date",
+				"D=|before=",
+				filterPriority: 1,
+				filterPredicate: (flagValue, task) =>
+					task.DueDate <= ParseHelper.ParseTaskDueDate(flagValue));
+
+			_priorityFlag = new TaskFilterFlag<string>(
+				"filters tasks by priority or specifies a new task's priority",
+				"p=|priority=",
+				filterPriority: 1,
+				filterPredicate: (flagValue, task) =>
+					task.Priority == ParseHelper.ParsePriority(flagValue));
+
+			_identityFilterFlag = new TaskFilterFlag<string>(
+				"filters tasks by their ID or ID range",
+				"i=|id=",
+				filterPriority: 1,
+				filterPredicate: (flagValue, task) =>
+				{
+					IEnumerable<int> allowedIds = ParseHelper.ParseTaskId(flagValue);
+					return allowedIds.Contains(task.ID);
+				});
+
+			_pendingFilterFlag = new TaskFilterFlag<bool>(
+				"filters out any finished tasks",
+				"P|pending|unfinished",
+				filterPriority: 1,
+				filterPredicate: (_, task) => task.IsFinished == false);
+
+			_finishedFilterFlag = new TaskFilterFlag<bool>(
+				"filters out any unfinished tasks",
+				"F|finished|completed",
+				filterPriority: 1,
+				filterPredicate: (_, task) => task.IsFinished == true);
+
+			_descriptionFilterFlag = new TaskFilterFlag<string>(
+				"filters tasks by their description matching a regex",
+				"l=|like=",
+				filterPriority: 1,
+				filterPredicate: (pattern, task) => Regex.IsMatch(
+					task.Description,
+					pattern,
+					RegexOptions.IgnoreCase));
+
+			_numberSkipFlag = new TaskFilterFlag<int>(
+				"skips a given number of tasks when displaying the result",
+				"skip=",
+				filterPriority: 2,
+				filterPredicate: (flagValue, task, taskIndex) => taskIndex + 1 > flagValue);
+
+			_numberLimitFlag = new TaskFilterFlag<int>(
+				"limits the total number of tasks displayed",
+				"n=|limit=",
+				filterPriority: 3,
+				filterPredicate: (flagValue, task, taskIndex) => taskIndex < flagValue);
+
+			_orderByFlag = new Flag<string>(
+				"orders the tasks by the specified criteria",
+				"s=|orderby=|sort=");
+
+			_renumberFlag = new Flag<bool>(
+				"before showing tasks, reassign task IDs in the display order",
+				"r|renumber");
+
+			_defaultFlag = new Flag<bool>(
+				"resets a parameter to its default value",
+				"default|reset");
+
 			_flags = privateFields
 				.Where(fieldInfo => typeof(Flag).IsAssignableFrom(fieldInfo.FieldType))
 				.Select(fieldInfo => fieldInfo.GetValue(this))
 				.Cast<Flag>();
-				
-			_flags.ForEach(flag => flag.AddToOptionSet(this._optionSet));
 
-			// Setup program commands
-			// -
+			_flags.ForEach(flag => flag.AddToOptionSet(this._optionSet));
+		}
+
+		private void InitializeCommands(IEnumerable<FieldInfo> privateFields)
+		{
 			_configureCommand = new Command(
 				@"^(config|configure)$",
 				isReadUpdateDelete: false,
-				supportedFlags: new [] { _configurationGlobalFlag, _interactiveFlag, _defaultFlag });
+				supportedFlags: new[] { _configurationGlobalFlag, _interactiveFlag, _defaultFlag });
 
 			_addTaskCommand = new Command(
-				@"^(add|new|create)$", 
+				@"^(add|new|create)$",
 				isReadUpdateDelete: false,
-				supportedFlags: 
+				supportedFlags:
 					new Flag[] { _interactiveFlag, _dueDateFlag, _priorityFlag, _silentFlag, _verboseFlag });
 
 			_deleteTasksCommand = new Command(
@@ -422,7 +461,7 @@ namespace TaskMan
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Concat(_includeAllFlag, _verboseFlag, _orderByFlag, _renumberFlag));
-			
+
 			_updateTasksCommand = new Command(
 				@"^(update|change|modify|set)$",
 				isReadUpdateDelete: true,
@@ -439,15 +478,16 @@ namespace TaskMan
 			_renumberCommand = new Command(
 				@"^(renumber)$",
 				isReadUpdateDelete: false,
-				supportedFlags: new [] { _orderByFlag });
+				supportedFlags: new[] { _orderByFlag });
 
 			_commands = privateFields
 				.Where(fieldInfo => fieldInfo.FieldType == typeof(Command))
 				.Select(fieldInfo => fieldInfo.GetValue(this))
 				.Cast<Command>();
+		}
 
-			// Setup program aliases
-			// -
+		private void InitializeAliases(IEnumerable<FieldInfo> privateFields)
+		{
 			_switchTaskListAlias = new Alias(
 				"switch",
 				$"{_configureCommand.Usage} {_configuration.CurrentTaskList.Name}");
@@ -480,14 +520,6 @@ namespace TaskMan
 				.Where(fieldInfo => fieldInfo.FieldType == typeof(Alias))
 				.Select(fieldInfo => fieldInfo.GetValue(this))
 				.Cast<Alias>();
-
-			// Setup IO
-			// -
-			_readTasks = taskReadFunction ?? this.ReadTasksFromFile;
-			_saveTasks = taskSaveFunction ?? this.SaveTasksIntoFile;
-
-			_output = outputStream ?? this._output;
-			_error = errorStream ?? this._error;
 		}
 
 		/// <summary>
