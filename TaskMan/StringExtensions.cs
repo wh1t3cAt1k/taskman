@@ -21,8 +21,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace TaskMan
 {
@@ -94,6 +95,55 @@ namespace TaskMan
 			}
 
 			return text;
+		}
+
+		/// <summary>
+		/// Splits the specified text into a sequence of lines, each line not
+		/// exceeding the specified maximal width, breaking the line (preferably) 
+		/// on whitespace characters.
+		/// </summary>
+		public static IEnumerable<string> MakeLinesByWhitespace(this string text, int maxLineWidth)
+		{
+			Queue<string> textParts = new Queue<string>(Regex
+				.Split(text, @"(\s)")
+				.SelectMany(part =>
+				{
+					if (part.Length <= maxLineWidth)
+					{
+						return new[] { part };
+					}
+					else
+					{
+						return part
+							.Split(maxLineWidth)
+							.Select(characters => new string(characters.ToArray()))
+							.ToArray();
+					}
+				}));
+
+			List<string> resultingLines = new List<string>();
+
+			StringBuilder nextLine = new StringBuilder();
+
+			while (textParts.Count > 0)
+			{
+				string linePart = textParts.Dequeue();
+
+				if (nextLine.Length + linePart.Length > maxLineWidth)
+				{
+					resultingLines.Add(nextLine.ToString().Trim());
+					nextLine = new StringBuilder();
+				}
+
+				nextLine.Append(linePart);
+			}
+
+			if (nextLine.Length > 0)
+			{
+				resultingLines.Add(nextLine.ToString().Trim());
+			}
+
+			return resultingLines;
 		}
 
 		/// <summary>
