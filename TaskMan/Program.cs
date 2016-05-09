@@ -160,7 +160,6 @@ namespace TaskMan
 		Command _configureCommand;
 		Command _listCommand;
 		Command _renumberCommand;
-		Command _exportCommand;
 
 		#endregion
 
@@ -1073,7 +1072,6 @@ namespace TaskMan
 				{
 					return;
 				}
-
 
 				// No parameter value, but default flag
 				// is set, which means we should reset the 
