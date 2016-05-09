@@ -202,42 +202,7 @@ namespace TaskMan.Objects
 			}
 			else if (fieldRule.LineBreaking == LineBreaking.Whitespace)
 			{
-				Queue<string> textParts = new Queue<string>(Regex
-					.Split(text, @"(\s)")
-                    .SelectMany(part =>
-					{
-						if (part.Length <= fieldRule.Width)
-						{
-							return new[] { part };
-						}
-						else 
-						{
-							return part
-								.Split(fieldRule.Width)
-								.Select(characters => new string(characters.ToArray()))
-								.ToArray();
-						}
-					}));
-
-				string nextLine = string.Empty;
-
-				while (textParts.Count > 0)
-				{
-					string linePart = textParts.Dequeue();
-
-					if (nextLine.Length + linePart.Length > fieldRule.Width)
-					{
-						resultingLines.Add(nextLine.Trim());
-						nextLine = string.Empty;
-					}
-
-					nextLine += linePart;
-				}
-
-				if (!string.IsNullOrEmpty(nextLine))
-				{
-					resultingLines.Add(nextLine.Trim());
-				}
+				resultingLines.AddRange(text.MakeLinesByWhitespace(fieldRule.Width));
 			}
 
 			// Account for bottom padding

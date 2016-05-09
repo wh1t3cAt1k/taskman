@@ -569,26 +569,36 @@ namespace TaskMan
 		/// </summary>
 		void OutputWrite(string text, params object[] args)
 		{
-			if (!_silentFlag.IsSet || !_silentFlag.Value)
-			{
-				_output.Write(string.Format(text, args));
-			}
+			if (_silentFlag.IsSet && _silentFlag) return;
+
+			_output.Write(string.Format(text, args));
 		}
 
 		/// <summary>
 		/// Writes the specified string to the output 
-		/// unless the silent flag is set.
+		/// unless the silent flag is set. Breaks the 
+		/// line on a whitespace character if it exceeds
+		/// the configured output width.
 		/// </summary>
 		void OutputWriteLine(string text, params object[] args)
 		{
-			OutputWrite(text + "\n", args);
+			if (_silentFlag.IsSet && _silentFlag) return;
+
+			int outputWidth = int.Parse(_configuration.OutputWidth.Value);
+
+			text
+				.MakeLinesByWhitespace(outputWidth)
+				.ForEach(line =>
+				{
+					OutputWrite(line, args);
+					OutputWrite("\n");
+				});
 		}
 
 		/// <summary>
 		/// Confirms with the user that the described action will
 		/// be executed.
 		/// </summary>
-		/// 
 		/// <returns>
 		/// <c>true</c>, if operation was confirmed, 
 		/// <c>false</c> otherwise.
