@@ -585,11 +585,12 @@ namespace TaskMan
 
 			int outputWidth = int.Parse(_configuration.OutputWidth.Value);
 
-			text
+			string
+				.Format(text, args)
 				.MakeLinesByWhitespace(outputWidth)
 				.ForEach(line =>
 				{
-					OutputWrite(line, args);
+					OutputWrite(line);
 					OutputWrite("\n");
 				});
 		}
