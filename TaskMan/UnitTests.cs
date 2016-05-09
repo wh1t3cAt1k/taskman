@@ -298,6 +298,16 @@ namespace TaskMan
 				StringExtensions.SplitCommandLine(@"'""show""'"),
 				Is.EqualTo(new string[] { @"""show""" }));
 		}
+
+		[Test]
+		public void Test_TaskMan_SplitsOutputMessagesIntoLines()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.RunWithCommand("add " + "ABCDE ".Replicate(10000));
+
+			Assert.That(tester.Output.Split('\n').HasAtLeastTwoElements());
+		}
 	}
 }
 

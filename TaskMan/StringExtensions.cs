@@ -170,7 +170,7 @@ namespace TaskMan
 		{
 			if (times < 0) throw new ArgumentOutOfRangeException(nameof(times));
 
-			StringBuilder resultBuilder = new StringBuilder(times);
+			StringBuilder resultBuilder = new StringBuilder(text.Length * times);
 
 			for (int counter = 0; counter < times; ++counter)
 			{
