@@ -141,6 +141,7 @@ namespace TaskMan.Control
 		const string ENUM_VALUE_PATTERN = @"[A-Za-z][A-Za-z0-9]*|[0-9]+";
 		const string ANY_PATTERN = @".*";
 		const string SYMBOL_PATTERN = @"\S*";
+		const string NUMBER_PATTERN = @"\d+";
 
 		public TaskmanParameter CurrentTaskList => new TaskmanParameter(
 			this, 
@@ -205,6 +206,13 @@ namespace TaskMan.Control
 			"defines the default tasks sorting order in the output",
 			"id+",
 			ParseHelper.SortOrderRegex);
+
+		public TaskmanParameter OutputWidth => new TaskmanParameter(
+			this,
+			"outputwidth",
+			"sets the program's output width",
+			"80",
+			NUMBER_PATTERN);
 
 		public IEnumerable<TaskmanParameter> SupportedParameters => _supportedParameters;
 
