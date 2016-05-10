@@ -145,6 +145,8 @@ namespace TaskMan
 		Flag<int> _numberSkipFlag;
 		Flag<int> _numberLimitFlag;
 
+		Flag<Format> _formatFlag;
+
 		#endregion
 
 		#region Command Verbs
@@ -409,6 +411,10 @@ namespace TaskMan
 				"resets a parameter to its default value",
 				"default|reset");
 
+			_formatFlag = new Flag<Format>(
+				"specifies the output format for tasks: text, csv, json or xml.",
+				"format");
+
 			_flags = privateFields
 				.Where(fieldInfo => typeof(Flag).IsAssignableFrom(fieldInfo.FieldType))
 				.Select(fieldInfo => fieldInfo.GetValue(this))
@@ -459,7 +465,7 @@ namespace TaskMan
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
-					.Concat(_includeAllFlag, _verboseFlag, _orderByFlag, _renumberFlag));
+					.Concat(_includeAllFlag, _verboseFlag, _orderByFlag, _renumberFlag, _formatFlag));
 
 			_updateTasksCommand = new Command(
 				@"^(update|change|modify|set)$",
