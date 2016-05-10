@@ -811,7 +811,7 @@ namespace TaskMan
 				if (_renumberFlag.IsSet && _renumberFlag)
 				{
 					// Only makes sense to save
-					// if renumbering happened.
+					// if renumbering has happened.
 					// -
 					_saveTasks(_allTasks);
 				}

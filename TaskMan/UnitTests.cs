@@ -308,6 +308,47 @@ namespace TaskMan
 
 			Assert.That(tester.Output.Split('\n').HasAtLeastTwoElements());
 		}
+
+		[Test]
+		public void Test_DescriptionRegexFlag_FiltersTasksByDescription()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.RunWithCommands(
+				"add mario --silent",
+				"add wario --silent",
+				"add princess --silent",
+				"add bowser --silent",
+				"show --like ario");
+
+			Assert.That(
+				tester.Output,
+				Does.Contain("mario")
+				.And.Contain("wario")
+				.And.Not.Contain("princess")
+				.And.Not.Contain("bowser"));
+		}
+
+		[Test]
+		public void Test_Renumber_RenumbersTasksInGivenOrder()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.RunWithCommands(
+				"add 1",
+				"add 2",
+				"add 3");
+
+			Assert.That(
+				tester.SavedTasks.Select(t => t.Description),
+				Is.EquivalentTo(new[] { "1", "2", "3" }));
+
+			tester.RunWithCommand("renumber --orderby id-");
+
+			Assert.That(
+				tester.SavedTasks.Select(t => t.Description),
+				Is.EquivalentTo(new[] { "3", "2", "1" }));
+		}
 	}
 }
 
