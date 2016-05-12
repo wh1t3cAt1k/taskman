@@ -66,6 +66,8 @@ namespace TaskMan
 		public const string TaskListCleared = "Task list has been cleared.";
 		public const string TaskWasUpdated = "Task {0} [{1}] has changed its '{2}' value to '{3}'";
 		public const string TasksWereUpdated = "Updated {0} task(s) with new '{1}' value of '{2}'.";
+		public const string TaskWasSomething = "Task with ID {0} [{1}] was {2}.";
+		public const string TasksWereSomething = "{0} tasks were {1}.";
 		public const string TaskWasDeleted = "Task with ID {0} [{1}] was deleted.";
 		public const string TasksWereDeleted = "{0} tasks were deleted.";
 		public const string TasksWereRenumbered = "{0} tasks were successfully renumbered.";

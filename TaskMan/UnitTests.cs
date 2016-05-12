@@ -69,6 +69,14 @@ namespace TaskMan
 		{
 			commands.ForEach(RunWithCommand);
 		}
+
+		public void AddThreeTasks()
+		{
+			this.RunWithCommands(
+				"add first --silent",
+				"add second --silent",
+				"add third --silent");
+		}
 	}
 
 	[TestFixture]
@@ -122,11 +130,8 @@ namespace TaskMan
 		{
 			TaskManTester tester = new TaskManTester();
 
-			tester.RunWithCommands(
-				"add first",
-				"add second",
-				"add third",
-				"complete --all");
+			tester.AddThreeTasks();
+			tester.RunWithCommand("complete --all");
 			
 			Assert.That(
 				tester.SavedTasks,
@@ -138,11 +143,8 @@ namespace TaskMan
 		{
 			TaskManTester tester = new TaskManTester();
 
-			tester.RunWithCommands(
-				"add first",
-				"add second",
-				"add third",
-				"delete --all");
+			tester.AddThreeTasks();
+			tester.RunWithCommand("delete --all");
 
 			Assert.IsEmpty(tester.SavedTasks);
 		}
@@ -152,11 +154,8 @@ namespace TaskMan
 		{
 			TaskManTester tester = new TaskManTester();
 
-			tester.RunWithCommands(
-				"add first",
-				"add second",
-				"add third",
-				"update --all description NEW");
+			tester.AddThreeTasks();
+			tester.RunWithCommand("update --all description NEW");
 
 			Assert.That(
 				tester.SavedTasks,
@@ -168,11 +167,8 @@ namespace TaskMan
 		{
 			TaskManTester tester = new TaskManTester();
 
-			tester.RunWithCommands(
-				"add first",
-				"add second",
-				"add third",
-				"update --all finished true");
+			tester.AddThreeTasks();
+			tester.RunWithCommands("update --all finished true");
 
 			Assert.That(
 				tester.SavedTasks,
@@ -184,11 +180,8 @@ namespace TaskMan
 		{
 			TaskManTester tester = new TaskManTester();
 
-			tester.RunWithCommands(
-				"add first",
-				"add second",
-				"add third",
-				"update --all priority Important");
+			tester.AddThreeTasks();
+			tester.RunWithCommands("update --all priority Important");
 
 			Assert.That(
 				tester.SavedTasks,
@@ -266,11 +259,8 @@ namespace TaskMan
 		{
 			TaskManTester tester = new TaskManTester();
 
-			tester.RunWithCommands(
-				"add first --silent",
-				"add second --silent",
-				"add third --silent",
-				"show --limit 1 --skip 2");
+			tester.AddThreeTasks();
+			tester.RunWithCommand("show --limit 1 --skip 2");
 
 			Assert.That(
 				tester.Output,
@@ -348,6 +338,28 @@ namespace TaskMan
 			Assert.That(
 				tester.SavedTasks.Select(t => t.Description),
 				Is.EquivalentTo(new[] { "3", "2", "1" }));
+		}
+
+		[Test]
+		public void Test_FormatFlag_WorksWithCSVFormat()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.AddThreeTasks();
+			tester.RunWithCommand("show --format csv");
+
+			Assert.That(true);
+		}
+
+		[Test]
+		public void Test_FormatFlag_WorksWithXMLFormat()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.AddThreeTasks();
+			tester.RunWithCommand("show --format xml");
+
+			Assert.That(true);
 		}
 	}
 }

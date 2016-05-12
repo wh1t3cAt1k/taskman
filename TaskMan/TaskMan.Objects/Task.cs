@@ -42,6 +42,8 @@ namespace TaskMan.Objects
 
 		public DateTime? DueDate { get; set; }
 
+		public Task() : this(-1) { }
+
 		public Task(
 			int id = -1,
 			string description = "",

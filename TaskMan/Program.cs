@@ -25,8 +25,11 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Web.Script.Serialization;
 using System.Text.RegularExpressions;
+using System.Xml.Serialization;
 
+using CsvHelper;
 using Mono.Options;
 
 using TaskMan.Control;
@@ -413,7 +416,7 @@ namespace TaskMan
 
 			_formatFlag = new Flag<Format>(
 				"specifies the output format for tasks: text, csv, json or xml.",
-				"format");
+				"format=");
 
 			_flags = privateFields
 				.Where(fieldInfo => typeof(Flag).IsAssignableFrom(fieldInfo.FieldType))
@@ -651,7 +654,7 @@ namespace TaskMan
 				willBe);
 
 			relevantTasks.Take(3).ForEach((task, isFirstTask, isLastTask) 
-				=> DisplayTask(task, isFirstTask, isLastTask, actionDescription));
+				=> DisplayTaskTabular(task, isFirstTask, isLastTask, actionDescription));
 
 			if (relevantTasks.Skip(3).Any())
 			{
@@ -661,6 +664,28 @@ namespace TaskMan
 			}
 
 			return ConfirmOperation(actionDescription.ToString().TrimEnd('\n'));
+		}
+
+		void SignalizeOperationSuccess(
+			string whatWasDone, 
+			int totalTasksAffected, 
+			IEnumerable<Task> relevantTasks)
+		{
+			if (relevantTasks.IsSingleton())
+			{
+				OutputWriteLine(
+					Messages.TaskWasSomething,
+					relevantTasks.Single().ID,
+					relevantTasks.Single().Description,
+					whatWasDone);
+			}
+			else
+			{
+				OutputWriteLine(
+					Messages.TasksWereSomething,
+					totalTasksAffected,
+					whatWasDone);
+			}
 		}
 
 		public void Run(IEnumerable<string> originalArguments)
@@ -811,8 +836,39 @@ namespace TaskMan
 
 				RequireNoMoreArguments();
 
-				_filteredTasks.ForEach((task, isFirstTask, isLastTask)
-					=> DisplayTask(task, isFirstTask, isLastTask));
+				if (!_formatFlag.IsSet)
+				{
+					_formatFlag.Set(Format.Text);
+				}
+
+				if (_formatFlag.Value == Format.Text)
+				{
+					_filteredTasks.ForEach((task, isFirstTask, isLastTask)
+						=> DisplayTaskTabular(task, isFirstTask, isLastTask));
+				}
+				else if (_formatFlag.Value == Format.CSV)
+				{
+					using (CsvWriter writer = new CsvWriter(_output))
+					{
+						writer.WriteHeader<Task>();
+						writer.WriteRecords(_filteredTasks);
+					}
+				}
+				else if (_formatFlag.Value == Format.JSON)
+				{
+					JavaScriptSerializer serializer = new JavaScriptSerializer();
+					_output.WriteLine(serializer.Serialize(_filteredTasks.ToArray()));
+				}
+				else if (_formatFlag.Value == Format.XML)
+				{
+					XmlSerializer serializer = new XmlSerializer(typeof(Task[]));
+					serializer.Serialize(_output, _filteredTasks.ToArray());
+					_output.WriteLine();
+				}
+				else
+				{
+					throw new NotImplementedException();
+				}
 
 				if (_renumberFlag.IsSet && _renumberFlag)
 				{
@@ -845,19 +901,10 @@ namespace TaskMan
 					File.Delete(this.CurrentTaskListFile);
 				}
 
-				if (_filteredTasks.IsSingleton())
-				{
-					OutputWriteLine(
-						Messages.TaskWasDeleted,
-						_filteredTasks.Single().ID,
-						_filteredTasks.Single().Description);
-				}
-				else
-				{
-					OutputWriteLine(
-						Messages.TasksWereDeleted,
-						totalTasksBefore - totalTasksAfter);
-				}
+				SignalizeOperationSuccess(
+					"deleted",
+					totalTasksBefore - totalTasksAfter,
+					_filteredTasks);
 			}
 			else if (executingCommand == _updateTasksCommand)
 			{
@@ -883,19 +930,10 @@ namespace TaskMan
 
 				_saveTasks(_allTasks);
 
-				if (_filteredTasks.IsSingleton())
-				{
-					OutputWriteLine(
-						Messages.TaskWasFinished,
-						_filteredTasks.Single().ID,
-						_filteredTasks.Single().Description);
-				}
-				else
-				{
-					OutputWriteLine(
-						Messages.TasksWereFinished,
-						totalTasksFinished);
-				}
+				SignalizeOperationSuccess(
+					"completed",
+					totalTasksFinished,
+					_filteredTasks);
 			}
 			else if (executingCommand == _reopenTasksCommand)
 			{
@@ -911,19 +949,10 @@ namespace TaskMan
 
 				_saveTasks(_allTasks);
 
-				if (_filteredTasks.IsSingleton())
-				{
-					OutputWriteLine(
-						Messages.TaskWasReopened,
-						_filteredTasks.Single().ID,
-						_filteredTasks.Single().Description);
-				}
-				else
-				{
-					OutputWriteLine(
-						Messages.TasksWereReopened,
-						totalTasksReopened);
-				}
+				SignalizeOperationSuccess(
+					"reopened",
+					totalTasksReopened,
+					_filteredTasks);
 			}
 			else if (executingCommand == _configureCommand)
 			{
@@ -1180,7 +1209,7 @@ namespace TaskMan
 			{
 				throw new TaskManException(
 					Messages.RequiredFlagNotSet,
-					requiredFlagsUnspecified.First().Prototype);
+					requiredFlagsUnspecified.First().Usage);
 			}
 
 			if (filterFlagsSpecified.Any() &&
@@ -1330,12 +1359,11 @@ namespace TaskMan
 		}
 
 		/// <summary>
-		/// Writes the string representation of the current task (followed by a line terminator) into
-		/// the standard output stream or explicitly provided <see cref="TextWriter"/> output. 
-		/// For console output, optional background and foreground <see cref="ConsoleColor"/>
-		/// parameters can be specified to override the standard colouring scheme.
+		/// Displays the given task in a default tabular format, writing it into 
+		/// the standard output stream or explicitly provided <see cref="TextWriter"/> 
+		/// output.
 		/// </summary>
-		void DisplayTask(Task task, bool isFirstTask, bool isLastTask, TextWriter output = null)
+		void DisplayTaskTabular(Task task, bool isFirstTask, bool isLastTask, TextWriter output = null)
 		{
 			output = output ?? _output;
 

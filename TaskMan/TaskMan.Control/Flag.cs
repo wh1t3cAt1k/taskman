@@ -188,7 +188,7 @@ namespace TaskMan.Control
 				// -
 				optionSet.Add(this.Prototype, this.Description, value => 
 					this.Set(
-						(T)Enum.Parse(typeof(T), value)));
+						(T)Enum.Parse(typeof(T), value, true)));
 			}
 			else
 			{
