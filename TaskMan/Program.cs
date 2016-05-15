@@ -195,6 +195,9 @@ namespace TaskMan
 		TextWriter _output = Console.Out;
 		TextWriter _error = Console.Error;
 
+		Command _executingCommand;
+		string _executingCommandName;
+
 		/// <summary>
 		/// Sets the function that would be called to read the task list.
 		/// Can be used to override the default function that reads the tasks from file, 
@@ -726,9 +729,9 @@ namespace TaskMan
 			_commandLineArguments =
 				new LinkedList<string>(_optionSet.Parse(originalArguments));
 
-			string commandName = _commandLineArguments.First?.Value;
+			_executingCommandName = _commandLineArguments.First?.Value;
 
-			if (commandName == null)
+			if (_executingCommandName == null)
 			{
 				if (this.HandleGlobalFlags())
 				{
@@ -738,8 +741,8 @@ namespace TaskMan
 				{
 					// TaskMan operates as "show" by default.
 					// -
-					commandName = "show";
-					_commandLineArguments = new LinkedList<string>(new [] { commandName }); 
+					_executingCommandName = "show";
+					_commandLineArguments = new LinkedList<string>(new [] { _executingCommandName }); 
 				}
 			}
 
@@ -747,22 +750,22 @@ namespace TaskMan
 
 			this.CurrentOperation = "recognize the command";
 
-			IEnumerable<Command> matchingCommands = _commands.Matching(commandName);
+			IEnumerable<Command> matchingCommands = _commands.Matching(_executingCommandName);
 
 			if (!matchingCommands.Any())
 			{
-				throw new TaskManException(Messages.UnknownCommand, commandName);
+				throw new TaskManException(Messages.UnknownCommand, _executingCommandName);
 			}
 			else if (!matchingCommands.IsSingleton())
 			{
 				throw new TaskManException(Messages.MoreThanOneCommandMatchesInput);
 			}
 
-			Command executingCommand = matchingCommands.Single();
+			_executingCommand = matchingCommands.Single();
 
 			this.CurrentOperation = "ensure flag consistency";
 
-			EnsureFlagConsistency(executingCommand, commandName, originalArguments);
+			EnsureFlagConsistency(_executingCommand, _executingCommandName, originalArguments);
 
 			this.CurrentOperation = "read tasks from the task file";
 
@@ -781,7 +784,7 @@ namespace TaskMan
 
 			this.CurrentOperation = "renumber tasks";
 
-			if (executingCommand == _renumberCommand ||
+			if (_executingCommand == _renumberCommand ||
 				_renumberFlag.IsSet && _renumberFlag)
 			{
 				_allTasks.ForEach((task, index) => task.ID = index);
@@ -791,7 +794,7 @@ namespace TaskMan
 
 			_filteredTasks = _allTasks;
 
-			if (executingCommand.IsReadUpdateDelete)
+			if (_executingCommand.IsReadUpdateDelete)
 			{
 				if (!_allTasks.Any())
 				{
@@ -819,32 +822,11 @@ namespace TaskMan
 				}
 			}
 
-			if (executingCommand == _addTaskCommand)
+			if (_executingCommand == _addTaskCommand)
 			{
-				this.CurrentOperation = "add a new task";
-
-				Task addedTask = AddTask();
-
-				// Only when the user discarded the task 
-				// creation in an interactive mode.
-				// -
-				if (addedTask == null) return;
-
-				_saveTasks(_allTasks);
-
-				string taskDueDate =
-					addedTask.DueDate?.ToString("ddd, yyyy-MM-dd");
-
-				OutputWriteLine(
-					Messages.TaskWasAdded,
-					addedTask.Description,
-					addedTask.ID,
-					addedTask.Priority.ToString().ToLower(),
-					taskDueDate != null ?
-						$", due on {taskDueDate}." :
-						".");
+				AddTask();
 			}
-			else if (executingCommand == _displayTasksCommand)
+			else if (_executingCommand == _displayTasksCommand)
 			{
 				this.CurrentOperation = "display tasks";
 
@@ -892,49 +874,25 @@ namespace TaskMan
 					_saveTasks(_allTasks);
 				}
 			}
-			else if (executingCommand == _deleteTasksCommand)
+			else if (_executingCommand == _deleteTasksCommand)
 			{
-				this.CurrentOperation = "delete tasks";
-
-				RequireExplicitFiltering(commandName);
-				RequireNoMoreArguments();
-
-				if (!ConfirmTaskOperation("deleted")) return;
-
-				int totalTasksBefore = _allTasks.Count;
-
-				_allTasks = _allTasks.Except(_filteredTasks).ToList();
-				_allTasks.ForEach((task, index) => task.ID = index);
-
-				int totalTasksAfter = _allTasks.Count;
-
-				_saveTasks(_allTasks);
-
-				if (!_allTasks.Any())
-				{
-					File.Delete(this.CurrentTaskListFile);
-				}
-
-				SignalizeOperationSuccess(
-					"deleted",
-					totalTasksBefore - totalTasksAfter,
-					_filteredTasks);
+				DeleteTasks();
 			}
-			else if (executingCommand == _updateTasksCommand)
+			else if (_executingCommand == _updateTasksCommand)
 			{
 				this.CurrentOperation = "update task parameters";
 
-				RequireExplicitFiltering(commandName);
+				RequireExplicitFiltering();
 
 				if (!ConfirmTaskOperation("updated")) return;
 
 				UpdateTasks();
 			}
-			else if (executingCommand == _completeTasksCommand)
+			else if (_executingCommand == _completeTasksCommand)
 			{
 				this.CurrentOperation = "finish tasks";
 
-				RequireExplicitFiltering(commandName);
+				RequireExplicitFiltering();
 				RequireNoMoreArguments();
 
 				if (!ConfirmTaskOperation("completed")) return;
@@ -949,11 +907,11 @@ namespace TaskMan
 					totalTasksFinished,
 					_filteredTasks);
 			}
-			else if (executingCommand == _reopenTasksCommand)
+			else if (_executingCommand == _reopenTasksCommand)
 			{
 				this.CurrentOperation = "reopen tasks";
 
-				RequireExplicitFiltering(commandName);
+				RequireExplicitFiltering();
 				RequireNoMoreArguments();
 
 				if (!ConfirmOperation("reopened")) return;
@@ -968,26 +926,27 @@ namespace TaskMan
 					totalTasksReopened,
 					_filteredTasks);
 			}
-			else if (executingCommand == _configureCommand)
+			else if (_executingCommand == _configureCommand)
 			{
 				this.CurrentOperation = "configure program parameters";
 
 				ConfigureProgramParameters();
 			}
-			else if (executingCommand == _listCommand)
+			else if (_executingCommand == _listCommand)
 			{
 				this.CurrentOperation = "display available task lists";
 
 				if (_commandLineArguments.Any())
 				{
 					// If another argument remains, it is the
-					// new task list name.
-					// -.
+					// new task list name..
+					// -
 					string newListName = _commandLineArguments.PopFirst();
 
 					RequireNoMoreArguments();
 
-					this.Run(new[]
+					new TaskMan(_readTasks, _saveTasks, _input,	_output, _error)
+						.Run(new[]
 					{
 						_configureCommand.Usage,
 						_configuration.CurrentTaskList.Name,
@@ -1013,7 +972,7 @@ namespace TaskMan
 					.OrderBy(listName => listName)
 					.ForEach((listName, index) => OutputWriteLine($"{index + 1}. {listName}"));
 			}
-			else if (executingCommand == _renumberCommand)
+			else if (_executingCommand == _renumberCommand)
 			{
 				RequireNoMoreArguments();
 
@@ -1024,7 +983,7 @@ namespace TaskMan
 				_saveTasks(_allTasks);
 				OutputWriteLine(Messages.TasksWereRenumbered, _allTasks.Count);
 			}
-			else if (executingCommand == _importCommand)
+			else if (_executingCommand == _importCommand)
 			{
 				
 			}
@@ -1242,21 +1201,20 @@ namespace TaskMan
 
 		/// <summary>
 		/// Either require task filtering or setting of the
-		/// <see cref="TaskMan._includeAllFlag"/>, or throw an error.
+		/// <see cref="_includeAllFlag"/>, or throw an error.
 		/// </summary>
-		/// <param name="commandName">The executing command name.</param>
-		void RequireExplicitFiltering(string commandName)
+		void RequireExplicitFiltering()
 		{
 			if (!_includeAllFlag.IsSet && _filteredTasks == _allTasks)
 			{
 				throw new TaskManException(
 					Messages.NoFilterConditionsUseAllIfIntended,
-					commandName);
+					_executingCommandName);
 			}
 		}
 
 		/// <summary>
-		/// Encapsulates the task modification logic in one method.
+		/// Encapsulates the task modification logic.
 		/// </summary>
 		void UpdateTasks()
 		{
@@ -1342,8 +1300,10 @@ namespace TaskMan
 		/// <summary>
 		/// Encapsulates the task adding logic in one method.
 		/// </summary>
-		Task AddTask()
+		void AddTask()
 		{
+			this.CurrentOperation = "add a new task";
+
 			if (!_commandLineArguments.Any())
 			{
 				throw new TaskManException(Messages.NoDescriptionSpecified);
@@ -1365,15 +1325,54 @@ namespace TaskMan
 				priority, 
 				dueDate);
 
-			if (this.ConfirmTaskOperation("added", new List<Task> { newTask }))
+			if (!ConfirmTaskOperation("added", new [] { newTask })) return;
+
+			_allTasks.Add(newTask);
+			_saveTasks(_allTasks);
+
+			string taskDueDate =
+				newTask.DueDate?.ToString("ddd, yyyy-MM-dd");
+
+			OutputWriteLine(
+				Messages.TaskWasAdded,
+				newTask.Description,
+				newTask.ID,
+				newTask.Priority.ToString().ToLower(),
+				taskDueDate != null ?
+					$", due on {taskDueDate}." :
+					".");
+		}
+
+		/// <summary>
+		/// Encapsulates the task deletion logic.
+		/// </summary>
+		void DeleteTasks()
+		{
+			this.CurrentOperation = "delete tasks";
+			
+			RequireExplicitFiltering();
+			RequireNoMoreArguments();
+
+			if (!ConfirmTaskOperation("deleted")) return;
+
+			int totalTasksBefore = _allTasks.Count;
+
+			_allTasks = _allTasks.Except(_filteredTasks).ToList();
+			_allTasks.ForEach((task, index) => task.ID = index);
+
+			int totalTasksAfter = _allTasks.Count;
+
+			_saveTasks(_allTasks);
+
+			if (!_allTasks.Any())
 			{
-				_allTasks.Add(newTask);
-				return newTask;
+				File.Delete(this.CurrentTaskListFile);
 			}
-			else
-			{
-				return null;
-			}
+
+			SignalizeOperationSuccess(
+				"deleted",
+				totalTasksBefore - totalTasksAfter,
+				_filteredTasks);
 		}
 
 		/// <summary>
