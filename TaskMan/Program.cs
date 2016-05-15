@@ -149,6 +149,7 @@ namespace TaskMan
 		Flag<int> _numberLimitFlag;
 
 		Flag<Format> _formatFlag;
+		Flag<ImportBehaviour> _importBehaviourFlag;
 
 		#endregion
 
@@ -165,6 +166,7 @@ namespace TaskMan
 		Command _configureCommand;
 		Command _listCommand;
 		Command _renumberCommand;
+		Command _importCommand;
 
 		#endregion
 
@@ -189,6 +191,7 @@ namespace TaskMan
 		/// </summary>
 		private OptionSet _optionSet;
 
+		TextReader _input = Console.In;
 		TextWriter _output = Console.Out;
 		TextWriter _error = Console.Error;
 
@@ -280,6 +283,7 @@ namespace TaskMan
 		public TaskMan(
 			Func<List<Task>> taskReadFunction = null,
 			Action<List<Task>> taskSaveFunction = null,
+			TextReader inputStream = null,
 			TextWriter outputStream = null,
 			TextWriter errorStream = null)
 		{
@@ -300,8 +304,9 @@ namespace TaskMan
 			_readTasks = taskReadFunction ?? this.ReadTasksFromFile;
 			_saveTasks = taskSaveFunction ?? this.SaveTasksIntoFile;
 
-			_output = outputStream ?? this._output;
-			_error = errorStream ?? this._error;
+			_input = inputStream ?? _input;
+			_output = outputStream ?? _output;
+			_error = errorStream ?? _error;
 		}
 
 		private void InitializeFlags(IEnumerable<FieldInfo> privateFields)
@@ -415,8 +420,12 @@ namespace TaskMan
 				"default|reset");
 
 			_formatFlag = new Flag<Format>(
-				"specifies the output format for tasks: text, csv, json or xml.",
+				"specifies the input / output format for tasks: text, csv, json or xml.",
 				"format=");
+
+			_importBehaviourFlag = new Flag<ImportBehaviour>(
+				"specifies the import behaviour for import command",
+				"importbehaviour=");
 
 			_flags = privateFields
 				.Where(fieldInfo => typeof(Flag).IsAssignableFrom(fieldInfo.FieldType))
@@ -487,6 +496,11 @@ namespace TaskMan
 				@"^(renumber)$",
 				isReadUpdateDelete: false,
 				supportedFlags: new[] { _orderByFlag });
+
+			_importCommand = new Command(
+				@"^(import|read)$",
+				isReadUpdateDelete: false,
+				supportedFlags: new Flag[] { _formatFlag, _importBehaviourFlag });
 
 			_commands = privateFields
 				.Where(fieldInfo => fieldInfo.FieldType == typeof(Command))
@@ -622,8 +636,8 @@ namespace TaskMan
 			{
 				OutputWriteLine(string.Format(actionDescription, formatArguments));
 				OutputWrite(Messages.YesNoConfirmationPrompt);
-
-				confirmationResult = ConfirmActionRegex.IsMatch(Console.ReadLine());
+				
+				confirmationResult = ConfirmActionRegex.IsMatch(_input.ReadLine());
 			}
 
 			if (!confirmationResult)
@@ -973,7 +987,7 @@ namespace TaskMan
 
 					RequireNoMoreArguments();
 
-					this.Run(new []
+					this.Run(new[]
 					{
 						_configureCommand.Usage,
 						_configuration.CurrentTaskList.Name,
@@ -1009,6 +1023,10 @@ namespace TaskMan
 				// -
 				_saveTasks(_allTasks);
 				OutputWriteLine(Messages.TasksWereRenumbered, _allTasks.Count);
+			}
+			else if (executingCommand == _importCommand)
+			{
+				
 			}
 		}
 

@@ -110,6 +110,7 @@
     <Compile Include="TaskMan.Objects\ParseHelper.cs" />
     <Compile Include="TaskMan.Objects\TableWriter.cs" />
     <Compile Include="TaskMan.Control\Format.cs" />
+    <Compile Include="TaskMan.Control\ImportBehaviour.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">

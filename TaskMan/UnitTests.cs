@@ -40,28 +40,29 @@ namespace TaskMan
 		StringBuilder _output = new StringBuilder();
 		StringBuilder _errors = new StringBuilder();
 
+		public string Input { get; set; } = "";
 		public string Output { get { return _output.ToString(); } }
 		public string Errors { get { return _errors.ToString(); } }
 
 		public void RunWithCommand(string command)
 		{
+			using (StringReader inputRedirect = new StringReader(this.Input))
 			using (StringWriter outputRedirect = new StringWriter())
+			using (StringWriter errorRedirect = new StringWriter())
 			{
-				using (StringWriter errorRedirect = new StringWriter())
-				{
-					TaskMan program = new TaskMan(
-						taskReadFunction: () => this._savedTasks,
-						taskSaveFunction: taskList => this._savedTasks = taskList,
-						outputStream: outputRedirect,
-						errorStream: errorRedirect);
-			
-					program.Run(command.Split(
-						new [] { ' ' },
-						StringSplitOptions.RemoveEmptyEntries));
+				TaskMan program = new TaskMan(
+					taskReadFunction: () => this._savedTasks,
+					taskSaveFunction: taskList => this._savedTasks = taskList,
+					inputStream: inputRedirect,
+					outputStream: outputRedirect,
+					errorStream: errorRedirect);
+		
+				program.Run(command.Split(
+					new [] { ' ' },
+					StringSplitOptions.RemoveEmptyEntries));
 
-					_output.AppendLine(outputRedirect.ToString());
-					_errors.AppendLine(errorRedirect.ToString());
-				}
+				_output.AppendLine(outputRedirect.ToString());
+				_errors.AppendLine(errorRedirect.ToString());
 			}
 		}
 
@@ -360,6 +361,33 @@ namespace TaskMan
 			tester.RunWithCommand("show --format xml");
 
 			Assert.That(true);
+		}
+
+		[Test]
+		public void Test_InteractiveFlag_AllowsTheUserToAbortOperation()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.AddThreeTasks();
+			tester.Input = "no";
+
+			tester.RunWithCommand("delete --all --interactive");
+
+			Assert.That(tester.Output, Does.Contain("cancelled").IgnoreCase);
+			Assert.That(tester.SavedTasks.Count, Is.EqualTo(3));
+		}
+
+		[Test]
+		public void Test_InteractiveFlag_AllowsTheUserToConfirmOperation()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.AddThreeTasks();
+			tester.Input = "yes";
+
+			tester.RunWithCommand("delete --all --interactive");
+
+			Assert.That(tester.SavedTasks, Is.Empty);
 		}
 	}
 }
