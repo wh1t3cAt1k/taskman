@@ -824,153 +824,43 @@ namespace TaskMan
 
 			if (_executingCommand == _addTaskCommand)
 			{
+				this.CurrentOperation = "add a new task";
 				AddTask();
 			}
 			else if (_executingCommand == _displayTasksCommand)
 			{
 				this.CurrentOperation = "display tasks";
-
-				RequireNoMoreArguments();
-
-				if (!_formatFlag.IsSet)
-				{
-					_formatFlag.Set(Format.Text);
-				}
-
-				if (_formatFlag.Value == Format.Text)
-				{
-					_filteredTasks.ForEach((task, isFirstTask, isLastTask)
-						=> DisplayTaskTabular(task, isFirstTask, isLastTask));
-				}
-				else if (_formatFlag.Value == Format.CSV)
-				{
-					using (CsvWriter writer = new CsvWriter(_output))
-					{
-						writer.WriteHeader<Task>();
-						writer.WriteRecords(_filteredTasks);
-					}
-				}
-				else if (_formatFlag.Value == Format.JSON)
-				{
-					JavaScriptSerializer serializer = new JavaScriptSerializer();
-					_output.WriteLine(serializer.Serialize(_filteredTasks.ToArray()));
-				}
-				else if (_formatFlag.Value == Format.XML)
-				{
-					XmlSerializer serializer = new XmlSerializer(typeof(Task[]));
-					serializer.Serialize(_output, _filteredTasks.ToArray());
-					_output.WriteLine();
-				}
-				else
-				{
-					throw new NotImplementedException();
-				}
-
-				if (_renumberFlag.IsSet && _renumberFlag)
-				{
-					// Only makes sense to save
-					// if renumbering has happened.
-					// -
-					_saveTasks(_allTasks);
-				}
+				DisplayTasks();
 			}
 			else if (_executingCommand == _deleteTasksCommand)
 			{
+				this.CurrentOperation = "delete tasks";
 				DeleteTasks();
 			}
 			else if (_executingCommand == _updateTasksCommand)
 			{
 				this.CurrentOperation = "update task parameters";
-
-				RequireExplicitFiltering();
-
-				if (!ConfirmTaskOperation("updated")) return;
-
 				UpdateTasks();
 			}
 			else if (_executingCommand == _completeTasksCommand)
 			{
 				this.CurrentOperation = "finish tasks";
-
-				RequireExplicitFiltering();
-				RequireNoMoreArguments();
-
-				if (!ConfirmTaskOperation("completed")) return;
-
-				int totalTasksFinished =
-					_filteredTasks.ForEach(task => task.IsFinished = true);
-
-				_saveTasks(_allTasks);
-
-				SignalizeOperationSuccess(
-					"completed",
-					totalTasksFinished,
-					_filteredTasks);
+				FinishTasks();
 			}
 			else if (_executingCommand == _reopenTasksCommand)
 			{
 				this.CurrentOperation = "reopen tasks";
-
-				RequireExplicitFiltering();
-				RequireNoMoreArguments();
-
-				if (!ConfirmOperation("reopened")) return;
-
-				int totalTasksReopened =
-					_filteredTasks.ForEach(task => task.IsFinished = false);
-
-				_saveTasks(_allTasks);
-
-				SignalizeOperationSuccess(
-					"reopened",
-					totalTasksReopened,
-					_filteredTasks);
+				ReopenTasks();
 			}
 			else if (_executingCommand == _configureCommand)
 			{
 				this.CurrentOperation = "configure program parameters";
-
 				ConfigureProgramParameters();
 			}
 			else if (_executingCommand == _listCommand)
 			{
-				this.CurrentOperation = "display available task lists";
-
-				if (_commandLineArguments.Any())
-				{
-					// If another argument remains, it is the
-					// new task list name..
-					// -
-					string newListName = _commandLineArguments.PopFirst();
-
-					RequireNoMoreArguments();
-
-					new TaskMan(_readTasks, _saveTasks, _input,	_output, _error)
-						.Run(new[]
-					{
-						_configureCommand.Usage,
-						_configuration.CurrentTaskList.Name,
-						newListName
-					});
-
-					return;
-				}
-
-				IEnumerable<string> taskListFiles = Directory.EnumerateFiles(
-					_configuration.UserConfigurationDirectory,
-					"*.tmf",
-					SearchOption.TopDirectoryOnly);
-
-				OutputWriteLine(
-					Messages.CurrentTaskList,
-					_configuration.CurrentTaskList.Value);
-
-				OutputWriteLine(Messages.AvailableTaskLists);
-
-				taskListFiles
-					.Select(fileName => Path.GetFileNameWithoutExtension(fileName))
-					.OrderBy(listName => listName)
-					.ForEach((listName, index) => OutputWriteLine($"{index + 1}. {listName}"));
+				this.CurrentOperation = "display task lists / change current task list";
+				DisplayOrChangeTaskList();
 			}
 			else if (_executingCommand == _renumberCommand)
 			{
@@ -985,7 +875,7 @@ namespace TaskMan
 			}
 			else if (_executingCommand == _importCommand)
 			{
-				
+				throw new NotImplementedException();
 			}
 		}
 
@@ -1151,6 +1041,45 @@ namespace TaskMan
 			}
 		}
 
+		void DisplayOrChangeTaskList()
+		{
+			if (_commandLineArguments.Any())
+			{
+				// If another argument remains, it is the
+				// new task list name.
+				// -
+				string newListName = _commandLineArguments.PopFirst();
+
+				RequireNoMoreArguments();
+
+				new TaskMan(_readTasks, _saveTasks, _input, _output, _error)
+					.Run(new[]
+				{
+						_configureCommand.Usage,
+						_configuration.CurrentTaskList.Name,
+						newListName
+				});
+
+				return;
+			}
+
+			IEnumerable<string> taskListFiles = Directory.EnumerateFiles(
+				_configuration.UserConfigurationDirectory,
+				"*.tmf",
+				SearchOption.TopDirectoryOnly);
+
+			OutputWriteLine(
+				Messages.CurrentTaskList,
+				_configuration.CurrentTaskList.Value);
+
+			OutputWriteLine(Messages.AvailableTaskLists);
+
+			taskListFiles
+				.Select(fileName => Path.GetFileNameWithoutExtension(fileName))
+				.OrderBy(listName => listName)
+				.ForEach((listName, index) => OutputWriteLine($"{index + 1}. {listName}"));
+		}
+
 		/// <summary>
 		/// Ensures the command line flag consistency.
 		/// </summary>
@@ -1214,15 +1143,113 @@ namespace TaskMan
 		}
 
 		/// <summary>
+		/// Encapsulates the task displaying / output logic.
+		/// </summary>
+		void DisplayTasks()
+		{
+			RequireNoMoreArguments();
+
+			if (!_formatFlag.IsSet)
+			{
+				_formatFlag.Set(Format.Text);
+			}
+
+			if (_formatFlag.Value == Format.Text)
+			{
+				_filteredTasks.ForEach((task, isFirstTask, isLastTask)
+					=> DisplayTaskTabular(task, isFirstTask, isLastTask));
+			}
+			else if (_formatFlag.Value == Format.CSV)
+			{
+				using (CsvWriter writer = new CsvWriter(_output))
+				{
+					writer.WriteHeader<Task>();
+					writer.WriteRecords(_filteredTasks);
+				}
+			}
+			else if (_formatFlag.Value == Format.JSON)
+			{
+				JavaScriptSerializer serializer = new JavaScriptSerializer();
+				_output.WriteLine(serializer.Serialize(_filteredTasks.ToArray()));
+			}
+			else if (_formatFlag.Value == Format.XML)
+			{
+				XmlSerializer serializer = new XmlSerializer(typeof(Task[]));
+				serializer.Serialize(_output, _filteredTasks.ToArray());
+				_output.WriteLine();
+			}
+			else
+			{
+				throw new NotImplementedException();
+			}
+
+			if (_renumberFlag.IsSet && _renumberFlag)
+			{
+				// Only makes sense to save
+				// if renumbering has happened.
+				// -
+				_saveTasks(_allTasks);
+			}
+		}
+
+		/// <summary>
+		/// Encapsulates the task adding logic in one method.
+		/// </summary>
+		void AddTask()
+		{
+			if (!_commandLineArguments.Any())
+			{
+				throw new TaskManException(Messages.NoDescriptionSpecified);
+			}
+
+			string description = string.Join(" ", _commandLineArguments);
+
+			Priority priority = _priorityFlag.IsSet ? 
+				ParseHelper.ParsePriority(_priorityFlag.Value) : 
+				Priority.Normal;
+
+			DateTime? dueDate = _dueDateFlag.IsSet ?
+				ParseHelper.ParseTaskDueDate(_dueDateFlag.Value) :
+                null as DateTime?;
+
+			Task newTask = new Task(
+				_allTasks.Count, 
+				description, 
+				priority, 
+				dueDate);
+
+			if (!ConfirmTaskOperation("added", new [] { newTask })) return;
+
+			_allTasks.Add(newTask);
+			_saveTasks(_allTasks);
+
+			string taskDueDate =
+				newTask.DueDate?.ToString("ddd, yyyy-MM-dd");
+
+			OutputWriteLine(
+				Messages.TaskWasAdded,
+				newTask.Description,
+				newTask.ID,
+				newTask.Priority.ToString().ToLower(),
+				taskDueDate != null ?
+					$", due on {taskDueDate}." :
+					".");
+		}
+
+		/// <summary>
 		/// Encapsulates the task modification logic.
 		/// </summary>
 		void UpdateTasks()
 		{
+			RequireExplicitFiltering();
+
 			if (!_commandLineArguments.HasAtLeastTwoElements())
-			{ 
+			{
 				throw new TaskManException(Messages.InsufficientUpdateParameters);
 			}
-			
+
+			if (!ConfirmTaskOperation("updated")) return;
+
 			string parameterToChange = _commandLineArguments.PopFirst().ToLower();
 			string parameterStringValue;
 
@@ -1290,7 +1317,7 @@ namespace TaskMan
 			else
 			{
 				OutputWriteLine(
-					Messages.TasksWereUpdated, 
+					Messages.TasksWereUpdated,
 					totalTasksUpdated,
 					parameterToChange,
 					parameterStringValue);
@@ -1298,58 +1325,10 @@ namespace TaskMan
 		}
 
 		/// <summary>
-		/// Encapsulates the task adding logic in one method.
-		/// </summary>
-		void AddTask()
-		{
-			this.CurrentOperation = "add a new task";
-
-			if (!_commandLineArguments.Any())
-			{
-				throw new TaskManException(Messages.NoDescriptionSpecified);
-			}
-
-			string description = string.Join(" ", _commandLineArguments);
-
-			Priority priority = _priorityFlag.IsSet ? 
-				ParseHelper.ParsePriority(_priorityFlag.Value) : 
-				Priority.Normal;
-
-			DateTime? dueDate = _dueDateFlag.IsSet ?
-				ParseHelper.ParseTaskDueDate(_dueDateFlag.Value) :
-                null as DateTime?;
-
-			Task newTask = new Task(
-				_allTasks.Count, 
-				description, 
-				priority, 
-				dueDate);
-
-			if (!ConfirmTaskOperation("added", new [] { newTask })) return;
-
-			_allTasks.Add(newTask);
-			_saveTasks(_allTasks);
-
-			string taskDueDate =
-				newTask.DueDate?.ToString("ddd, yyyy-MM-dd");
-
-			OutputWriteLine(
-				Messages.TaskWasAdded,
-				newTask.Description,
-				newTask.ID,
-				newTask.Priority.ToString().ToLower(),
-				taskDueDate != null ?
-					$", due on {taskDueDate}." :
-					".");
-		}
-
-		/// <summary>
 		/// Encapsulates the task deletion logic.
 		/// </summary>
 		void DeleteTasks()
-		{
-			this.CurrentOperation = "delete tasks";
-			
+		{			
 			RequireExplicitFiltering();
 			RequireNoMoreArguments();
 
@@ -1372,6 +1351,48 @@ namespace TaskMan
 			SignalizeOperationSuccess(
 				"deleted",
 				totalTasksBefore - totalTasksAfter,
+				_filteredTasks);
+		}
+
+		/// <summary>
+		/// Encapsulates the task finishing logic.
+		/// </summary>
+		void FinishTasks()
+		{
+			RequireExplicitFiltering();
+			RequireNoMoreArguments();
+
+			if (!ConfirmTaskOperation("completed")) return;
+
+			int totalTasksFinished =
+				_filteredTasks.ForEach(task => task.IsFinished = true);
+
+			_saveTasks(_allTasks);
+
+			SignalizeOperationSuccess(
+				"completed",
+				totalTasksFinished,
+				_filteredTasks);
+		}
+
+		/// <summary>
+		/// Encapsulates the task reopen logic.
+		/// </summary>
+		void ReopenTasks()
+		{
+			RequireExplicitFiltering();
+			RequireNoMoreArguments();
+
+			if (!ConfirmOperation("reopened")) return;
+
+			int totalTasksReopened =
+				_filteredTasks.ForEach(task => task.IsFinished = false);
+
+			_saveTasks(_allTasks);
+
+			SignalizeOperationSuccess(
+				"reopened",
+				totalTasksReopened,
 				_filteredTasks);
 		}
 
