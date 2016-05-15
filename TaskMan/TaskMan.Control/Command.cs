@@ -19,6 +19,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -30,6 +31,11 @@ namespace TaskMan.Control
 	/// </summary>
 	public class Command
 	{
+		/// <summary>
+		/// Gets the current command's description.
+		/// </summary>
+		public string Description { get; }
+
 		/// <summary>
 		/// Gets a value indicating whether this instance is a 
 		/// read / update / delete command.
@@ -59,7 +65,7 @@ namespace TaskMan.Control
 		/// <c>^(create|add|delete)$</c>, this property
 		/// must return <c>create</c>.
 		/// </example>
-		public string Usage 
+		public string Usage
 		{
 			get
 			{
@@ -80,16 +86,26 @@ namespace TaskMan.Control
 		/// </summary>
 		public IEnumerable<Flag> RequiredFlags { get; }
 
+		/// <summary>
+		/// Gets the action corresponding to the current
+		/// command.
+		/// </summary>
+		public Action Action { get; }
+
 		public Command(
+			string description,
 			string prototype, 
-			bool isReadUpdateDelete, 
+			bool isReadUpdateDelete,
 			IEnumerable<Flag> supportedFlags = null,
-			IEnumerable<Flag> requiredFlags = null)
+			IEnumerable<Flag> requiredFlags = null,
+			Action action = null)
 		{
+			this.Description = description;
 			this.Prototype = prototype;
 			this.IsReadUpdateDelete = isReadUpdateDelete;
 			this.SupportedFlags = supportedFlags ?? new Flag[] { };
 			this.RequiredFlags = requiredFlags ?? new Flag[] { };
+			this.Action = action ?? (() => { throw new NotImplementedException(); });
 		}
 	}
 

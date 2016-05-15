@@ -57,11 +57,7 @@ namespace TaskMan
 					Console.Write(">> ");
 					args = StringExtensions.SplitCommandLine(Console.ReadLine()).ToArray();
 
-					if (!args.Any())
-					{
-						continue;
-					}
-					else if (Regex.IsMatch(args.First(), "^(exit|quit)$", RegexOptions.IgnoreCase))
+					if (Regex.IsMatch(args.First(), "^(exit|quit)$", RegexOptions.IgnoreCase))
 					{
 						Console.WriteLine(Messages.ExitingShell);
 						return;
@@ -441,66 +437,83 @@ namespace TaskMan
 		private void InitializeCommands(IEnumerable<FieldInfo> privateFields)
 		{
 			_configureCommand = new Command(
+				"configure program parameters",
 				@"^(config|configure)$",
 				isReadUpdateDelete: false,
-				supportedFlags: new[] { _configurationGlobalFlag, _interactiveFlag, _defaultFlag });
+				supportedFlags: new[] { _configurationGlobalFlag, _interactiveFlag, _defaultFlag },
+				action: ConfigureProgramParameters);
 
 			_addTaskCommand = new Command(
+				"add a new task",
 				@"^(add|new|create)$",
 				isReadUpdateDelete: false,
 				supportedFlags:
-					new Flag[] { _interactiveFlag, _dueDateFlag, _priorityFlag, _silentFlag, _verboseFlag });
+					new Flag[] { _interactiveFlag, _dueDateFlag, _priorityFlag, _silentFlag, _verboseFlag },
+				action: AddTask);
 
 			_deleteTasksCommand = new Command(
+				"delete tasks",
 				@"^(delete|remove)$",
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Except(_numberLimitFlag, _numberSkipFlag)
-					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag));
+					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag),
+				action: DeleteTasks);
 
 			_completeTasksCommand = new Command(
+				"finish tasks",
 				@"^(complete|finish|accomplish)$",
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Except(_numberLimitFlag, _numberSkipFlag)
-					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag));
+					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag),
+				action: FinishTasks);
 
 			_reopenTasksCommand = new Command(
+				"reopen tasks",
 				@"^(uncomplete|unfinish|reopen)$",
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Except(_numberLimitFlag, _numberSkipFlag)
-					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag));
+					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag),
+				action: ReopenTasks);
 
 			_displayTasksCommand = new Command(
-				@"^(show|display|view)$",
+				"display / output tasks",
+				@"^(show|display|write)$",
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
-					.Concat(_includeAllFlag, _verboseFlag, _orderByFlag, _renumberFlag, _formatFlag));
+					.Concat(_includeAllFlag, _verboseFlag, _orderByFlag, _renumberFlag, _formatFlag),
+				action: DisplayTasks);
 
 			_updateTasksCommand = new Command(
+				"update task parameters",
 				@"^(update|change|modify|set)$",
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Except(_numberLimitFlag, _numberSkipFlag)
-					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag));
+					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag),
+				action: UpdateTasks);
 
 			_listCommand = new Command(
+				"view available task lists or change the current list",
 				@"^(list)$",
 				isReadUpdateDelete: false,
-				supportedFlags: new Flag[0]);
+				action: DisplayOrChangeTaskList);
 
 			_renumberCommand = new Command(
+				"renumber tasks",
 				@"^(renumber)$",
 				isReadUpdateDelete: false,
 				supportedFlags: new[] { _orderByFlag });
 
 			_importCommand = new Command(
+				"import tasks",
 				@"^(import|read)$",
 				isReadUpdateDelete: false,
 				supportedFlags: new Flag[] { _formatFlag, _importBehaviourFlag });
@@ -508,7 +521,8 @@ namespace TaskMan
 			_commands = privateFields
 				.Where(fieldInfo => fieldInfo.FieldType == typeof(Command))
 				.Select(fieldInfo => fieldInfo.GetValue(this))
-				.Cast<Command>();
+				.Cast<Command>()
+				.Except(_executingCommand);
 		}
 
 		private void InitializeAliases(IEnumerable<FieldInfo> privateFields)
@@ -782,11 +796,12 @@ namespace TaskMan
 					ParseHelper.ParseTaskSortOrder(
 						sortingSteps)));
 
-			this.CurrentOperation = "renumber tasks";
+			this.CurrentOperation = _renumberCommand.Description;
 
 			if (_executingCommand == _renumberCommand ||
 				_renumberFlag.IsSet && _renumberFlag)
 			{
+				this.CurrentOperation = _executingCommand.Description;
 				_allTasks.ForEach((task, index) => task.ID = index);
 			}
 	
@@ -822,47 +837,7 @@ namespace TaskMan
 				}
 			}
 
-			if (_executingCommand == _addTaskCommand)
-			{
-				this.CurrentOperation = "add a new task";
-				AddTask();
-			}
-			else if (_executingCommand == _displayTasksCommand)
-			{
-				this.CurrentOperation = "display tasks";
-				DisplayTasks();
-			}
-			else if (_executingCommand == _deleteTasksCommand)
-			{
-				this.CurrentOperation = "delete tasks";
-				DeleteTasks();
-			}
-			else if (_executingCommand == _updateTasksCommand)
-			{
-				this.CurrentOperation = "update task parameters";
-				UpdateTasks();
-			}
-			else if (_executingCommand == _completeTasksCommand)
-			{
-				this.CurrentOperation = "finish tasks";
-				FinishTasks();
-			}
-			else if (_executingCommand == _reopenTasksCommand)
-			{
-				this.CurrentOperation = "reopen tasks";
-				ReopenTasks();
-			}
-			else if (_executingCommand == _configureCommand)
-			{
-				this.CurrentOperation = "configure program parameters";
-				ConfigureProgramParameters();
-			}
-			else if (_executingCommand == _listCommand)
-			{
-				this.CurrentOperation = "display task lists / change current task list";
-				DisplayOrChangeTaskList();
-			}
-			else if (_executingCommand == _renumberCommand)
+			if (_executingCommand == _renumberCommand)
 			{
 				RequireNoMoreArguments();
 
@@ -873,9 +848,10 @@ namespace TaskMan
 				_saveTasks(_allTasks);
 				OutputWriteLine(Messages.TasksWereRenumbered, _allTasks.Count);
 			}
-			else if (_executingCommand == _importCommand)
+			else
 			{
-				throw new NotImplementedException();
+				this.CurrentOperation = _executingCommand.Description;
+				_executingCommand.Action();
 			}
 		}
 
