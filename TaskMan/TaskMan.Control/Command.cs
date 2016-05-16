@@ -63,7 +63,7 @@ namespace TaskMan.Control
 		/// <example>
 		/// For example, if the command's prototype is 
 		/// <c>^(create|add|delete)$</c>, this property
-		/// must return <c>create</c>.
+		/// must return <c>add</c>.
 		/// </example>
 		public string Usage
 		{

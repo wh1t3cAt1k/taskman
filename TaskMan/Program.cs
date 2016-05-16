@@ -757,17 +757,19 @@ namespace TaskMan
 
 			if (_executingCommandName == null)
 			{
-				if (this.HandleGlobalFlags())
+				if (HandleGlobalFlags())
 				{
 					return;
 				}
-				else
-				{
-					// TaskMan operates as "show" by default.
-					// -
-					_executingCommandName = "show";
-					_commandLineArguments = new LinkedList<string>(new [] { _executingCommandName }); 
-				}
+
+				// TaskMan operates in the display mode by default.
+				// --
+				_executingCommandName = _displayTasksCommand.Usage;
+
+				_commandLineArguments = new LinkedList<string>(new [] 
+				{ 
+					_executingCommandName
+				});
 			}
 
 			_commandLineArguments.RemoveFirst();
@@ -780,7 +782,8 @@ namespace TaskMan
 			{
 				throw new TaskManException(Messages.UnknownCommand, _executingCommandName);
 			}
-			else if (!matchingCommands.IsSingleton())
+
+			if (!matchingCommands.IsSingleton())
 			{
 				throw new TaskManException(Messages.MoreThanOneCommandMatchesInput);
 			}
