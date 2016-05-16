@@ -491,7 +491,7 @@ namespace TaskMan
 
 			_displayTasksCommand = new Command(
 				"display / output tasks",
-				@"^(show|display|write)$",
+				@"^(show|display|write|view)$",
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
@@ -782,7 +782,6 @@ namespace TaskMan
 			{
 				throw new TaskManException(Messages.UnknownCommand, _executingCommandName);
 			}
-
 			if (!matchingCommands.IsSingleton())
 			{
 				throw new TaskManException(Messages.MoreThanOneCommandMatchesInput);
@@ -1082,7 +1081,8 @@ namespace TaskMan
 		{
 			IEnumerable<Flag> unsupportedFlagsSpecified = _flags.Where(
 				flag => flag.IsSet && 
-				!executingCommand.SupportedFlags.Contains(flag));
+				!executingCommand.SupportedFlags.Contains(flag) &&
+				!executingCommand.RequiredFlags.Contains(flag));
 
 			IEnumerable<Flag> requiredFlagsUnspecified = _flags.Where(
 				flag => !flag.IsSet &&
