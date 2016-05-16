@@ -57,15 +57,23 @@ namespace TaskMan
 					Console.Write(">> ");
 					args = StringExtensions.SplitCommandLine(Console.ReadLine()).ToArray();
 
-					if (Regex.IsMatch(args.First(), "^(exit|quit)$", RegexOptions.IgnoreCase))
+					if (args.Any())
 					{
-						Console.WriteLine(Messages.ExitingShell);
-						return;
-					}
-					else if (Regex.IsMatch(args.First(), "^cls$", RegexOptions.IgnoreCase))
-					{
-						Console.Clear();
-						continue;
+						if (Regex.IsMatch(args.First(), "^(exit|quit)$", RegexOptions.IgnoreCase))
+						{
+							Console.WriteLine(Messages.ExitingShell);
+							return;
+						}
+						else if (Regex.IsMatch(args.First(), "^cls$", RegexOptions.IgnoreCase))
+						{
+							Console.Clear();
+							continue;
+						}
+						else if (Regex.IsMatch(args.First(), "^taskman$", RegexOptions.IgnoreCase))
+						{
+							Console.WriteLine(Messages.RecursionIsProhibited);
+							continue;
+						}
 					}
 				}
 
@@ -516,7 +524,9 @@ namespace TaskMan
 				"import tasks",
 				@"^(import|read)$",
 				isReadUpdateDelete: false,
-				supportedFlags: new Flag[] { _formatFlag, _importBehaviourFlag });
+				supportedFlags: new Flag[] { _importBehaviourFlag },
+				requiredFlags: new Flag[] { _formatFlag }, 
+				action: ImportTasks);
 
 			_commands = privateFields
 				.Where(fieldInfo => fieldInfo.FieldType == typeof(Command))
@@ -1156,7 +1166,7 @@ namespace TaskMan
 			}
 			else
 			{
-				throw new NotImplementedException();
+				throw new TaskManException(Messages.FormatNotSupported, _formatFlag.Value);
 			}
 
 			if (_renumberFlag.IsSet && _renumberFlag)
@@ -1165,6 +1175,63 @@ namespace TaskMan
 				// if renumbering has happened.
 				// -
 				_saveTasks(_allTasks);
+			}
+		}
+
+		/// <summary>
+		/// Encapsulates the task importing logic.
+		/// </summary>
+		void ImportTasks()
+		{
+			RequireNoMoreArguments();
+
+			IEnumerable<Task> importedTasks;
+
+			if (_formatFlag.Value == Format.CSV)
+			{
+				using (CsvReader reader = new CsvReader(_input))
+				{
+					importedTasks = reader.GetRecords<Task>();
+				}
+			}
+			else if (_formatFlag.Value == Format.JSON)
+			{
+				JavaScriptSerializer serializer = new JavaScriptSerializer();
+				importedTasks = serializer.Deserialize<Task[]>(_input.ReadToEnd());
+			}
+			else if (_formatFlag.Value == Format.XML)
+			{
+				XmlSerializer serializer = new XmlSerializer(typeof(Task[]));
+				importedTasks = (Task[])serializer.Deserialize(_input);	
+			}
+			else
+			{
+				throw new TaskManException(Messages.FormatNotSupported, _formatFlag.Value);
+			}
+
+			ImportBehaviour importBehaviour = _importBehaviourFlag.IsSet ?
+				_importBehaviourFlag.Value :
+				ImportBehaviour.Replace;
+
+			if (importBehaviour == ImportBehaviour.Replace)
+			{
+				importedTasks.ForEach((task, index) => task.ID = index);
+
+				_allTasks.Clear();
+				_allTasks.AddRange(importedTasks);
+			}
+			else if (importBehaviour == ImportBehaviour.Append)
+			{
+				int maximumExistingID = _allTasks.Max(task => task.ID);
+
+				importedTasks.ForEach((task, index)
+					=> task.ID = maximumExistingID + index + 1);
+
+				_allTasks.AddRange(importedTasks);
+			}
+			else
+			{
+				throw new NotImplementedException();
 			}
 		}
 

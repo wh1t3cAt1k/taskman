@@ -83,5 +83,7 @@ namespace TaskMan
 		public const string UnknownDueDate = "Cannot parse '{0}' into a due date.";
 		public const string NoFilterConditionsUseAllIfIntended = "No task filter conditions specified. Use the --all flag if you intended to {0} all tasks.";
 		public const string IncorrectSortingStepsSyntax = "Sorting string does not match the required syntax ('property+' or 'property-')";
+		public const string RecursionIsProhibited = "No, recursion is prohibited.";
+		public const string FormatNotSupported = "'{0}' format is not supported.";
 	}
 }

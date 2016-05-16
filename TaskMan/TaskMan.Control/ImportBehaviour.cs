@@ -4,7 +4,7 @@
 	{
 		/// <summary>
 		/// Replaces all tasks in the target list by
-		/// the imported tasks.
+		/// the imported tasks. The imported tasks
 		/// </summary>
 		Replace = 0,
 		/// <summary>
@@ -13,11 +13,11 @@
 		/// </summary>
 		Append,
 		/// <summary>
-		/// Currently not supported.
+		/// Not yet supported.
 		/// </summary>
 		MergePriorityExisting,
 		/// <summary>
-		/// Currently not supported.
+		/// Not yet supported.
 		/// </summary>
 		MergePriorityImported,
 	}
