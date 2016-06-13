@@ -430,6 +430,19 @@ namespace TaskMan
 			Assert.That(
 				tester.Errors.ContainsFormat(Messages.MoreThanOneCommandMatchesInput));
 		}
+
+		[Test]
+		public void Test_TaskMan_RequiresExplicitFilteringOnDelete()
+		{
+			TaskManTester tester = new TaskManTester();
+			tester.AddThreeTasks();
+
+			tester.RunWithCommand("delete");
+
+			Assert.That(tester.SavedTasks.Any());
+			Assert.That(
+				tester.Errors.ContainsFormat(Messages.NoFilterConditionsUseAllIfIntended));
+		}
 	}
 }
 
