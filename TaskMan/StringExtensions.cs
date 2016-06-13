@@ -232,6 +232,22 @@ namespace TaskMan
 
 			return distances[firstLength, secondLength];
 		}
+
+		/// <summary>
+		/// Checks that a given string contains the given format string,
+		/// ignoring any argument placeholders in the latter.
+		/// The implementation is currently not precise, but enough
+		/// for unit testing purposes.
+		/// </summary>
+		public static bool ContainsFormat(
+			this string text, 
+			string formatString, 
+			StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
+		{
+			return Regex
+				.Split(formatString, @"{\d+}")
+				.All(part => text.IndexOf(part, comparisonType) >= 0);
+		}
 	}
 }
 

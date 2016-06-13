@@ -370,7 +370,7 @@ namespace TaskMan
 
 			tester.RunWithCommand("delete --all --interactive");
 
-			Assert.That(tester.Output, Does.Contain("cancelled").IgnoreCase);
+			Assert.That(() => tester.Output.ContainsFormat(Messages.Cancelled));
 			Assert.That(tester.SavedTasks.Count, Is.EqualTo(3));
 		}
 
@@ -388,16 +388,25 @@ namespace TaskMan
 		}
 
 		[Test]
-		public void Test_Taskman_OutputsSimilarCommandOnTypo()
+		public void Test_TaskMan_OutputsSimilarCommandOnTypo()
 		{
 			TaskManTester tester = new TaskManTester();
 
 			tester.RunWithCommand("shom");
 
+			Assert.That(tester.Errors.ContainsFormat(Messages.DidYouMean));
+			Assert.That(tester.Errors, Does.Contain("show").IgnoreCase);
+		}
+
+		[Test]
+		public void Test_TaskMan_OutputsPossibleCommandsOnAmbiguity()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.RunWithCommand("s");
+
 			Assert.That(
-				tester.Errors,
-				Does.Contain("did you mean").IgnoreCase
-				.And.Contain("show").IgnoreCase);
+				tester.Errors.ContainsFormat(Messages.MoreThanOneCommandMatchesInput));
 		}
 	}
 }
