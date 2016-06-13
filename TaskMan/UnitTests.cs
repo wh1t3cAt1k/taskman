@@ -249,7 +249,29 @@ namespace TaskMan
 
 			tester.RunWithCommand("add --silent Remember the milk");
 
-			Assert.That(() => string.IsNullOrWhiteSpace(tester.Output));
+			Assert.That(string.IsNullOrWhiteSpace(tester.Output));
+		}
+
+		[Test]
+		public void Test_VerboseFlag_IncreasesErrorVerbosity()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.RunWithCommand("self-destruct --verbose");
+
+			Assert.That(
+				tester.Errors.ContainsFormat(Messages.ExceptionStackTrace));
+		}
+
+		[Test]
+		public void Test_TaskMan_DoesNotPrintStackTrace_When_NoVerboseFlag()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.RunWithCommand("self-destruct");
+
+			Assert.That(
+				!tester.Errors.ContainsFormat(Messages.ExceptionStackTrace));
 		}
 
 		[Test]
