@@ -788,7 +788,7 @@ namespace TaskMan
 
 				if (similarCommandNames.Any())
 				{
-					errorMessage += " " + string.Format(
+					errorMessage += "\n" + string.Format(
 						Messages.DidYouMean,
 						similarCommandNames.First());
 				}

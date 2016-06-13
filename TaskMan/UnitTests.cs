@@ -41,8 +41,8 @@ namespace TaskMan
 		StringBuilder _errors = new StringBuilder();
 
 		public string Input { get; set; } = "";
-		public string Output { get { return _output.ToString(); } }
-		public string Errors { get { return _errors.ToString(); } }
+		public string Output => _output.ToString();
+		public string Errors => _errors.ToString();
 
 		public void RunWithCommand(string command)
 		{
@@ -56,13 +56,27 @@ namespace TaskMan
 					inputStream: inputRedirect,
 					outputStream: outputRedirect,
 					errorStream: errorRedirect);
-		
-				program.Run(command.Split(
-					new [] { ' ' },
-					StringSplitOptions.RemoveEmptyEntries));
 
-				_output.AppendLine(outputRedirect.ToString());
-				_errors.AppendLine(errorRedirect.ToString());
+				try
+				{
+					program.Run(command.Split(
+						new[] { ' ' },
+						StringSplitOptions.RemoveEmptyEntries));
+				}
+				catch (Exception error)
+				{
+					// Need to do this explicitly because
+					// TaskMan object doesn't handle exceptions
+					// itself, delegating it to the Program class.
+					// This need to be redone in the future.
+					// -
+					_errors.AppendLine(error.Message);
+				}
+				finally
+				{
+					_errors.AppendLine(errorRedirect.ToString());
+					_output.AppendLine(outputRedirect.ToString());
+				}
 			}
 		}
 
@@ -388,6 +402,21 @@ namespace TaskMan
 			tester.RunWithCommand("delete --all --interactive");
 
 			Assert.That(tester.SavedTasks, Is.Empty);
+		}
+
+		[Test]
+		public void Test_Taskman_OutputsSimilarCommandOnTypo()
+		{
+			TaskManTester tester = new TaskManTester();
+
+			tester.RunWithCommand("shom");
+
+			Console.WriteLine(tester.Errors);
+
+			Assert.That(
+				tester.Errors,
+				Does.Contain("did you mean").IgnoreCase
+				.And.Contain("show").IgnoreCase);
 		}
 	}
 }
