@@ -117,11 +117,39 @@ namespace TaskMan.Control
 		/// </summary>
 		public static IEnumerable<Command> Matching(this IEnumerable<Command> commands, string expression)
 		{
-			return commands.Where(command => 
+			IEnumerable<Command> strictMatches = commands.Where(
+				command => new Regex(command.Prototype).IsMatch(expression));
+
+			if (strictMatches.Any()) return strictMatches;
+
+			IEnumerable<Command> prefixMatches = commands.Where(command =>
 			{
-				Regex prototypeRegex = new Regex(command.Prototype);
-				return prototypeRegex.IsMatch(expression);
+				IEnumerable<string> commandComponents = 
+					PrototypeHelper.GetComponents(command.Prototype);
+
+				return commandComponents.Any(
+					component => component.StartsWith(
+						expression, 
+						StringComparison.OrdinalIgnoreCase));
 			});
+
+			return prefixMatches;
+		}
+
+		/// <summary>
+		/// For a given set of commands, extracts command names 
+		/// that are similar to the provided expression in terms
+		/// of string distance.
+		/// </summary>
+		public static IEnumerable<string> SimilarNames(
+			this IEnumerable<Command> commands, 
+			string expression,
+			int maximumEditDistance)
+		{
+			return commands.SelectMany(
+				command => PrototypeHelper
+					.GetComponents(command.Prototype)
+					.Where(name => name.LevenshteinDistance(expression) <= maximumEditDistance));
 		}
 	}
 }

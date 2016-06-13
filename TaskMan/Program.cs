@@ -148,6 +148,7 @@ namespace TaskMan
 		Flag<string> _identityFilterFlag;
 		Flag<string> _descriptionFilterFlag;
 		Flag<string> _orderByFlag;
+		Flag<string> _listOverrideFlag;
 
 		Flag<int> _numberSkipFlag;
 		Flag<int> _numberLimitFlag;
@@ -249,26 +250,14 @@ namespace TaskMan
 		/// <summary>
 		/// Gets a value indicating whether this instance is verbose.
 		/// </summary>
-		public bool IsVerbose 
-		{ 
-			get 
-			{
-				return 
-					this._verboseFlag.IsSet &&
-					this._verboseFlag.Value;
-			}
-		}
+		public bool IsVerbose =>
+			this._verboseFlag.IsSet &&
+			this._verboseFlag.Value;
 
 		/// <summary>
 		/// Gets the error stream used by this instance.
 		/// </summary>
-		public TextWriter ErrorStream
-		{
-			get
-			{
-				return _error;
-			}
-		}
+		public TextWriter ErrorStream => _error;
 
 		/// <summary>
 		/// Gets the full filename of the file that stores
@@ -279,9 +268,16 @@ namespace TaskMan
 		{
 			get
 			{
+				string taskListName =
+					_listOverrideFlag.IsSet
+						? _listOverrideFlag.Value
+						: _configuration.CurrentTaskList.Value;
+
+				_configuration.CurrentTaskList.Validate(taskListName);
+
 				return Path.Combine(
 					_configuration.UserConfigurationDirectory,
-					_configuration.GetValue(_configuration.CurrentTaskList.Name) + ".tmf");
+					$"{taskListName}.tmf");
 			}
 		}
 
@@ -434,6 +430,10 @@ namespace TaskMan
 				"specifies the import behaviour for import command",
 				"importbehaviour=");
 
+			_listOverrideFlag = new Flag<string>(
+				"explicitly specifies the target task list for the current operation.",
+				"L=|list=");
+
 			_flags = privateFields
 				.Where(fieldInfo => typeof(Flag).IsAssignableFrom(fieldInfo.FieldType))
 				.Select(fieldInfo => fieldInfo.GetValue(this))
@@ -455,8 +455,8 @@ namespace TaskMan
 				"add a new task",
 				@"^(add|new|create)$",
 				isReadUpdateDelete: false,
-				supportedFlags:
-					new Flag[] { _interactiveFlag, _dueDateFlag, _priorityFlag, _silentFlag, _verboseFlag },
+				supportedFlags: 
+					new Flag[] { _interactiveFlag, _dueDateFlag, _priorityFlag, _silentFlag, _verboseFlag, _listOverrideFlag },
 				action: AddTask);
 
 			_deleteTasksCommand = new Command(
@@ -466,7 +466,7 @@ namespace TaskMan
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Except(_numberLimitFlag, _numberSkipFlag)
-					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag),
+					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag, _listOverrideFlag),
 				action: DeleteTasks);
 
 			_completeTasksCommand = new Command(
@@ -476,7 +476,7 @@ namespace TaskMan
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Except(_numberLimitFlag, _numberSkipFlag)
-					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag),
+					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag, _listOverrideFlag),
 				action: FinishTasks);
 
 			_reopenTasksCommand = new Command(
@@ -495,7 +495,7 @@ namespace TaskMan
 				isReadUpdateDelete: true,
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
-					.Concat(_includeAllFlag, _verboseFlag, _orderByFlag, _renumberFlag, _formatFlag),
+					.Concat(_includeAllFlag, _verboseFlag, _orderByFlag, _renumberFlag, _formatFlag, _listOverrideFlag),
 				action: DisplayTasks);
 
 			_updateTasksCommand = new Command(
@@ -505,7 +505,7 @@ namespace TaskMan
 				supportedFlags: _flags
 					.Where(flag => flag is ITaskFilter)
 					.Except(_numberLimitFlag, _numberSkipFlag)
-					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag),
+					.Concat(_interactiveFlag, _includeAllFlag, _silentFlag, _verboseFlag, _listOverrideFlag),
 				action: UpdateTasks);
 
 			_listCommand = new Command(
@@ -518,13 +518,13 @@ namespace TaskMan
 				"renumber tasks",
 				@"^(renumber)$",
 				isReadUpdateDelete: false,
-				supportedFlags: new[] { _orderByFlag });
+				supportedFlags: new[] { _orderByFlag, _listOverrideFlag });
 
 			_importCommand = new Command(
 				"import tasks",
 				@"^(import|read)$",
 				isReadUpdateDelete: false,
-				supportedFlags: new Flag[] { _importBehaviourFlag },
+				supportedFlags: new Flag[] { _importBehaviourFlag, _listOverrideFlag },
 				requiredFlags: new Flag[] { _formatFlag }, 
 				action: ImportTasks);
 
@@ -1060,12 +1060,16 @@ namespace TaskMan
 				Messages.CurrentTaskList,
 				_configuration.CurrentTaskList.Value);
 
-			OutputWriteLine(Messages.AvailableTaskLists);
-
-			taskListFiles
+			IEnumerable<string> availableNonEmptyLists = taskListFiles
 				.Select(fileName => Path.GetFileNameWithoutExtension(fileName))
-				.OrderBy(listName => listName)
-				.ForEach((listName, index) => OutputWriteLine($"{index + 1}. {listName}"));
+				.OrderBy(listName => listName);
+
+			if (availableNonEmptyLists.Any())
+			{
+				OutputWriteLine(Messages.AvailableTaskLists);
+				availableNonEmptyLists.ForEach(
+					(listName, index) => OutputWriteLine($"{index + 1}. {listName}"));
+			}
 		}
 
 		/// <summary>

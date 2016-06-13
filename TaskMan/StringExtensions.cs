@@ -166,6 +166,10 @@ namespace TaskMan
 			}
 		}
 
+		/// <summary>
+		/// Returns the given string replicated the required
+		/// number of times.
+		/// </summary>
 		public static string Replicate(this string text, int times)
 		{
 			if (times < 0) throw new ArgumentOutOfRangeException(nameof(times));
@@ -178,6 +182,55 @@ namespace TaskMan
 			}
 
 			return resultBuilder.ToString();
+		}
+
+		/// <summary>
+		/// Returns the string, filtering out the provided
+		/// set of characters. 
+		/// </summary>
+		public static string FilterCharacters(
+			this string text, 
+			IEnumerable<char> forbiddenCharacters)
+		{
+			char[] filteredCharacters = text
+				.Where(character => !forbiddenCharacters.Contains(character))
+				.ToArray();
+
+			return new string(filteredCharacters);
+		}
+
+		/// <summary>
+		/// Returns the edit distance between the strings.
+		/// </summary>
+		public static int LevenshteinDistance(this string first, string second)
+		{
+			if (string.IsNullOrEmpty(first) ||
+				string.IsNullOrEmpty(second))
+			{
+				return 0;
+			}
+
+			int firstLength = first.Length;
+			int secondLength = second.Length;
+
+			int[,] distances = new int[firstLength + 1, secondLength + 1];
+
+			for (int i = 0; i <= firstLength; distances[i, 0] = i++) { }
+			for (int j = 0; j <= secondLength; distances[0, j] = j++) { }
+
+			for (int i = 1; i <= firstLength; i++)
+			{
+				for (int j = 1; j <= secondLength; j++)
+				{
+					int cost = second[j - 1] == first[i - 1] ? 0 : 1;
+
+					distances[i, j] = Math.Min(
+						Math.Min(distances[i - 1, j] + 1, distances[i, j - 1] + 1),
+						distances[i - 1, j - 1] + cost);
+				}
+			}
+
+			return distances[firstLength, secondLength];
 		}
 	}
 }

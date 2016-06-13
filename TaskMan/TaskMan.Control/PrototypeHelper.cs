@@ -30,9 +30,9 @@ namespace TaskMan.Control
 		/// </summary>
 		public static string[] GetComponents(string prototype)
 		{
-			return
-				new string(prototype.Where(character => "^$():=".Contains(character) == false).ToArray())
-					.Split(new [] { '|' });
+			return prototype
+				.FilterCharacters("^$():=")
+				.Split(new [] { '|' });
 		}
 	}
 }

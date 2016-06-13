@@ -87,11 +87,7 @@ namespace TaskMan.Control
 			this.ValidationRegex = validationRegex;
 			this.IsUserScoped = isUserScoped;
 
-			if (!this.ValidationRegex.IsMatch(defaultValue))
-			{
-				throw new ArgumentException(
-					"The specified default value does not match the given validation expression");
-			}
+			Validate(defaultValue);
 
 			this.DefaultValue = defaultValue;
 		}
@@ -111,6 +107,19 @@ namespace TaskMan.Control
 				new Regex(validationPattern),
 				isUserScoped)
 		{ }
+
+		/// <summary>
+		/// Validates the provided value against the parameter's
+		/// validation regex.
+		/// </summary>
+		public void Validate(string value)
+		{
+			if (!this.ValidationRegex.IsMatch(value))
+			{
+				throw new ArgumentException(
+					"The specified value does not match the given validation expression.");
+			}
+		}
 
 		/// <summary>
 		/// Gets the value of this parameter using the
