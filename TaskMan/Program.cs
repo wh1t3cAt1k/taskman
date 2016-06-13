@@ -1262,6 +1262,8 @@ namespace TaskMan
 			{
 				throw new NotImplementedException();
 			}
+
+			_saveTasks(_allTasks);
 		}
 
 		/// <summary>
