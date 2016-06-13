@@ -35,7 +35,7 @@ namespace TaskMan
 	{
 		List<Task> _savedTasks = new List<Task>();
 		
-		public IEnumerable<Task> SavedTasks { get { return _savedTasks; } }
+		public IEnumerable<Task> SavedTasks => _savedTasks;
 
 		StringBuilder _output = new StringBuilder();
 		StringBuilder _errors = new StringBuilder();
