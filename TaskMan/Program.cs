@@ -39,11 +39,11 @@ namespace TaskMan
 {
 	public class Program
 	{
-		public static void Main(string[] args)
+		public static void Main(string[] arguments)
 		{
 			bool shellMode = 
-				args.Length == 1 &&
-				Regex.IsMatch(args[0], "^(shell|repl)$", RegexOptions.IgnoreCase);
+				arguments.Length == 1 &&
+				Regex.IsMatch(arguments[0], "^(shell|repl)$", RegexOptions.IgnoreCase);
 
 			if (shellMode)
 			{
@@ -55,21 +55,21 @@ namespace TaskMan
 				if (shellMode)
 				{
 					Console.Write(">> ");
-					args = StringExtensions.SplitCommandLine(Console.ReadLine()).ToArray();
+					arguments = StringExtensions.SplitCommandLine(Console.ReadLine()).ToArray();
 
-					if (args.Any())
+					if (arguments.Any())
 					{
-						if (Regex.IsMatch(args.First(), "^(exit|quit)$", RegexOptions.IgnoreCase))
+						if (Regex.IsMatch(arguments.First(), "^(exit|quit)$", RegexOptions.IgnoreCase))
 						{
 							Console.WriteLine(Messages.ExitingShell);
 							return;
 						}
-						else if (Regex.IsMatch(args.First(), "^cls$", RegexOptions.IgnoreCase))
+						else if (Regex.IsMatch(arguments.First(), "^cls$", RegexOptions.IgnoreCase))
 						{
 							Console.Clear();
 							continue;
 						}
-						else if (Regex.IsMatch(args.First(), "^taskman$", RegexOptions.IgnoreCase))
+						else if (Regex.IsMatch(arguments.First(), "^taskman$", RegexOptions.IgnoreCase))
 						{
 							Console.WriteLine(Messages.RecursionIsProhibited);
 							continue;
@@ -77,31 +77,7 @@ namespace TaskMan
 					}
 				}
 
-				TaskMan program = new TaskMan();
-
-				try
-				{
-					program.Run(args);
-				}
-				catch (Exception exception)
-				{
-					if (program.IsVerbose)
-					{
-						program.ErrorStream.WriteLine(
-							Messages.ErrorPerformingOperation,
-							program.CurrentOperation,
-							exception.Message.DecapitaliseFirstLetter());
-
-						program.ErrorStream.WriteLine(Messages.ExceptionStackTrace);
-						program.ErrorStream.Write(exception.StackTrace);
-					}
-					else
-					{
-						program.ErrorStream.WriteLine(
-							Messages.Error,
-							exception.Message.DecapitaliseFirstLetter());
-					}
-				}
+				new TaskMan().RunTaskman(arguments);
 			}
 			while (shellMode);
 		}
@@ -729,7 +705,34 @@ namespace TaskMan
 			}
 		}
 
-		public void Run(IEnumerable<string> arguments)
+		public void RunTaskman(IEnumerable<string> arguments)
+		{
+			try
+			{
+				Run(arguments);
+			}
+			catch (Exception exception)
+			{
+				if (this.IsVerbose)
+				{
+					_error.WriteLine(
+						Messages.ErrorPerformingOperation,
+						this.CurrentOperation,
+						exception.Message.DecapitaliseFirstLetter());
+
+					_error.WriteLine(Messages.ExceptionStackTrace);
+					_error.Write(exception.StackTrace);
+				}
+				else
+				{
+					_error.WriteLine(
+						Messages.Error,
+						exception.Message.DecapitaliseFirstLetter());
+				}
+			}
+		}
+
+		void Run(IEnumerable<string> arguments)
 		{
 			if (arguments.Any())
 			{
