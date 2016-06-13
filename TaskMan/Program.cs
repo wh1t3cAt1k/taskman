@@ -223,7 +223,7 @@ namespace TaskMan
 		/// Represents the unparsed remainder of the command 
 		/// line arguments.
 		/// </summary>
-		LinkedList<string> _commandLineArguments;
+		LinkedList<string> _parsedArguments;
 
 		/// <summary>
 		/// Represents the subset of tasks relevant for the
@@ -729,31 +729,31 @@ namespace TaskMan
 			}
 		}
 
-		public void Run(IEnumerable<string> originalArguments)
+		public void Run(IEnumerable<string> arguments)
 		{
-			if (originalArguments.Any())
+			if (arguments.Any())
 			{
 				this.CurrentOperation = "expand aliases";
 
 				IEnumerable<Alias> matchingAliases = 
-					_aliases.Where(alias => alias.Name == originalArguments.First());
+					_aliases.Where(alias => alias.Name == arguments.First());
 
 				if (matchingAliases.Any())
 				{
 					// Replace the alias with its expansion.
 					// -
-					originalArguments = Enumerable.Concat(
+					arguments = Enumerable.Concat(
 						matchingAliases.Single().ExpansionArray,
-						originalArguments.Skip(1));
+						arguments.Skip(1));
 				}
 			}
 
 			this.CurrentOperation = "parse command line arguments";
 
-			_commandLineArguments =
-				new LinkedList<string>(_optionSet.Parse(originalArguments));
+			_parsedArguments =
+				new LinkedList<string>(_optionSet.Parse(arguments));
 
-			_executingCommandName = _commandLineArguments.First?.Value;
+			_executingCommandName = _parsedArguments.First?.Value;
 
 			if (_executingCommandName == null)
 			{
@@ -766,13 +766,13 @@ namespace TaskMan
 				// --
 				_executingCommandName = _displayTasksCommand.Usage;
 
-				_commandLineArguments = new LinkedList<string>(new [] 
+				_parsedArguments = new LinkedList<string>(new [] 
 				{ 
 					_executingCommandName
 				});
 			}
 
-			_commandLineArguments.RemoveFirst();
+			_parsedArguments.RemoveFirst();
 
 			this.CurrentOperation = "recognize the command";
 
@@ -788,7 +788,7 @@ namespace TaskMan
 
 				if (similarCommandNames.Any())
 				{
-					errorMessage += "\n" + string.Format(
+					errorMessage += " " + string.Format(
 						Messages.DidYouMean,
 						similarCommandNames.First());
 				}
@@ -797,14 +797,20 @@ namespace TaskMan
 			}
 			if (!matchingCommands.IsSingleton())
 			{
-				throw new TaskManException(Messages.MoreThanOneCommandMatchesInput);
+				IEnumerable<string> matchingNames = matchingCommands
+					.SelectMany(command => PrototypeHelper.GetComponents(command.Prototype))
+					.Where(name => name.StartsWith(_executingCommandName, StringComparison.OrdinalIgnoreCase));
+
+				throw new TaskManException(
+					Messages.MoreThanOneCommandMatchesInput,
+					string.Join(", ", matchingNames.Select(name => $"'{name}'")));
 			}
 
 			_executingCommand = matchingCommands.Single();
 
 			this.CurrentOperation = "ensure flag consistency";
 
-			EnsureFlagConsistency(_executingCommand, _executingCommandName, originalArguments);
+			EnsureFlagConsistency(_executingCommand, _executingCommandName, arguments);
 
 			this.CurrentOperation = "read tasks from the task file";
 
@@ -936,7 +942,7 @@ namespace TaskMan
 
 		void ConfigureProgramParameters()
 		{
-			if (!_commandLineArguments.Any())
+			if (!_parsedArguments.Any())
 			{
 				OutputWriteLine("Available configuration parameters: ");
 
@@ -963,9 +969,9 @@ namespace TaskMan
 				return;
 			}
 
-			string parameterName = _commandLineArguments.PopFirst();
+			string parameterName = _parsedArguments.PopFirst();
 
-			if (!_commandLineArguments.Any() && _defaultFlag.IsSet && _defaultFlag)
+			if (!_parsedArguments.Any() && _defaultFlag.IsSet && _defaultFlag)
 			{
 				string defaultValue = _configuration.GetDefaultValue(parameterName);
 
@@ -991,7 +997,7 @@ namespace TaskMan
 					parameterName,
 					defaultValue);
 			}
-			else if (!_commandLineArguments.Any() && !_defaultFlag.IsSet)
+			else if (!_parsedArguments.Any() && !_defaultFlag.IsSet)
 			{
 				// Just show the parameter.
 				// 
@@ -1022,7 +1028,7 @@ namespace TaskMan
 						_defaultFlag.Usage);
 				}
 
-				string parameterValue = _commandLineArguments.PopFirst();
+				string parameterValue = _parsedArguments.PopFirst();
 				RequireNoMoreArguments();
 
 				if (!ConfirmOperation(
@@ -1044,12 +1050,12 @@ namespace TaskMan
 
 		void DisplayOrChangeTaskList()
 		{
-			if (_commandLineArguments.Any())
+			if (_parsedArguments.Any())
 			{
 				// If another argument remains, it is the
 				// new task list name.
 				// -
-				string newListName = _commandLineArguments.PopFirst();
+				string newListName = _parsedArguments.PopFirst();
 
 				RequireNoMoreArguments();
 
@@ -1260,12 +1266,12 @@ namespace TaskMan
 		/// </summary>
 		void AddTask()
 		{
-			if (!_commandLineArguments.Any())
+			if (!_parsedArguments.Any())
 			{
 				throw new TaskManException(Messages.NoDescriptionSpecified);
 			}
 
-			string description = string.Join(" ", _commandLineArguments);
+			string description = string.Join(" ", _parsedArguments);
 
 			Priority priority = _priorityFlag.IsSet ? 
 				ParseHelper.ParsePriority(_priorityFlag.Value) : 
@@ -1306,14 +1312,14 @@ namespace TaskMan
 		{
 			RequireExplicitFiltering();
 
-			if (!_commandLineArguments.HasAtLeastTwoElements())
+			if (!_parsedArguments.HasAtLeastTwoElements())
 			{
 				throw new TaskManException(Messages.InsufficientUpdateParameters);
 			}
 
 			if (!ConfirmTaskOperation("updated")) return;
 
-			string parameterToChange = _commandLineArguments.PopFirst().ToLower();
+			string parameterToChange = _parsedArguments.PopFirst().ToLower();
 			string parameterStringValue;
 
 			// Preserve old task description for better human-readable
@@ -1330,7 +1336,7 @@ namespace TaskMan
 
 			if (TaskSetPriorityRegex.IsMatch(parameterToChange))
 			{
-				Priority priority = ParseHelper.ParsePriority(_commandLineArguments.PopFirst());
+				Priority priority = ParseHelper.ParsePriority(_parsedArguments.PopFirst());
 				parameterStringValue = priority.ToString();
 
 				RequireNoMoreArguments();
@@ -1339,13 +1345,13 @@ namespace TaskMan
 			}
 			else if (TaskSetDescriptionRegex.IsMatch(parameterToChange))
 			{
-				parameterStringValue = string.Join(" ", _commandLineArguments);
+				parameterStringValue = string.Join(" ", _parsedArguments);
 
 				totalTasksUpdated = _filteredTasks.ForEach(task => task.Description = parameterStringValue);
 			}
 			else if (TaskSetFinishedRegex.IsMatch(parameterToChange))
 			{
-				bool isFinished = ParseHelper.ParseBool(_commandLineArguments.PopFirst());
+				bool isFinished = ParseHelper.ParseBool(_parsedArguments.PopFirst());
 				parameterStringValue = isFinished.ToString();
 
 				RequireNoMoreArguments();
@@ -1354,7 +1360,7 @@ namespace TaskMan
 			}
 			else if (TaskSetDueDateRegex.IsMatch(parameterToChange))
 			{
-				DateTime dueDate = ParseHelper.ParseTaskDueDate(_commandLineArguments.PopFirst());
+				DateTime dueDate = ParseHelper.ParseTaskDueDate(_parsedArguments.PopFirst());
 				parameterStringValue = dueDate.ToString("MMMMM dd, yyyy");
 
 				RequireNoMoreArguments();
@@ -1516,11 +1522,11 @@ namespace TaskMan
 		/// </summary>
 		void RequireNoMoreArguments()
 		{
-			if (_commandLineArguments.Any())
+			if (_parsedArguments.Any())
 			{
 				throw new TaskManException(
 					Messages.UnknownCommandLineArguments,
-					string.Join(" ", _commandLineArguments));
+					string.Join(" ", _parsedArguments));
 			}
 		}
 

@@ -49,7 +49,7 @@ namespace TaskMan
 		public const string InsufficientUpdateParameters = "Insufficient parameters in 'set' command.";
 		public const string InvalidTaskIdRange = "Invalid task ID range: the starting ID should not exceed the ending ID.";
 		public const string InvalidSetParameters = "Invalid 'set' command syntax.";
-		public const string MoreThanOneCommandMatchesInput = "More than one command matches the given input. Please be more specific.";
+		public const string MoreThanOneCommandMatchesInput = "More than one command matches the given input: {0}";
 		public const string NoDescriptionSpecified = "A task description is missing.";
 		public const string NoTasksMatchingGivenConditions = "There are no tasks matching the given conditions."; 
 		public const string NoTaskWithSpecifiedId = "There is no task with the specified ID: '{0}'.";
