@@ -47,8 +47,8 @@ namespace TaskMan
 		public void RunWithCommand(string command)
 		{
 			using (StringReader inputRedirect = new StringReader(this.Input))
-			using (StringWriter outputRedirect = new StringWriter())
-			using (StringWriter errorRedirect = new StringWriter())
+			using (StringWriter outputRedirect = new StringWriter(_output))
+			using (StringWriter errorRedirect = new StringWriter(_errors))
 			{
 				TaskMan program = new TaskMan(
 					taskReadFunction: () => this._savedTasks,
@@ -57,26 +57,9 @@ namespace TaskMan
 					outputStream: outputRedirect,
 					errorStream: errorRedirect);
 
-				try
-				{
-					program.Run(command.Split(
-						new[] { ' ' },
-						StringSplitOptions.RemoveEmptyEntries));
-				}
-				catch (Exception error)
-				{
-					// Need to do this explicitly because
-					// TaskMan object doesn't handle exceptions
-					// itself, delegating it to the Program class.
-					// This need to be redone in the future.
-					// -
-					_errors.AppendLine(error.Message);
-				}
-				finally
-				{
-					_errors.AppendLine(errorRedirect.ToString());
-					_output.AppendLine(outputRedirect.ToString());
-				}
+				program.RunTaskman(command.Split(
+					new[] { ' ' },
+					StringSplitOptions.RemoveEmptyEntries));
 			}
 		}
 
@@ -410,8 +393,6 @@ namespace TaskMan
 			TaskManTester tester = new TaskManTester();
 
 			tester.RunWithCommand("shom");
-
-			Console.WriteLine(tester.Errors);
 
 			Assert.That(
 				tester.Errors,
