@@ -86,5 +86,6 @@ namespace TaskMan
 		public const string RecursionIsProhibited = "No, recursion is prohibited.";
 		public const string FormatNotSupported = "'{0}' format is not supported.";
 		public const string DidYouMean = "Did you mean '{0}'?";
+		public const string AssumingCommand = "Assuming command '{0}'.";
 	}
 }

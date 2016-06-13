@@ -311,7 +311,7 @@ namespace TaskMan
 				"I|interactive");
 
 			_verboseFlag = new Flag<bool>(
-				"increase error message verbosity",
+				"increase program verbosity",
 				"v|verbose");
 
 			_silentFlag = new Flag<bool>(
@@ -798,6 +798,7 @@ namespace TaskMan
 
 				throw new TaskManException(errorMessage, _executingCommandName);
 			}
+
 			if (!matchingCommands.IsSingleton())
 			{
 				IEnumerable<string> matchingNames = matchingCommands
@@ -810,6 +811,20 @@ namespace TaskMan
 			}
 
 			_executingCommand = matchingCommands.Single();
+
+			if (!PrototypeHelper
+			    .GetComponents(_executingCommand.Prototype)
+				.Any(name => name.Equals(_executingCommandName, StringComparison.OrdinalIgnoreCase)))
+			{
+				_executingCommandName = PrototypeHelper
+					.GetComponents(_executingCommand.Prototype)
+					.First(name => name.StartsWith(_executingCommandName, StringComparison.OrdinalIgnoreCase));
+
+				if (this.IsVerbose)
+				{
+					OutputWriteLine(Messages.AssumingCommand, _executingCommandName);
+				}
+			}
 
 			this.CurrentOperation = "ensure flag consistency";
 
