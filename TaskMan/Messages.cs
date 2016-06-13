@@ -42,7 +42,7 @@ namespace TaskMan
 		public const string ParameterWasSetToValue = "Parameter '{0}' was set to '{1}'.";
 		public const string CurrentUserValueOfParameter = "User-level value: '{1}'.";
 		public const string CurrentGlobalValueOfParameter = "Global value: '{1}'.";
-		public const string ParameterHasNoDefault = "Parameter has no default.";
+		public const string ParameterHasNoDefault = "Parameter has no default value.";
 		public const string DefaultValueOfParameter = "Default value: '{0}'.";
 		public const string CurrentTaskList = "Current list: '{0}'.";
 		public const string EntityDoesNotMakeSenseWithEntity = "'{0}' does not make sense with '{1}'.";
@@ -74,9 +74,9 @@ namespace TaskMan
 		public const string TheFollowingObjectWillBeAction = "The following {0} will be {1}: ";
 		public const string TypeHelpForCommandSyntax = "Type 'taskman --help' to view command syntax.";
 		public const string ParameterNameWillBeSetToValue = "Parameter '{0}' will be set to '{1}'.";
-		public const string RequiredFlagNotSet = "Required flag {0} was not specified";
+		public const string RequiredFlagNotSet = "Required flag {0} was not specified.";
 		public const string UknownBooleanValue = "Cannot parse '{0}' into a boolean value.";
-		public const string UnknownCommand = "Unknown command '{0}'. ";
+		public const string UnknownCommand = "Unknown command '{0}'.";
 		public const string UnknownColor = "Unknown console color '{0}'.";
 		public const string UnknownPriorityLevel = "Unknown priority level '{0}'.";
 		public const string UnknownIdOrIdRange = "Unknown ID or ID range '{0}'.";
@@ -85,5 +85,6 @@ namespace TaskMan
 		public const string IncorrectSortingStepsSyntax = "Sorting string does not match the required syntax ('property+' or 'property-')";
 		public const string RecursionIsProhibited = "No, recursion is prohibited.";
 		public const string FormatNotSupported = "'{0}' format is not supported.";
+		public const string DidYouMean = "Did you mean '{0}'?";
 	}
 }

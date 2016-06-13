@@ -780,7 +780,20 @@ namespace TaskMan
 
 			if (!matchingCommands.Any())
 			{
-				throw new TaskManException(Messages.UnknownCommand, _executingCommandName);
+				IEnumerable<string> similarCommandNames = _commands.SimilarNames(
+					_executingCommandName,
+					maximumEditDistance: 2);
+
+				string errorMessage = Messages.UnknownCommand;
+
+				if (similarCommandNames.Any())
+				{
+					errorMessage += " " + string.Format(
+						Messages.DidYouMean,
+						similarCommandNames.First());
+				}
+
+				throw new TaskManException(errorMessage, _executingCommandName);
 			}
 			if (!matchingCommands.IsSingleton())
 			{
