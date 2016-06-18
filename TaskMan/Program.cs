@@ -721,7 +721,7 @@ namespace TaskMan
 						exception.Message.DecapitaliseFirstLetter());
 
 					_error.WriteLine(Messages.ExceptionStackTrace);
-					_error.Write(exception.StackTrace);
+					_error.WriteLine(exception.StackTrace);
 				}
 				else
 				{
