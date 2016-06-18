@@ -140,7 +140,7 @@ namespace TaskMan
 
 				if (nextLine.Length + linePart.Length > maxLineWidth)
 				{
-					resultingLines.Add(nextLine.ToString().Trim());
+					resultingLines.Add(nextLine.ToString().TrimEnd());
 					nextLine = new StringBuilder();
 				}
 
@@ -149,7 +149,7 @@ namespace TaskMan
 
 			if (nextLine.Length > 0)
 			{
-				resultingLines.Add(nextLine.ToString().Trim());
+				resultingLines.Add(nextLine.ToString().TrimEnd());
 			}
 
 			return resultingLines;
