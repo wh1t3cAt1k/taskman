@@ -57,3 +57,13 @@ TaskMan follows [semantic versioning](http://semver.org/). No version until 1.0.
 TaskMan is [free software](http://www.gnu.org/philosophy/free-sw.html) (as in Freedom). It is licensed under GNU GPLv3. The licensing terms can be found here: http://www.gnu.org/licenses/gpl-3.0.html
 
 The program author provides this software "as is", without any warranty. Anyone who uses the software does so at their own risk. In no event will the author be held responsible for any negative consequences arising from using TaskMan, including (but not limited to) frustration, depression, shot legs, brain and/or computer damage, alien abductions, Donald Trump winning elections etc.
+
+## Acknowledgements
+
+TaskMan incorporates and makes use of the following external dependencies:
+
+* [CsvHelper](https://joshclose.github.io/CsvHelper/) for importing/exporting task lists using the CSV file format
+* [Mono Options](https://github.com/mono/mono/tree/master/mcs/class/Mono.Options) for command line flag parsing
+* [NUnit](http://www.nunit.org/) for unit testing
+
+The author expresses much gratitude to all authors and contributors to the aforementioned software products!
