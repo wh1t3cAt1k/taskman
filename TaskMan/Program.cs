@@ -826,6 +826,13 @@ namespace TaskMan
 				}
 			}
 
+			this.CurrentOperation = "display help for the selected command";
+
+			if (_displayHelpFlag.IsSet && _displayHelpFlag)
+			{
+				DisplayCommandHelp();
+			}
+
 			this.CurrentOperation = "ensure flag consistency";
 
 			EnsureFlagConsistency(_executingCommand, _executingCommandName, arguments);
@@ -1562,6 +1569,45 @@ namespace TaskMan
 			if (dueDate.Value.Date == DateTime.Today.AddDays(1)) return "Tomorrow";
 
 			return dueDate.Value.ToString("MMMMM d, yyyy");
+		}
+
+		/// <summary>
+		/// Displays the help for the command specified
+		/// by the use.
+		/// </summary>
+		void DisplayCommandHelp()
+		{
+			OutputWriteLine(Messages.EntityDashDescription, _executingCommand.Description);
+
+			IEnumerable<string> alternativeCommandNames = PrototypeHelper
+				.GetComponents(_executingCommand.Prototype)
+				.Where(name => !name.Equals(_executingCommandName, StringComparison.OrdinalIgnoreCase))
+				.Select(name => $"'{name}'");
+
+			OutputWriteLine(Messages.AlternativeNames);
+			OutputWriteLine(string.Join(",", alternativeCommandNames));
+
+			Action<IEnumerable<Flag>> writeFlagsDescription = flags =>
+			{
+				OptionSet flagsOptionSet = new OptionSet();
+
+				flags.ForEach(flag => flag.AddToOptionSet(flagsOptionSet));
+
+				flagsOptionSet.WriteOptionDescriptions(_output);
+			};
+
+			if (_executingCommand.RequiredFlags.Any())
+			{
+				OutputWriteLine(Messages.RequiredFlags);
+				writeFlagsDescription(_executingCommand.RequiredFlags);
+			}
+
+			if (_executingCommand.SupportedFlags.Any())
+			{
+				OutputWriteLine(Messages.SupportedFlags);
+				writeFlagsDescription(_executingCommand.SupportedFlags);
+			}
+			
 		}
 	}
 }
