@@ -66,4 +66,4 @@ TaskMan incorporates and makes use of the following external dependencies:
 * [Mono Options](https://github.com/mono/mono/tree/master/mcs/class/Mono.Options) for command line flag parsing
 * [NUnit](http://www.nunit.org/) for unit testing
 
-The author expresses much gratitude to all authors and contributors to the aforementioned software products!
+The author expresses much gratitude to all the authors and contributors to these software products!
