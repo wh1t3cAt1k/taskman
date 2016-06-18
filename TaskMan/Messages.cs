@@ -87,7 +87,7 @@ namespace TaskMan
 		public const string FormatNotSupported = "'{0}' format is not supported.";
 		public const string DidYouMean = "Did you mean '{0}'?";
 		public const string AssumingCommand = "Assuming command '{0}'.";
-		public const string AlternativeNames = "Alternative names: ";
+		public const string AlternativeNames = "Alternative names: {0}.";
 		public const string EntityDashDescription = "'{0}' - {1}.";
 		public const string RequiredFlags = "Required command line flags:";
 		public const string SupportedFlags = "Supported command line flags:";

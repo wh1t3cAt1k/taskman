@@ -1587,8 +1587,9 @@ namespace TaskMan
 				.Where(name => !name.Equals(_executingCommandName, StringComparison.OrdinalIgnoreCase))
 				.Select(name => $"'{name}'");
 
-			OutputWriteLine(Messages.AlternativeNames);
-			OutputWriteLine(string.Join(",", alternativeCommandNames));
+			OutputWriteLine(
+				Messages.AlternativeNames, 
+				string.Join(",", alternativeCommandNames));
 
 			Action<IEnumerable<Flag>> writeFlagsDescription = flags =>
 			{
