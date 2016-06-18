@@ -831,6 +831,7 @@ namespace TaskMan
 			if (_displayHelpFlag.IsSet && _displayHelpFlag)
 			{
 				DisplayCommandHelp();
+				return;
 			}
 
 			this.CurrentOperation = "ensure flag consistency";
