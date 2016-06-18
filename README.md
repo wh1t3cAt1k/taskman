@@ -1,7 +1,7 @@
 # TaskMan - a command line todo list
 ## Description
 
-TaskMan is a convenient command line application that allows you to manage your everyday tasks in the form of a to-do list.
+TaskMan is a convenient CLI application that allows you to manage your everyday tasks in the form of a to-do list.
 
 **Current version**: 0.3.0
 
