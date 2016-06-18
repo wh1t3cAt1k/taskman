@@ -13,7 +13,7 @@ TaskMan is a convenient CLI application that allows you to manage your everyday 
 
 ## Example usage
 
-TaskMan was designed to be intuitive and easy-to-use. See some examples below, all of which should be pretty much self-explanatory:
+TaskMan is designed to be intuitive and easy-to-use. See some examples below, all of which should be pretty self-explanatory:
 
 If you wish to study all available commands and command line flags, run `taskman --help` or access the [help file in the repository](https://github.com/wh1t3cAt1k/taskman/blob/master/TaskMan/HELP.txt). You can also obtain short help for a specific command by running `taskman <commandname> --help`.
 
@@ -35,11 +35,11 @@ If you wish to study all available commands and command line flags, run `taskman
 
 ## System requirements
 
-TaskMan requires [Microsoft .NET](https://www.microsoft.com/net) 4.5 (or later), or [Mono Runtime](http://www.mono-project.com/download/) 4.0.0 (or later) to run.
+TaskMan requires at least [Microsoft .NET](https://www.microsoft.com/net) 4.5, or [Mono Runtime](http://www.mono-project.com/download/) 4.0.0 to run.
 
 ## Installation and running
 
-The installation is pretty straightforward - just extract/copy the contents of the release into a directory on your machine, `cd` into that directory, then:
+The installation is pretty straightforward - just extract/copy the contents of [the latest release](https://github.com/wh1t3cAt1k/taskman/releases) into a directory on your machine, `cd` into that directory, then:
 
 * In Windows / .NET environment, run TaskMan.exe;  
 * Using Mono, run 'mono TaskMan.exe';
