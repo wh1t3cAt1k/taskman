@@ -1590,7 +1590,7 @@ namespace TaskMan
 
 			OutputWriteLine(
 				Messages.AlternativeNames, 
-				string.Join(",", alternativeCommandNames));
+				string.Join(", ", alternativeCommandNames));
 
 			Action<IEnumerable<Flag>> writeFlagsDescription = flags =>
 			{
