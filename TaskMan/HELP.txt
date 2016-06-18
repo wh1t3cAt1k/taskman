@@ -176,7 +176,7 @@
 
 	> taskman add remember the milk --priority critical --due tomorrow
 
-	> taskman add pay bills --due 'this month'
+	> taskman add pay bills --due 'this month' --list household
 
 	> taskman show --like milk --orderby isfinished+desc-
 
