@@ -100,10 +100,19 @@ namespace TaskMan
 		/// <summary>
 		/// Splits the specified text into a sequence of lines, each line not
 		/// exceeding the specified maximal width, breaking the line (preferably) 
-		/// on whitespace characters.
+		/// on whitespace characters. If the text contains any line breaks, treats 
+		/// the pieces between the line breaks separately.
 		/// </summary>
 		public static IEnumerable<string> MakeLinesByWhitespace(this string text, int maxLineWidth)
 		{
+			IEnumerable<string> atomicTexts = text.Split('\n');
+
+			if (atomicTexts.HasAtLeastTwoElements())
+			{
+				return atomicTexts.SelectMany(
+					atomicText => MakeLinesByWhitespace(atomicText, maxLineWidth));
+			}
+
 			Queue<string> textParts = new Queue<string>(Regex
 				.Split(text, @"(\s)")
 				.SelectMany(part =>

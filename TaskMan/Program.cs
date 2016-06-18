@@ -680,7 +680,7 @@ namespace TaskMan
 					_filteredTasks.Skip(3).Count());
 			}
 
-			return ConfirmOperation(actionDescription.ToString().TrimEnd('\n'));
+			return ConfirmOperation(actionDescription.ToString().TrimEnd());
 		}
 
 		void SignalizeOperationSuccess(
