@@ -1577,7 +1577,10 @@ namespace TaskMan
 		/// </summary>
 		void DisplayCommandHelp()
 		{
-			OutputWriteLine(Messages.EntityDashDescription, _executingCommand.Description);
+			OutputWriteLine(
+				Messages.EntityDashDescription,
+				_executingCommandName,
+				_executingCommand.Description);
 
 			IEnumerable<string> alternativeCommandNames = PrototypeHelper
 				.GetComponents(_executingCommand.Prototype)
