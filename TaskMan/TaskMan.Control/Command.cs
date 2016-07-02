@@ -149,7 +149,10 @@ namespace TaskMan.Control
 			return commands.SelectMany(
 				command => PrototypeHelper
 					.GetComponents(command.Prototype)
-					.Where(name => name.LevenshteinDistance(expression) <= maximumEditDistance));
+					.Select(name => new { Name = name, Distance = name.LevenshteinDistance(expression) })
+					.Where(pair => pair.Distance <= maximumEditDistance))
+					.OrderBy(pair => pair.Distance)
+					.Select(pair => pair.Name);
 		}
 	}
 }
