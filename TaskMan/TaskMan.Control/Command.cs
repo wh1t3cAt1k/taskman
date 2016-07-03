@@ -146,13 +146,14 @@ namespace TaskMan.Control
 			string expression,
 			int maximumEditDistance)
 		{
-			return commands.SelectMany(
-				command => PrototypeHelper
-					.GetComponents(command.Prototype)
-					.Select(name => new { Name = name, Distance = name.LevenshteinDistance(expression) })
-					.Where(pair => pair.Distance <= maximumEditDistance))
-					.OrderBy(pair => pair.Distance)
-					.Select(pair => pair.Name);
+			return commands
+				.SelectMany(
+					command => PrototypeHelper
+						.GetComponents(command.Prototype)
+						.Select(name => new { Name = name, Distance = name.LevenshteinDistance(expression) })
+						.Where(pair => pair.Distance <= maximumEditDistance))
+				.OrderBy(pair => pair.Distance)
+				.Select(pair => pair.Name);
 		}
 	}
 }
